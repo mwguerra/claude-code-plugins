@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mwguerra.dev/taskmanager/memories.schema.json",
+  "title": "MWGuerraTaskManagerMemories",
+  "type": "object",
+  "required": ["version", "project", "memories"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "project": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "memories": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/memory" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "memory": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "kind",
+        "whyImportant",
+        "body",
+        "tags",
+        "scope",
+        "source",
+        "importance",
+        "confidence",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "useCount"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^M-[0-9]{4,}$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "constraint",
+            "decision",
+            "bugfix",
+            "workaround",
+            "convention",
+            "architecture",
+            "process",
+            "integration",
+            "anti-pattern",
+            "other"
+          ]
+        },
+        "whyImportant": { "type": "string" },
+        "body": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "project": { "type": "string" },
+            "files": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)*$"
+              },
+              "uniqueItems": true
+            },
+            "commands": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true
+            },
+            "agents": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true
+            },
+            "domains": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "source": {
+          "type": "object",
+          "required": ["type", "name"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["user", "agent", "command", "hook", "other"]
+            },
+            "name": { "type": "string" },
+            "via": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "importance": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "deprecated", "superseded", "draft"]
+        },
+        "supersededBy": {
+          "type": ["string", "null"]
+        },
+        "links": {
+          "type": "object",
+          "properties": {
+            "docs": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "prs": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUsedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "useCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

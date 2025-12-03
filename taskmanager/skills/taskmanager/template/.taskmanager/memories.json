@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "id": "project-id",
+    "name": "Project Name",
+    "description": "Optional description of the project"
+  },
+  "memories": [
+    {
+      "id": "M-0001",
+      "title": "Always use Pest for tests in Laravel apps",
+      "kind": "constraint",
+      "whyImportant": "Ensures consistency across all test suites and aligns with team standard.",
+      "body": "For any Laravel project in this monorepo, always create tests in Pest. Do not mix PHPUnit-style tests unless migrating legacy code.",
+      "tags": ["testing", "laravel", "pest", "convention"],
+      "scope": {
+        "project": "project-id",
+        "files": ["tests/", "app/"],
+        "tasks": [],
+        "domains": ["testing", "architecture"]
+      },
+      "source": {
+        "type": "user",               // 'user' | 'agent' | 'command' | 'hook' | 'other'
+        "name": "mwguerra",
+        "via": "cli"                  // free text; e.g. 'taskmanager skill', 'command tests/run-test-suite'
+      },
+      "importance": 5,                // 1–5 (how critical)
+      "confidence": 0.95,             // 0–1 (how sure we are this is correct)
+      "status": "active",             // 'active' | 'deprecated' | 'superseded' | 'draft'
+      "supersededBy": null,
+      "links": {
+        "docs": [".claude/docs/testing-guidelines.md"],
+        "prs": []
+      },
+      "createdAt": "2025-11-22T10:00:00Z",
+      "updatedAt": "2025-11-22T10:00:00Z",
+      "lastUsedAt": null,
+      "useCount": 0
+    }
+  ]
+}

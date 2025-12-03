@@ -1,0 +1,17 @@
+{
+  "name": "taskmanager",
+  "description": "Hierarchical task management system with project memory. Includes commands for planning tasks from PRDs, executing tasks, viewing dashboards, and managing project-wide memories (constraints, decisions, conventions, bugfixes).",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "taskmanager",
+    "tasks",
+    "planning",
+    "prd",
+    "project-memory",
+    "automation",
+    "workflow"
+  ]
+}

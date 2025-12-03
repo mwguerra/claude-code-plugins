@@ -1,0 +1,16 @@
+{
+  "name": "code-cleanup",
+  "description": "Clean code for commits by removing debug statements, fix-related comments, resolved TODOs, and other development artifacts. Supports JavaScript, TypeScript, Python, PHP, Java, Kotlin, Swift, Ruby, Go, Rust, C/C++, Vue, and Svelte.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "cleanup",
+    "code-quality",
+    "debug",
+    "lint",
+    "commit-prep",
+    "refactoring"
+  ]
+}

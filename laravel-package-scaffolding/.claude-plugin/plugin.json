@@ -1,0 +1,16 @@
+{
+  "name": "laravel-package-scaffolding",
+  "description": "Scaffold new Laravel Composer package skeletons with proper structure, ServiceProvider, and test command. Automatically updates project composer.json with path repository.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "laravel",
+    "package",
+    "scaffold",
+    "composer",
+    "skeleton",
+    "generator"
+  ]
+}

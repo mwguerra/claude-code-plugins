@@ -1,0 +1,16 @@
+{
+  "name": "docs-specialist",
+  "description": "Specialized documentation writer and reviewer. Includes commands for updating and validating project documentation, plus a docs-specialist agent for comprehensive documentation tasks.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "documentation",
+    "docs",
+    "technical-writing",
+    "validation",
+    "audit",
+    "markdown"
+  ]
+}

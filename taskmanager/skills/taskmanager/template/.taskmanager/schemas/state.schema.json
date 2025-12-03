@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MWGuerraState",
+  "type": "object",
+  "required": [
+    "version",
+    "currentTaskId",
+    "currentStep",
+    "mode",
+    "startedAt",
+    "lastUpdate",
+    "evidence",
+    "verificationsPassed"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "currentTaskId": { "type": ["string", "null"] },
+    "currentSubtaskPath": { "type": ["string", "null"] },
+    "currentStep": {
+      "type": "string",
+      "enum": [
+        "starting",
+        "planning-top-level",
+        "expanding-subtasks",
+        "dependency-analysis",
+        "execution",
+        "verification",
+        "idle",
+        "done"
+      ]
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["autonomous", "interactive", "paused"]
+    },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "lastUpdate": { "type": "string", "format": "date-time" },
+    "loop": {
+      "type": "object",
+      "properties": {
+        "iteration": { "type": "integer", "minimum": 0 },
+        "maxIterations": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "contextSnapshot": {
+      "type": "object",
+      "properties": {
+        "tasksVersion": { "type": "string" },
+        "tasksFileHash": { "type": "string" },
+        "promptHash": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "filesCreated",
+        "filesModified",
+        "commitSha",
+        "testsPassingBefore",
+        "testsPassingAfter"
+      ],
+      "properties": {
+        "filesCreated": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "filesModified": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "commitSha": { "type": ["string", "null"] },
+        "testsPassingBefore": { "type": "integer", "minimum": 0 },
+        "testsPassingAfter": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "verificationsPassed": {
+      "type": "object",
+      "required": [
+        "filesCreated",
+        "filesNonEmpty",
+        "gitChangesExist",
+        "testsPass",
+        "committed"
+      ],
+      "properties": {
+        "filesCreated": { "type": "boolean" },
+        "filesNonEmpty": { "type": "boolean" },
+        "gitChangesExist": { "type": "boolean" },
+        "testsPass": { "type": "boolean" },
+        "committed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "lastDecision": {
+      "type": "object",
+      "properties": {
+        "summary": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

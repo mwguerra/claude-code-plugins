@@ -15,6 +15,36 @@
       "source": "./technical-content",
       "version": "1.0.0",
       "description": "Create high-quality technical articles with full research, documentation, and quality checks"
+    },
+    {
+      "name": "docs-specialist",
+      "source": "./docs-specialist",
+      "version": "1.0.0",
+      "description": "Specialized documentation writer and reviewer with commands for updating and validating project documentation"
+    },
+    {
+      "name": "taskmanager",
+      "source": "./taskmanager",
+      "version": "1.0.0",
+      "description": "Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs"
+    },
+    {
+      "name": "test-automation",
+      "source": "./test-automation",
+      "version": "1.0.0",
+      "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4"
+    },
+    {
+      "name": "laravel-package-scaffolding",
+      "source": "./laravel-package-scaffolding",
+      "version": "1.0.0",
+      "description": "Scaffold new Laravel Composer package skeletons with ServiceProvider and test command"
+    },
+    {
+      "name": "code-cleanup",
+      "source": "./code-cleanup",
+      "version": "1.0.0",
+      "description": "Clean code for commits by removing debug statements, fix-related comments, and development artifacts"
     }
   ]
 }
