@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-tool-use.ts\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

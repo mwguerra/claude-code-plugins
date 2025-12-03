@@ -1,0 +1,16 @@
+{
+  "name": "mwguerra-marketplace",
+  "metadata": {
+    "description": "Claude Code plugins by mwguerra",
+    "version": "1.0.0",
+    "author": "mwguerra"
+  },
+  "plugins": [
+    {
+      "name": "technical-content",
+      "source": "./technical-content",
+      "version": "1.0.0",
+      "description": "Create high-quality technical articles with full research, documentation, and quality checks"
+    }
+  ]
+}
