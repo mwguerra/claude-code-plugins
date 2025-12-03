@@ -1,5 +1,9 @@
 {
   "name": "mwguerra-marketplace",
+  "owner": {
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
+  },
   "metadata": {
     "description": "Claude Code plugins by mwguerra",
     "version": "1.0.0",
