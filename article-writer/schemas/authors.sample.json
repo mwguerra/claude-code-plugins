@@ -1,0 +1,64 @@
+{
+  "$schema": "./schemas/authors.schema.json",
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-15T12:00:00Z"
+  },
+  "authors": [
+    {
+      "id": "mwguerra",
+      "name": "MW Guerra",
+      "languages": ["pt_BR", "en_US"],
+      "role": "Senior Software Engineer & Technical Writer",
+      "experience": "10+ years in web development",
+      "expertise": ["Laravel", "PHP", "JavaScript", "Software Architecture"],
+      "tone": {
+        "formality": 4,
+        "opinionated": 7
+      },
+      "vocabulary": {
+        "use_freely": [
+          "Controllers", "Models", "Views",
+          "Middleware", "Routes",
+          "Eloquent", "Blade",
+          "Composer", "npm",
+          "API", "REST", "JSON",
+          "Git", "GitHub"
+        ],
+        "always_explain": [
+          "DDD concepts (briefly on first use)",
+          "Design patterns (with context)",
+          "Infrastructure terms (Redis, queues)",
+          "Advanced OOP concepts"
+        ]
+      },
+      "phrases": {
+        "signature": [
+          "Na prática...",
+          "O que realmente importa aqui é...",
+          "Vamos direto ao ponto:"
+        ],
+        "avoid": [
+          "Simplesmente",
+          "É só fazer...",
+          "Todo mundo sabe que...",
+          "Obviamente"
+        ]
+      },
+      "opinions": {
+        "strong_positions": [
+          "Tests are non-negotiable for production code",
+          "Fat models are a code smell",
+          "Laravel's conventions should be followed unless there's a good reason",
+          "Documentation is part of the code"
+        ],
+        "stay_neutral": [
+          "Tabs vs spaces",
+          "IDE preferences",
+          "Mac vs Linux vs Windows"
+        ]
+      },
+      "example_voice": "Antes de mais nada, vamos entender o problema que estamos resolvendo. Rate limiting não é só sobre bloquear requests — é sobre proteger sua aplicação e garantir uma experiência justa para todos os usuários. O Laravel torna isso surpreendentemente simples, mas há nuances importantes que muitos desenvolvedores ignoram."
+    }
+  ]
+}

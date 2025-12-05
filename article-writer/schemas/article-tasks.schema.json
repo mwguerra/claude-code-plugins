@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "article-tasks.schema.json",
+  "title": "Article Tasks",
+  "description": "Schema for article tasks queue with author references and multi-language support.",
+  "oneOf": [
+    {
+      "type": "array",
+      "items": { "$ref": "#/$defs/article" }
+    },
+    {
+      "type": "object",
+      "required": ["articles"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "articles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/article" }
+        },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "last_updated": { "type": "string", "format": "date-time" },
+        "total_count": { "type": "integer" }
+      }
+    },
+    "author_reference": {
+      "type": "object",
+      "description": "Reference to an author from authors.json",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Author ID (must match an id in authors.json)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Author display name (cached for convenience)"
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Languages for this article (subset of author's languages)"
+        }
+      }
+    },
+    "output_file": {
+      "type": "object",
+      "description": "Generated article file for a specific language",
+      "properties": {
+        "language": {
+          "type": "string",
+          "description": "Language code (e.g., pt_BR, en_US)"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path from project root (e.g., content/articles/2025_01_15_rate-limiting/rate-limiting.pt_BR.md)"
+        },
+        "translated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this translation was completed"
+        }
+      }
+    },
+    "source_reference": {
+      "type": "object",
+      "description": "Web source researched and used in the article",
+      "required": ["url", "summary", "usage"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "URL of the source"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the page/document"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Brief summary of what the source is about"
+        },
+        "usage": {
+          "type": "string",
+          "description": "How this source was used in the article"
+        },
+        "accessed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the source was accessed"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["documentation", "tutorial", "news", "blog", "repository", "specification", "other"],
+          "description": "Type of source"
+        }
+      }
+    },
+    "article": {
+      "type": "object",
+      "required": [
+        "id", "title", "subject", "area", "tags", "difficulty",
+        "relevance", "content_type", "estimated_effort", "versions",
+        "series_potential", "prerequisites", "reference_urls", "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 200
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100
+        },
+        "area": {
+          "type": "string",
+          "enum": [
+            "Architecture", "Backend", "Business", "Database", "DevOps",
+            "Files", "Frontend", "Full-stack", "JavaScript", "Laravel",
+            "Native Apps", "Notifications", "Performance", "PHP", "Quality",
+            "Security", "Soft Skills", "Testing", "Tools", "AI/ML"
+          ]
+        },
+        "tags": { "type": "string" },
+        "difficulty": {
+          "type": "string",
+          "enum": ["Beginner", "Intermediate", "Advanced", "All Levels"]
+        },
+        "relevance": { "type": "string" },
+        "content_type": {
+          "type": "string",
+          "enum": [
+            "Deep-dive Tutorial", "Tutorial with Examples", "Tutorial",
+            "Deep-dive", "Comprehensive Guide", "Comprehensive Tutorial",
+            "Quick Tutorial", "Quick Tip", "Quick Setup", "Project Tutorial",
+            "Project Series", "Tips & Tricks", "Case Study", "Pattern Guide",
+            "Feature Overview", "Reference Guide", "Comparison", "Collection",
+            "Checklist", "Setup Guide", "Guide", "Tool Introduction",
+            "Tool Tutorial", "Tool Review", "Opinion", "Opinion + Tutorial",
+            "Opinion/Experience", "Experience Sharing", "Strategic Guide",
+            "Practical Guide", "Framework Guide", "Idea Collection + Guide",
+            "Comparison Guide", "Step-by-step Tutorial"
+          ]
+        },
+        "estimated_effort": {
+          "type": "string",
+          "enum": ["Short", "Medium", "Long", "Long (Series)"]
+        },
+        "versions": { "type": "string" },
+        "series_potential": { "type": "string" },
+        "prerequisites": { "type": "string", "minLength": 1 },
+        "reference_urls": { "type": "string", "minLength": 1 },
+        "author": {
+          "$ref": "#/$defs/author_reference",
+          "description": "Author for this article. If not specified, uses first author."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "draft", "review", "published", "archived"],
+          "default": "pending"
+        },
+        "output_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/output_file" },
+          "description": "Generated article files per language"
+        },
+        "sources_used": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_reference" },
+          "description": "Web sources researched and used in the article"
+        },
+        "output_folder": {
+          "type": "string",
+          "description": "Base folder for article (e.g., content/articles/2025_01_15_rate-limiting/)"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this task was created/added to queue"
+        },
+        "written_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the primary language article was completed"
+        },
+        "published_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the article was published"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification timestamp"
+        },
+        "error_note": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

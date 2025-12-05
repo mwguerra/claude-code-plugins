@@ -11,8 +11,8 @@
   },
   "plugins": [
     {
-      "name": "technical-content",
-      "source": "./technical-content",
+      "name": "article-writer",
+      "source": "./article-writer",
       "version": "1.0.0",
       "description": "Create high-quality technical articles with full research, documentation, and quality checks"
     },

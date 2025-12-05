@@ -1,0 +1,147 @@
+{
+  "$schema": "./schemas/article-tasks.schema.json",
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-15T12:00:00Z",
+    "total_count": 5
+  },
+  "articles": [
+    {
+      "id": 1,
+      "title": "Implementando Rate Limiting no Laravel 11",
+      "subject": "Rate Limiting",
+      "area": "Laravel",
+      "tags": "laravel, rate-limiting, middleware, throttle, api, security",
+      "difficulty": "Intermediate",
+      "relevance": "High - Essential for API security and preventing abuse",
+      "content_type": "Tutorial with Examples",
+      "estimated_effort": "Medium",
+      "versions": "Laravel 11.x, PHP 8.2+",
+      "series_potential": "Yes - Laravel Security Series",
+      "prerequisites": "Basic Laravel knowledge, Understanding of middleware",
+      "reference_urls": "https://laravel.com/docs/11.x/rate-limiting",
+      "author": {
+        "id": "mwguerra",
+        "name": "MW Guerra",
+        "languages": ["pt_BR", "en_US"]
+      },
+      "status": "pending",
+      "created_at": "2025-01-15T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "title": "Repository Pattern no Laravel: Quando Usar (e Quando Evitar)",
+      "subject": "Repository Pattern",
+      "area": "Architecture",
+      "tags": "laravel, repository-pattern, design-patterns, architecture, eloquent",
+      "difficulty": "Intermediate",
+      "relevance": "High - Common architecture debate in Laravel community",
+      "content_type": "Opinion + Tutorial",
+      "estimated_effort": "Long",
+      "versions": "Laravel 10+, PHP 8.1+",
+      "series_potential": "Yes - Laravel Architecture Patterns",
+      "prerequisites": "Solid Laravel fundamentals, Basic OOP concepts",
+      "reference_urls": "Original article idea",
+      "author": {
+        "id": "mwguerra",
+        "name": "MW Guerra",
+        "languages": ["pt_BR", "en_US"]
+      },
+      "status": "draft",
+      "output_folder": "content/articles/2025_01_10_repository-pattern/",
+      "output_files": [
+        {
+          "language": "pt_BR",
+          "path": "content/articles/2025_01_10_repository-pattern/repository-pattern.pt_BR.md",
+          "translated_at": "2025-01-10T15:30:00Z"
+        }
+      ],
+      "created_at": "2025-01-08T10:00:00Z",
+      "written_at": "2025-01-10T15:30:00Z"
+    },
+    {
+      "id": 3,
+      "title": "Guia Completo de Queues no Laravel",
+      "subject": "Laravel Queues",
+      "area": "Backend",
+      "tags": "laravel, queues, jobs, workers, redis, horizon",
+      "difficulty": "Intermediate",
+      "relevance": "High - Essential for scalable applications",
+      "content_type": "Comprehensive Guide",
+      "estimated_effort": "Long",
+      "versions": "Laravel 11.x, PHP 8.2+",
+      "series_potential": "No - Standalone comprehensive guide",
+      "prerequisites": "Basic Laravel, Command line familiarity",
+      "reference_urls": "https://laravel.com/docs/11.x/queues",
+      "status": "pending",
+      "created_at": "2025-01-15T12:00:00Z"
+    },
+    {
+      "id": 4,
+      "title": "Testes de Feature vs Unit no Laravel: Guia Prático",
+      "subject": "Testing Strategy",
+      "area": "Testing",
+      "tags": "laravel, testing, phpunit, pest, tdd, unit-tests, feature-tests",
+      "difficulty": "Beginner",
+      "relevance": "High - Fundamental for code quality",
+      "content_type": "Tutorial with Examples",
+      "estimated_effort": "Medium",
+      "versions": "Laravel 10+, PHP 8.1+, Pest 2.x",
+      "series_potential": "Yes - Laravel Testing Series",
+      "prerequisites": "Basic Laravel knowledge",
+      "reference_urls": "https://laravel.com/docs/11.x/testing",
+      "status": "pending",
+      "created_at": "2025-01-15T12:00:00Z"
+    },
+    {
+      "id": 5,
+      "title": "Otimização de Queries N+1 no Laravel com Eager Loading",
+      "subject": "Query Optimization",
+      "area": "Performance",
+      "tags": "laravel, performance, eloquent, eager-loading, n+1, database",
+      "difficulty": "Intermediate",
+      "relevance": "Very High - Most common Laravel performance issue",
+      "content_type": "Deep-dive Tutorial",
+      "estimated_effort": "Short",
+      "versions": "Laravel 10+, PHP 8.1+",
+      "series_potential": "Yes - Laravel Performance Series",
+      "prerequisites": "Eloquent basics, Understanding of SQL joins",
+      "reference_urls": "https://laravel.com/docs/11.x/eloquent-relationships#eager-loading",
+      "status": "published",
+      "output_folder": "content/articles/2025_01_05_n-plus-one/",
+      "output_files": [
+        {
+          "language": "pt_BR",
+          "path": "content/articles/2025_01_05_n-plus-one/n-plus-one.pt_BR.md",
+          "translated_at": "2025-01-05T14:00:00Z"
+        },
+        {
+          "language": "en_US",
+          "path": "content/articles/2025_01_05_n-plus-one/n-plus-one.en_US.md",
+          "translated_at": "2025-01-06T10:00:00Z"
+        }
+      ],
+      "sources_used": [
+        {
+          "url": "https://laravel.com/docs/11.x/eloquent-relationships#eager-loading",
+          "title": "Eloquent: Relationships - Laravel Documentation",
+          "summary": "Official Laravel documentation covering eager loading with with(), load(), and nested eager loading",
+          "usage": "Used as primary reference for eager loading syntax and best practices",
+          "accessed_at": "2025-01-05T10:00:00Z",
+          "type": "documentation"
+        },
+        {
+          "url": "https://github.com/beyondcode/laravel-query-detector",
+          "title": "Laravel Query Detector - GitHub",
+          "summary": "Package that detects N+1 queries during development",
+          "usage": "Mentioned as debugging tool recommendation in troubleshooting section",
+          "accessed_at": "2025-01-05T11:00:00Z",
+          "type": "repository"
+        }
+      ],
+      "created_at": "2025-01-03T08:00:00Z",
+      "written_at": "2025-01-05T14:00:00Z",
+      "published_at": "2025-01-07T09:00:00Z"
+    }
+  ]
+}

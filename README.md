@@ -14,36 +14,57 @@ A collection of Claude Code plugins for development workflows.
 
 ## Available Plugins
 
-### technical-content
+### article-writer
 
 Create high-quality technical articles with full research, documentation, and quality checks.
 
 ```bash
-/plugin install technical-content@mwguerra
+/plugin install article-writer@mwguerra-marketplace
 ```
 
-**Commands:**
-- `/technical-content:article <topic>` - Create a new article
-- `/technical-content:voice setup` - Set up your voice profile
+### docs-specialist
 
-**Skills:**
-- `technical-content` - Full article creation workflow
-- `timestamp` - Cross-platform timestamp generation
+Specialized documentation writer and reviewer with commands for updating and validating project documentation.
+
+```bash
+/plugin install docs-specialist@mwguerra-marketplace
+```
+
+### taskmanager
+
+Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs.
+
+```bash
+/plugin install taskmanager@mwguerra-marketplace
+```
+
+### test-automation
+
+Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4.
+
+```bash
+/plugin install test-automation@mwguerra-marketplace
+```
+
+### laravel-package-scaffolding
+
+Scaffold new Laravel Composer package skeletons with ServiceProvider and test command.
+
+```bash
+/plugin install laravel-package-scaffolding@mwguerra-marketplace
+```
+
+### code-cleanup
+
+Clean code for commits by removing debug statements, fix-related comments, and development artifacts.
+
+```bash
+/plugin install code-cleanup@mwguerra-marketplace
+```
 
 ## Requirements
 
 - Claude Code
-- Bun runtime (for scripts)
-
-## After Installation
-
-```bash
-# Set up your voice profile first
-/technical-content:voice setup
-
-# Then create articles
-/technical-content:article implementing rate limiting in Laravel
-```
 
 ## License
 

@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "authors.schema.json",
+  "title": "Authors",
+  "description": "Schema for article authors with voice/tone profiles and language preferences.",
+  "type": "object",
+  "required": ["authors"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to the JSON Schema file"
+    },
+    "authors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/author" },
+      "minItems": 1
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "last_updated": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "$defs": {
+    "author": {
+      "type": "object",
+      "required": ["id", "name", "languages"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier (slug-like)",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name"
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Supported languages. First is primary, others are translation targets.",
+          "examples": [["pt_BR", "en_US"], ["en_US"]]
+        },
+        "role": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Professional role(s)"
+        },
+        "experience": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Years/areas of experience"
+        },
+        "expertise": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Areas of expertise"
+        },
+        "tone": {
+          "type": "object",
+          "description": "Tone settings on 1-10 scale",
+          "properties": {
+            "formality": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "1=very casual, 10=very formal"
+            },
+            "opinionated": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "1=always hedge, 10=strong opinions"
+            }
+          }
+        },
+        "vocabulary": {
+          "type": "object",
+          "properties": {
+            "use_freely": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Terms readers know, no explanation needed"
+            },
+            "always_explain": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Terms that need explanation on first use"
+            }
+          }
+        },
+        "phrases": {
+          "type": "object",
+          "properties": {
+            "signature": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Phrases to use naturally"
+            },
+            "avoid": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Phrases to never use"
+            }
+          }
+        },
+        "opinions": {
+          "type": "object",
+          "properties": {
+            "strong_positions": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Topics with strong opinions"
+            },
+            "stay_neutral": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "array", "items": { "type": "string" } }
+              ],
+              "description": "Topics to remain neutral on"
+            }
+          }
+        },
+        "example_voice": {
+          "type": "string",
+          "description": "2-3 sentence example in author's voice"
+        },
+        "notes": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "description": "Additional notes about writing style"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}
