@@ -60,9 +60,11 @@ your-project/
 ├── .article_writer/
 │   ├── schemas/
 │   │   ├── article-tasks.schema.json
-│   │   └── authors.schema.json
+│   │   ├── authors.schema.json
+│   │   └── settings.schema.json
 │   ├── article_tasks.json           # Task queue
-│   └── authors.json                 # Author profiles
+│   ├── authors.json                 # Author profiles
+│   └── settings.json                # Global settings (example defaults)
 └── content/
     └── articles/
         └── 2025_01_15_rate-limiting/
@@ -72,6 +74,11 @@ your-project/
             ├── 03_drafts/
             ├── 04_review/
             ├── 05_assets/
+            ├── code/                     # Practical example
+            │   ├── README.md
+            │   ├── app/
+            │   ├── tests/
+            │   └── composer.json
             ├── rate-limiting.pt_BR.md    # Primary
             └── rate-limiting.en_US.md    # Translation
 ```
@@ -129,6 +136,7 @@ Key fields in article_tasks.json:
 | `output_folder` | Base folder path |
 | `output_files` | Per-language file paths |
 | `sources_used` | Web sources researched and used |
+| `example` | Practical example info (type, path, files) |
 | `created_at` | When task was added |
 | `written_at` | When primary article completed |
 | `published_at` | When article went live |
@@ -139,10 +147,79 @@ Key fields in article_tasks.json:
 1. **Initialize** - Select author, create folder structure
 2. **Plan** - Classify type, define audience, create outline
 3. **Research** - **Search web** for docs, news, tutorials (< 1 year)
-4. **Draft** - Write in primary language following author's voice
-5. **Review** - Run quality checklists, verify sources
-6. **Translate** - Create versions for other languages
-7. **Finalize** - Update task with output paths and sources
+4. **Draft** - Write initial draft in primary language
+5. **Example** - Create practical example (code project, document, template)
+6. **Integrate** - Update draft with example code/content
+7. **Review** - Check flow, voice compliance, example accuracy
+8. **Translate** - Create versions for other languages
+9. **Finalize** - Update task with paths, sources, and example info
+
+## Practical Examples
+
+Every article includes a practical example in the `code/` folder:
+
+```
+content/articles/2025_01_15_rate-limiting/
+├── code/
+│   ├── README.md              # How to run the example
+│   ├── app/
+│   ├── database/
+│   ├── tests/                 # Pest tests
+│   └── composer.json
+├── rate-limiting.pt_BR.md
+└── rate-limiting.en_US.md
+```
+
+### Global Example Defaults
+
+Default settings for each example type are in `.article_writer/settings.json`:
+
+```json
+{
+  "example_defaults": {
+    "code": {
+      "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+      "has_tests": true,
+      "run_instructions": "composer install && ..."
+    },
+    "document": { ... },
+    "diagram": { ... }
+  }
+}
+```
+
+**Article-specific values override defaults.** For example:
+
+```json
+{
+  "example": {
+    "type": "code",
+    "technologies": ["Laravel 11", "MySQL"]  // overrides default SQLite
+  }
+}
+```
+
+### Example Requirements
+
+- **Minimal but complete** - Smallest possible while functional
+- **Self-contained** - Can run independently
+- **Well-commented** - Comments reference article sections
+- **Tested** - Pest tests for PHP (default: true for code examples)
+- **SQLite** - Default for database examples (configurable in settings.json)
+
+Example info is tracked in `article_tasks.json`:
+
+```json
+{
+  "example": {
+    "type": "code",
+    "path": "code/",
+    "description": "Minimal Laravel app demonstrating rate limiting",
+    "technologies": ["Laravel 12", "SQLite", "Pest 4"],
+    "has_tests": true
+  }
+}
+```
 
 ## Web Research
 

@@ -1,0 +1,104 @@
+{
+  "$schema": "./schemas/settings.schema.json",
+  "example_defaults": {
+    "code": {
+      "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+      "has_tests": true,
+      "path": "code/",
+      "run_instructions": "composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan test",
+      "setup_commands": [
+        "composer install",
+        "cp .env.example .env",
+        "php artisan key:generate",
+        "touch database/database.sqlite",
+        "php artisan migrate --seed"
+      ],
+      "test_command": "php artisan test",
+      "file_structure": [
+        "app/",
+        "database/migrations/",
+        "database/seeders/",
+        "tests/Feature/",
+        "composer.json",
+        ".env.example",
+        "README.md"
+      ],
+      "notes": "All code examples should be minimal but complete. Use SQLite to avoid external dependencies."
+    },
+    "document": {
+      "technologies": ["Markdown"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "Open the markdown files in any markdown viewer or editor",
+      "file_structure": [
+        "templates/",
+        "examples/",
+        "README.md"
+      ],
+      "notes": "Document examples should include both empty templates and filled examples"
+    },
+    "diagram": {
+      "technologies": ["Mermaid"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "View .mermaid files in any Mermaid-compatible viewer (VS Code, GitHub, etc.)",
+      "file_structure": [
+        "diagrams/",
+        "README.md"
+      ],
+      "notes": "Use Mermaid for diagrams as they render in GitHub and most markdown viewers"
+    },
+    "template": {
+      "technologies": ["Markdown", "YAML"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "Copy and customize the templates for your needs",
+      "file_structure": [
+        "templates/",
+        "README.md"
+      ],
+      "notes": "Templates should be well-commented with placeholders clearly marked"
+    },
+    "dataset": {
+      "technologies": ["JSON", "CSV"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "Import the data files into your application or database",
+      "file_structure": [
+        "data/",
+        "schemas/",
+        "README.md"
+      ],
+      "notes": "Include both sample data and schema definitions"
+    },
+    "config": {
+      "technologies": ["Docker", "YAML"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "docker-compose up -d",
+      "setup_commands": [
+        "docker-compose up -d"
+      ],
+      "file_structure": [
+        "docker/",
+        "docker-compose.yml",
+        "README.md"
+      ],
+      "notes": "Configuration examples should be self-contained and runnable with Docker"
+    },
+    "other": {
+      "technologies": [],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "See README.md for instructions",
+      "file_structure": [
+        "README.md"
+      ],
+      "notes": "Document thoroughly as the example type may not be obvious"
+    }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-15T00:00:00Z"
+  }
+}

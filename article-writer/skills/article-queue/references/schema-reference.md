@@ -84,6 +84,102 @@ Tracks web sources researched and used in the article.
 | `accessed_at` | datetime | | When accessed |
 | `type` | enum | | documentation/tutorial/news/blog/repository/specification/other |
 
+## Example Info
+
+Tracks the practical example created for the article.
+
+```json
+{
+  "type": "code",
+  "path": "code/",
+  "description": "Minimal Laravel app demonstrating rate limiting",
+  "technologies": ["Laravel 11", "SQLite", "Pest 3"],
+  "has_tests": true,
+  "files": [
+    "app/Providers/AppServiceProvider.php",
+    "tests/Feature/RateLimitTest.php"
+  ],
+  "run_instructions": "composer install && php artisan test"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | enum | code/document/diagram/template/dataset/config/other |
+| `path` | string | Path to example folder (usually `code/`) |
+| `description` | string | What the example demonstrates |
+| `technologies` | array | Technologies used |
+| `has_tests` | boolean | Whether tests are included |
+| `files` | array | Key files in the example |
+| `run_instructions` | string | How to run the example |
+| `skipped` | boolean | True if example was skipped |
+| `skip_reason` | string | Why example was skipped |
+
+## Settings (settings.json)
+
+Global settings including example defaults.
+
+### Structure
+
+```json
+{
+  "$schema": "./schemas/settings.schema.json",
+  "example_defaults": {
+    "code": { ... },
+    "document": { ... },
+    "diagram": { ... },
+    "template": { ... },
+    "dataset": { ... },
+    "config": { ... },
+    "other": { ... }
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2025-01-15T00:00:00Z"
+  }
+}
+```
+
+### Example Defaults Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `technologies` | array | Default tech stack for this type |
+| `has_tests` | boolean | Include tests by default |
+| `path` | string | Default example folder path |
+| `run_instructions` | string | How to run the example |
+| `setup_commands` | array | List of setup commands |
+| `test_command` | string | Command to run tests |
+| `file_structure` | array | Expected files/folders |
+| `template_repo` | string | Git repo to clone (optional) |
+| `notes` | string | Additional notes |
+
+### Default Values (code type)
+
+```json
+{
+  "code": {
+    "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+    "has_tests": true,
+    "path": "code/",
+    "run_instructions": "composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan test",
+    "test_command": "php artisan test"
+  }
+}
+```
+
+### Merging with Article Examples
+
+Article-specific values **override** defaults:
+
+```
+settings.json          article example           result
+─────────────          ───────────────           ──────
+technologies: [L12]    technologies: [L11] →     [L11]
+has_tests: true        (not set)           →     true
+path: "code/"          path: "example/"    →     "example/"
+```
+
 ## Enums
 
 ### area
@@ -151,6 +247,19 @@ pending, in_progress, draft, review, published, archived
       "type": "documentation"
     }
   ],
+  "example": {
+    "type": "code",
+    "path": "code/",
+    "description": "Minimal Laravel app demonstrating rate limiting",
+    "technologies": ["Laravel 11", "SQLite", "Pest 3"],
+    "has_tests": true,
+    "files": [
+      "app/Providers/AppServiceProvider.php",
+      "routes/api.php",
+      "tests/Feature/RateLimitTest.php"
+    ],
+    "run_instructions": "composer install && php artisan test"
+  },
   "created_at": "2025-01-10T10:00:00Z",
   "written_at": "2025-01-15T14:00:00Z"
 }

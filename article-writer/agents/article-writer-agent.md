@@ -53,13 +53,17 @@ c. Update status: "pending" → "in_progress"
 d. Save JSON immediately
 e. Use Skill(article-writer):
    - Research: Search web for docs, news, tutorials
-   - Write in author's primary language
-   - Translate to other languages
+   - Draft: Write initial draft in primary language
+   - Example: Create practical example (code/document)
+   - Integrate: Update draft with example code/content
+   - Review: Check flow, voice compliance, accuracy
+   - Translate: Create other language versions
 f. On success:
    - status → "draft"
    - output_folder → folder path
    - output_files → per-language paths
    - sources_used → array of researched URLs
+   - example → example info (type, path, files)
    - written_at → now
 g. On failure:
    - Keep "in_progress"
@@ -109,7 +113,39 @@ For each article, search the web for:
    - Note summary and how it was used
    - Save to task's sources_used array
 
-### 6. Multi-Language Flow
+### 6. Example Creation Phase
+
+**Every article should have a practical example unless it makes absolutely no sense.**
+
+1. **Determine example type**
+   - Code article → Minimal working project
+   - Process article → Document template
+   - Architecture → Diagrams + sample code
+
+2. **Create in `code/` folder**
+   - Minimal but complete
+   - Well-commented (reference article sections)
+   - Include tests (Pest for PHP)
+   - Use SQLite for database examples
+
+3. **Write initial draft first**
+   - Mark example locations: `<!-- EXAMPLE: ... -->`
+   
+4. **Build example to match draft**
+   - Code snippets that will appear in article
+   - Tests that verify the concepts
+
+5. **Update draft with example content**
+   - Insert actual code from example
+   - Add file references
+   - Include run instructions
+
+6. **Review integrated article**
+   - Verify explanation flow
+   - Check voice compliance
+   - Confirm example matches article
+
+### 7. Multi-Language Flow
 
 For author with `languages: ["pt_BR", "en_US"]`:
 
@@ -120,7 +156,7 @@ For author with `languages: ["pt_BR", "en_US"]`:
 5. Save as `{slug}.en_US.md`
 6. Record with translated_at timestamp
 
-### 7. Progress Tracking
+### 8. Progress Tracking
 
 Log to `.article_writer/.processing-log.json`:
 
@@ -135,6 +171,7 @@ Log to `.article_writer/.processing-log.json`:
       "author": "mwguerra",
       "languages_completed": ["pt_BR", "en_US"],
       "sources_found": 5,
+      "example_created": true,
       "duration_seconds": 180
     }
   ],
@@ -142,7 +179,7 @@ Log to `.article_writer/.processing-log.json`:
 }
 ```
 
-### 8. Completion
+### 9. Completion
 
 After batch:
 1. Update `metadata.last_updated`

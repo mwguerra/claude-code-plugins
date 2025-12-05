@@ -103,6 +103,51 @@
         }
       }
     },
+    "example_info": {
+      "type": "object",
+      "description": "Information about the practical example created for the article",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["code", "document", "diagram", "template", "dataset", "config", "other"],
+          "description": "Type of example"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to example folder from article root (usually 'code/')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of what the example demonstrates"
+        },
+        "technologies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Technologies/tools used in the example"
+        },
+        "has_tests": {
+          "type": "boolean",
+          "description": "Whether the example includes tests"
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Key files in the example"
+        },
+        "run_instructions": {
+          "type": "string",
+          "description": "How to run/use the example"
+        },
+        "skipped": {
+          "type": "boolean",
+          "description": "True if example was intentionally skipped"
+        },
+        "skip_reason": {
+          "type": "string",
+          "description": "Reason why example was skipped (if skipped)"
+        }
+      }
+    },
     "article": {
       "type": "object",
       "required": [
@@ -181,6 +226,10 @@
           "type": "array",
           "items": { "$ref": "#/$defs/source_reference" },
           "description": "Web sources researched and used in the article"
+        },
+        "example": {
+          "$ref": "#/$defs/example_info",
+          "description": "Practical example created for the article"
         },
         "output_folder": {
           "type": "string",

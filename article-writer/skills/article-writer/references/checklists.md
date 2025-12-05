@@ -105,6 +105,37 @@
 - [ ] URL slug is clean and keyword-rich
 ```
 
+## Example Checklist
+
+```markdown
+# Example Review
+
+## Completeness
+- [ ] Example is functional (runs without errors)
+- [ ] Example is minimal (no unnecessary code/files)
+- [ ] README.md explains how to run
+- [ ] All dependencies listed
+
+## Quality
+- [ ] Well-commented (references article sections)
+- [ ] Follows coding standards
+- [ ] Uses SQLite for database (no external DB)
+- [ ] Tests included (Pest for PHP)
+- [ ] Tests pass
+
+## Integration
+- [ ] Code snippets in article match example files
+- [ ] File paths in article are correct
+- [ ] Run instructions are accurate
+- [ ] Example demonstrates all key concepts
+
+## Documentation
+- [ ] README has setup instructions
+- [ ] Key files are documented
+- [ ] Article sections referenced in comments
+- [ ] Example purpose is clear
+```
+
 ## Final Review
 
 ```markdown
@@ -115,7 +146,20 @@
 | Accuracy | [ ] | |
 | Readability | [ ] | |
 | Voice | [ ] | |
+| Example | [ ] | |
 | SEO | [ ] | |
+
+## Flow Review
+- [ ] Narrative flows logically
+- [ ] Concepts introduced before use
+- [ ] Example appears at the right time
+- [ ] Transitions are smooth
+
+## Example Integration
+- [ ] Code snippets match example files
+- [ ] Example tests pass
+- [ ] Run instructions work
+- [ ] Example is referenced throughout article
 
 ## Pre-Publication
 - [ ] Spell check completed
@@ -126,6 +170,7 @@
 
 ## Ready for Publication
 - [ ] All checklists passed
+- [ ] Example runs correctly
 - [ ] Author reviewed final draft
 - [ ] Scheduled/published
 ```

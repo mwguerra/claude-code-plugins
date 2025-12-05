@@ -30,8 +30,10 @@ interface InitStatus {
   docsDirExists: boolean;
   tasksSchemaExists: boolean;
   authorsSchemaExists: boolean;
+  settingsSchemaExists: boolean;
   tasksFileExists: boolean;
   authorsFileExists: boolean;
+  settingsFileExists: boolean;
   missingItems: string[];
   existingItems: string[];
 }
@@ -53,8 +55,10 @@ async function checkStatus(): Promise<InitStatus> {
     docsDirExists: await exists(DOCS_DIR),
     tasksSchemaExists: await exists(join(SCHEMAS_DIR, "article-tasks.schema.json")),
     authorsSchemaExists: await exists(join(SCHEMAS_DIR, "authors.schema.json")),
+    settingsSchemaExists: await exists(join(SCHEMAS_DIR, "settings.schema.json")),
     tasksFileExists: await exists(join(CONFIG_DIR, "article_tasks.json")),
     authorsFileExists: await exists(join(CONFIG_DIR, "authors.json")),
+    settingsFileExists: await exists(join(CONFIG_DIR, "settings.json")),
     missingItems: [],
     existingItems: []
   };
@@ -78,11 +82,17 @@ async function checkStatus(): Promise<InitStatus> {
   if (!status.authorsSchemaExists) status.missingItems.push("schemas/authors.schema.json");
   else status.existingItems.push("schemas/authors.schema.json");
 
+  if (!status.settingsSchemaExists) status.missingItems.push("schemas/settings.schema.json");
+  else status.existingItems.push("schemas/settings.schema.json");
+
   if (!status.tasksFileExists) status.missingItems.push("article_tasks.json");
   else status.existingItems.push("article_tasks.json");
 
   if (!status.authorsFileExists) status.missingItems.push("authors.json");
   else status.existingItems.push("authors.json");
+
+  if (!status.settingsFileExists) status.missingItems.push("settings.json");
+  else status.existingItems.push("settings.json");
 
   return status;
 }
@@ -135,6 +145,117 @@ async function createEmptyAuthors(): Promise<void> {
   await writeFile(
     join(CONFIG_DIR, "authors.json"), 
     JSON.stringify(emptyAuthors, null, 2)
+  );
+}
+
+async function createDefaultSettings(): Promise<void> {
+  const defaultSettings = {
+    $schema: "./schemas/settings.schema.json",
+    example_defaults: {
+      code: {
+        technologies: ["Laravel 12", "Pest 4", "SQLite"],
+        has_tests: true,
+        path: "code/",
+        run_instructions: "composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan test",
+        setup_commands: [
+          "composer install",
+          "cp .env.example .env",
+          "php artisan key:generate",
+          "touch database/database.sqlite",
+          "php artisan migrate --seed"
+        ],
+        test_command: "php artisan test",
+        file_structure: [
+          "app/",
+          "database/migrations/",
+          "database/seeders/",
+          "tests/Feature/",
+          "composer.json",
+          ".env.example",
+          "README.md"
+        ],
+        notes: "All code examples should be minimal but complete. Use SQLite to avoid external dependencies."
+      },
+      document: {
+        technologies: ["Markdown"],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "Open the markdown files in any markdown viewer or editor",
+        file_structure: [
+          "templates/",
+          "examples/",
+          "README.md"
+        ],
+        notes: "Document examples should include both empty templates and filled examples"
+      },
+      diagram: {
+        technologies: ["Mermaid"],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "View .mermaid files in any Mermaid-compatible viewer (VS Code, GitHub, etc.)",
+        file_structure: [
+          "diagrams/",
+          "README.md"
+        ],
+        notes: "Use Mermaid for diagrams as they render in GitHub and most markdown viewers"
+      },
+      template: {
+        technologies: ["Markdown", "YAML"],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "Copy and customize the templates for your needs",
+        file_structure: [
+          "templates/",
+          "README.md"
+        ],
+        notes: "Templates should be well-commented with placeholders clearly marked"
+      },
+      dataset: {
+        technologies: ["JSON", "CSV"],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "Import the data files into your application or database",
+        file_structure: [
+          "data/",
+          "schemas/",
+          "README.md"
+        ],
+        notes: "Include both sample data and schema definitions"
+      },
+      config: {
+        technologies: ["Docker", "YAML"],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "docker-compose up -d",
+        setup_commands: [
+          "docker-compose up -d"
+        ],
+        file_structure: [
+          "docker/",
+          "docker-compose.yml",
+          "README.md"
+        ],
+        notes: "Configuration examples should be self-contained and runnable with Docker"
+      },
+      other: {
+        technologies: [],
+        has_tests: false,
+        path: "code/",
+        run_instructions: "See README.md for instructions",
+        file_structure: [
+          "README.md"
+        ],
+        notes: "Document thoroughly as the example type may not be obvious"
+      }
+    },
+    metadata: {
+      version: "1.0.0",
+      last_updated: new Date().toISOString()
+    }
+  };
+  await writeFile(
+    join(CONFIG_DIR, "settings.json"),
+    JSON.stringify(defaultSettings, null, 2)
   );
 }
 
@@ -241,6 +362,11 @@ async function init(checkOnly: boolean = false): Promise<void> {
       console.log("   ✓ authors.schema.json");
     }
   }
+  if (!status.settingsSchemaExists) {
+    if (await copySchema("settings.schema.json", SCHEMAS_DIR)) {
+      console.log("   ✓ settings.schema.json");
+    }
+  }
 
   // Create empty data files
   console.log("\n📝 Creating data files...");
@@ -251,6 +377,10 @@ async function init(checkOnly: boolean = false): Promise<void> {
   if (!status.authorsFileExists) {
     await createEmptyAuthors();
     console.log("   ✓ authors.json");
+  }
+  if (!status.settingsFileExists) {
+    await createDefaultSettings();
+    console.log("   ✓ settings.json (with example defaults)");
   }
 
   // Summary

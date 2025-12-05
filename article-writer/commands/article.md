@@ -39,12 +39,15 @@ Create a single technical article interactively with multi-language support.
 ## Process
 
 1. Select author and load profile from `.article_writer/authors.json`
-2. Initialize folder: `content/articles/{date}_{slug}/`
-3. Guide through: Planning → **Web Research** → Drafting → Review
+2. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
+3. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review
 4. Search web for documentation, news, and related content
-5. Write article in author's primary language
-6. Translate to other languages in author's profile
-7. Update article_tasks.json with output paths and sources used
+5. Write initial draft in author's primary language
+6. Create practical example in `code/` folder
+7. Update draft with example code/content
+8. Review article for flow and voice compliance
+9. Translate to other languages
+10. Update article_tasks.json with output paths, sources, and example info
 
 ## Web Research
 
@@ -55,6 +58,19 @@ During research phase, searches for:
 - Related GitHub repositories
 
 All sources are recorded in `sources_used` array.
+
+## Practical Examples
+
+Every article includes a practical example:
+- **Code articles**: Minimal project with SQLite + Pest tests
+- **Process articles**: Document templates, project plans
+- **Architecture**: Diagrams + sample code structure
+
+Example workflow:
+1. Write initial draft with `<!-- EXAMPLE: ... -->` markers
+2. Create example that fulfills the article needs
+3. Update draft with actual code from example
+4. Review integrated article as a whole
 
 ## Multi-Language Output
 

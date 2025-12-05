@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "settings.schema.json",
+  "title": "Article Writer Settings",
+  "description": "Global settings for article writer plugin including example defaults",
+  "type": "object",
+  "properties": {
+    "example_defaults": {
+      "type": "object",
+      "description": "Default settings for each example type. Article-specific values override these.",
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "document": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "diagram": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "template": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "dataset": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "config": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "other": {
+          "$ref": "#/$defs/example_defaults"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "example_defaults": {
+      "type": "object",
+      "description": "Default values for an example type",
+      "properties": {
+        "technologies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Default technologies/tools for this example type"
+        },
+        "has_tests": {
+          "type": "boolean",
+          "description": "Whether examples of this type should include tests by default"
+        },
+        "path": {
+          "type": "string",
+          "description": "Default folder path for the example"
+        },
+        "run_instructions": {
+          "type": "string",
+          "description": "Default instructions to run/use the example"
+        },
+        "setup_commands": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Default setup commands"
+        },
+        "test_command": {
+          "type": "string",
+          "description": "Default command to run tests"
+        },
+        "file_structure": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Expected file/folder structure"
+        },
+        "template_repo": {
+          "type": "string",
+          "description": "Git repository to clone as starting point (optional)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes for this example type"
+        }
+      }
+    }
+  }
+}

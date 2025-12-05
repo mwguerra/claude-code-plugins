@@ -30,6 +30,7 @@ const dirs = [
   "03_drafts",
   "04_review",
   "05_assets/images",
+  "code",              // Practical example folder
 ];
 
 const files: Record<string, string> = {
@@ -231,7 +232,18 @@ const files: Record<string, string> = {
 | Accuracy | [ ] | |
 | Readability | [ ] | |
 | Voice | [ ] | |
+| Example | [ ] | |
 | SEO | [ ] | |
+
+## Flow Review
+- [ ] Narrative flows logically
+- [ ] Example appears at right time
+- [ ] Transitions are smooth
+
+## Example Integration
+- [ ] Code snippets match example files
+- [ ] Example tests pass
+- [ ] Run instructions work
 
 ## Pre-Publication
 - [ ] Spell check
@@ -241,7 +253,66 @@ const files: Record<string, string> = {
 
 ## Ready for Publication
 - [ ] All checks passed
+- [ ] Example runs correctly
 - [ ] Author approved
+
+`,
+  "04_review/checklist_example.md": `# Example Checklist
+
+## Completeness
+- [ ] Example is functional (runs without errors)
+- [ ] Example is minimal (no unnecessary code)
+- [ ] README.md explains how to run
+- [ ] All dependencies listed
+
+## Quality
+- [ ] Well-commented (references article sections)
+- [ ] Uses SQLite for database (no external DB)
+- [ ] Tests included (Pest for PHP)
+- [ ] Tests pass
+
+## Integration
+- [ ] Code snippets in article match example
+- [ ] File paths in article are correct
+- [ ] Run instructions are accurate
+
+`,
+  "code/README.md": `# Example: ${basename(folderPath)}
+
+> Practical example demonstrating concepts from the article.
+
+## Requirements
+
+- PHP 8.2+
+- Composer
+
+## Setup
+
+\`\`\`bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+\`\`\`
+
+## Run Tests
+
+\`\`\`bash
+php artisan test
+\`\`\`
+
+## Key Files
+
+| File | Description |
+|------|-------------|
+| \`app/...\` | [Description] |
+| \`tests/...\` | [Description] |
+
+## Article Reference
+
+This example accompanies the article.
+See article sections for detailed explanation.
 
 `,
 };
@@ -267,31 +338,45 @@ async function create() {
       await writeFile(join(folderPath, file), content);
     }
 
-    // Copy voice profile if exists
-    const voiceProfilePath = "docs/voice_profile.md";
-    if (await exists(voiceProfilePath)) {
-      await copyFile(
-        voiceProfilePath,
-        join(folderPath, "00_context/voice_profile.md")
-      );
-      console.log("📋 Copied voice profile");
+    // Copy author profile if authors.json exists
+    const authorsPath = ".article_writer/authors.json";
+    if (await exists(authorsPath)) {
+      try {
+        const authorsContent = await readFile(authorsPath, "utf-8");
+        const authorsData = JSON.parse(authorsContent);
+        if (authorsData.authors && authorsData.authors.length > 0) {
+          // Use first author as default, or specified author
+          const author = authorsData.authors[0];
+          await writeFile(
+            join(folderPath, "00_context/author_profile.json"),
+            JSON.stringify(author, null, 2)
+          );
+          console.log(`📋 Copied author profile: ${author.name}`);
+        }
+      } catch (e) {
+        console.warn("⚠️ Could not load authors:", e);
+      }
     } else {
       await writeFile(
-        join(folderPath, "00_context/voice_profile.md"),
-        "# Voice Profile\n\n*Create profile with /technical-content:voice setup*\n"
+        join(folderPath, "00_context/author_profile.json"),
+        JSON.stringify({ note: "Run /article-writer:author add to create an author" }, null, 2)
       );
     }
 
     // If from queue, load article metadata
     if (articleId !== null) {
       try {
-        const queueContent = await readFile("article_ideas.json", "utf-8");
+        const queueContent = await readFile(".article_writer/article_tasks.json", "utf-8");
         const queue = JSON.parse(queueContent);
         const articles = queue.articles || queue;
         const article = articles.find((a: any) => a.id === articleId);
         
         if (article) {
           // Write context from queue
+          const authorInfo = article.author 
+            ? `- **Author:** ${article.author.name} (${article.author.id})\n- **Languages:** ${article.author.languages?.join(", ") || "default"}`
+            : "- **Author:** (using default)";
+          
           const context = `# Editorial Context
 
 **Article:** ${article.title}
@@ -300,6 +385,7 @@ async function create() {
 
 ## From Queue
 
+${authorInfo}
 - **Subject:** ${article.subject}
 - **Area:** ${article.area}
 - **Difficulty:** ${article.difficulty}
