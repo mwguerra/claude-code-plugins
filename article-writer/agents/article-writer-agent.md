@@ -115,35 +115,30 @@ For each article, search the web for:
 
 ### 6. Example Creation Phase
 
-**Every article should have a practical example unless it makes absolutely no sense.**
+**Use Skill(example-creator) for this phase.**
 
-1. **Determine example type**
-   - Code article → Minimal working project
-   - Process article → Document template
-   - Architecture → Diagrams + sample code
+> **CRITICAL: Examples must be COMPLETE, RUNNABLE applications.**
 
-2. **Create in `code/` folder**
-   - Minimal but complete
-   - Well-commented (reference article sections)
-   - Include tests (Pest for PHP)
-   - Use SQLite for database examples
-
-3. **Write initial draft first**
-   - Mark example locations: `<!-- EXAMPLE: ... -->`
+1. **Determine example type** from article content
+2. **Load defaults** from `settings.json`
+3. **For code examples:**
+   ```bash
+   # Execute scaffold_command from settings
+   composer create-project laravel/laravel code --prefer-dist
    
-4. **Build example to match draft**
-   - Code snippets that will appear in article
-   - Tests that verify the concepts
+   # Execute post_scaffold commands
+   cd code
+   composer require pestphp/pest --dev
+   # etc.
+   ```
+4. **Add article-specific code** on top of scaffolded project
+5. **Verify example works:**
+   - Dependencies install
+   - Application runs
+   - Tests pass
+6. **Update task** with example info including `verified: true`
 
-5. **Update draft with example content**
-   - Insert actual code from example
-   - Add file references
-   - Include run instructions
-
-6. **Review integrated article**
-   - Verify explanation flow
-   - Check voice compliance
-   - Confirm example matches article
+**Never create partial projects with just a few files.**
 
 ### 7. Multi-Language Flow
 

@@ -63,14 +63,27 @@
           "type": "string",
           "description": "Default folder path for the example"
         },
+        "scaffold_command": {
+          "type": "string",
+          "description": "Command to create the base project (e.g., composer create-project laravel/laravel code)"
+        },
+        "post_scaffold": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Commands to run after scaffolding (e.g., install test framework)"
+        },
         "run_instructions": {
           "type": "string",
           "description": "Default instructions to run/use the example"
         },
+        "run_command": {
+          "type": "string",
+          "description": "Command to start/run the example (e.g., php artisan serve)"
+        },
         "setup_commands": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Default setup commands"
+          "description": "Default setup commands after cloning"
         },
         "test_command": {
           "type": "string",
@@ -84,6 +97,10 @@
         "template_repo": {
           "type": "string",
           "description": "Git repository to clone as starting point (optional)"
+        },
+        "env_setup": {
+          "type": "object",
+          "description": "Environment configuration (e.g., DB_CONNECTION: sqlite)"
         },
         "notes": {
           "type": "string",

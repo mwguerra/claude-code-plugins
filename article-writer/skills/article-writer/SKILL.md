@@ -68,37 +68,57 @@ content/articles/YYYY_MM_DD_slug/
 - Save as `03_drafts/draft_v1.{lang}.md`
 
 ### Phase 4: Create Example ⭐
-**Critical phase - create the practical example**
+**Use Skill(example-creator) for this phase**
 
-#### Global Example Defaults
+> **CRITICAL: Examples must be COMPLETE and RUNNABLE, not snippets.**
 
-Example settings are defined in `.article_writer/settings.json` per example type.
-Article-specific values **override** global defaults.
+A Laravel example is a FULL Laravel installation. A Node example is a FULL Node project.
 
+#### Load Example Defaults
+
+1. Get example type from article plan
+2. Load defaults from `settings.json`
+3. Merge with article-specific overrides
+
+#### For Code Examples
+
+**ALWAYS scaffold a complete project first:**
+
+```bash
+# Laravel (from settings.json scaffold_command)
+composer create-project laravel/laravel code --prefer-dist
+
+# Then add article-specific code on top
 ```
-Global defaults (settings.json)     Article example (article_tasks.json)
-─────────────────────────────────   ─────────────────────────────────────
-code:                               example:
-  technologies: [Laravel 12, ...]     type: code
-  has_tests: true                     technologies: [Laravel 11, MySQL]  ← overrides
-  run_instructions: "..."             has_tests: true                    ← from defaults
-                                      description: "Rate limiting demo"  ← article-specific
-```
 
-**Merge logic:**
-1. Get example type from article (e.g., `code`)
-2. Load defaults for that type from `settings.json`
-3. Merge with article's example object
-4. Article values take precedence
+**Never create partial projects with just a few files.**
 
-#### Example Requirements
-
-1. **Minimal but complete** - Smallest possible while fully functional
-2. **Self-contained** - Can run independently
-3. **Well-commented** - Comments reference article sections
-4. **Tested** - Include tests when applicable (default: true for code)
+See `skills/example-creator/SKILL.md` for complete instructions.
 
 #### Example Types
+
+| Article Topic | Example Type | What to Create |
+|---------------|--------------|----------------|
+| Laravel/PHP code | `code` | **Full Laravel project** via composer create-project |
+| JavaScript/Node | `code` | **Full Node project** via npm init |
+| DevOps/Docker | `config` | Complete docker-compose setup |
+| Architecture | `diagram` | Complete Mermaid diagrams |
+| Project management | `document` | Complete templates + filled examples |
+| Database | `code` | Full Laravel project with migrations |
+| API design | `code` | Full API server (Laravel/Node) |
+| Testing | `code` | Full project with test suite |
+| Soft skills | `document` | Templates, checklists, examples |
+| Automation | `script` | Executable bash scripts |
+| Data analysis | `dataset` + `code` | Data files + analysis code |
+
+#### Verification
+
+Before completing:
+- [ ] Project can be cloned fresh
+- [ ] Dependencies install without errors
+- [ ] Application runs (e.g., `php artisan serve`)
+- [ ] Tests pass (e.g., `php artisan test`)
+- [ ] README explains everything
 
 | Article Topic | Example Type | What to Create |
 |---------------|--------------|----------------|

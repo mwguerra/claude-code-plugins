@@ -109,7 +109,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["code", "document", "diagram", "template", "dataset", "config", "other"],
+          "enum": ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"],
           "description": "Type of example"
         },
         "path": {
@@ -125,6 +125,10 @@
           "items": { "type": "string" },
           "description": "Technologies/tools used in the example"
         },
+        "scaffold_command": {
+          "type": "string",
+          "description": "Command used to create the base project"
+        },
         "has_tests": {
           "type": "boolean",
           "description": "Whether the example includes tests"
@@ -132,11 +136,28 @@
         "files": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Key files in the example"
+          "description": "Key files in the example (article-specific additions)"
+        },
+        "run_command": {
+          "type": "string",
+          "description": "Command to run/start the example"
         },
         "run_instructions": {
           "type": "string",
           "description": "How to run/use the example"
+        },
+        "test_command": {
+          "type": "string",
+          "description": "Command to run tests"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Whether the example was verified to work"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the example was verified"
         },
         "skipped": {
           "type": "boolean",

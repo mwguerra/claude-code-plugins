@@ -110,29 +110,39 @@
 ```markdown
 # Example Review
 
-## Completeness
-- [ ] Example is functional (runs without errors)
-- [ ] Example is minimal (no unnecessary code/files)
-- [ ] README.md explains how to run
-- [ ] All dependencies listed
+## Completeness (CRITICAL)
+- [ ] Example is a FULL project (not snippets)
+- [ ] For code: Created via scaffold command (composer create-project, etc.)
+- [ ] Example runs without errors
+- [ ] README.md explains setup and usage completely
+- [ ] All dependencies listed in package file
+
+## Verification (REQUIRED)
+- [ ] Fresh clone test: Can be cloned and installed fresh
+- [ ] Dependencies install without errors (composer install / npm install)
+- [ ] Application starts (php artisan serve / npm start)
+- [ ] Can be accessed in browser at documented URL
+- [ ] All tests pass (php artisan test / npm test)
+- [ ] Marked as verified=true in article_tasks.json
 
 ## Quality
 - [ ] Well-commented (references article sections)
 - [ ] Follows coding standards
-- [ ] Uses SQLite for database (no external DB)
-- [ ] Tests included (Pest for PHP)
-- [ ] Tests pass
+- [ ] Uses SQLite for database (no external DB needed)
+- [ ] Tests cover main concepts (Pest for PHP)
+- [ ] Only article-specific code added to scaffolded project
 
 ## Integration
-- [ ] Code snippets in article match example files
+- [ ] Code snippets in article match example files exactly
 - [ ] File paths in article are correct
-- [ ] Run instructions are accurate
-- [ ] Example demonstrates all key concepts
+- [ ] Run instructions are accurate and complete
+- [ ] Example demonstrates all key concepts from article
 
 ## Documentation
-- [ ] README has setup instructions
-- [ ] Key files are documented
-- [ ] Article sections referenced in comments
+- [ ] README has complete setup instructions
+- [ ] README lists all requirements
+- [ ] Key files are documented with their purpose
+- [ ] Article sections referenced in code comments
 - [ ] Example purpose is clear
 ```
 

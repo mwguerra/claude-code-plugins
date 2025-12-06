@@ -156,70 +156,81 @@ Key fields in article_tasks.json:
 
 ## Practical Examples
 
-Every article includes a practical example in the `code/` folder:
+> **Examples must be COMPLETE and RUNNABLE, not snippets.**
+
+Every article includes a practical example that readers can clone and run immediately.
+
+### Code Examples (Laravel)
+
+Code examples are **full Laravel installations** created via `composer create-project`:
 
 ```
 content/articles/2025_01_15_rate-limiting/
-├── code/
-│   ├── README.md              # How to run the example
+├── code/                          # FULL Laravel project
 │   ├── app/
+│   ├── bootstrap/
+│   ├── config/
 │   ├── database/
-│   ├── tests/                 # Pest tests
-│   └── composer.json
+│   ├── public/
+│   ├── resources/
+│   ├── routes/
+│   ├── storage/
+│   ├── tests/
+│   ├── .env.example
+│   ├── artisan
+│   ├── composer.json
+│   └── README.md
 ├── rate-limiting.pt_BR.md
 └── rate-limiting.en_US.md
 ```
 
+**Readers can immediately:**
+```bash
+cd code
+composer install
+php artisan serve
+# Visit http://localhost:8000
+```
+
+### Example Types
+
+| Type | What Gets Created |
+|------|-------------------|
+| `code` | **Full application** (Laravel, Node, etc.) |
+| `document` | Templates + filled examples |
+| `diagram` | Valid Mermaid diagrams |
+| `config` | Working docker-compose setup |
+| `script` | Executable bash scripts |
+| `dataset` | Data files + schemas |
+
 ### Global Example Defaults
 
-Default settings for each example type are in `.article_writer/settings.json`:
+Defaults in `.article_writer/settings.json`:
 
 ```json
 {
   "example_defaults": {
     "code": {
       "technologies": ["Laravel 12", "Pest 4", "SQLite"],
-      "has_tests": true,
-      "run_instructions": "composer install && ..."
-    },
-    "document": { ... },
-    "diagram": { ... }
+      "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
+      "run_command": "php artisan serve",
+      "test_command": "php artisan test"
+    }
   }
 }
 ```
 
-**Article-specific values override defaults.** For example:
+Article-specific values override defaults.
 
-```json
-{
-  "example": {
-    "type": "code",
-    "technologies": ["Laravel 11", "MySQL"]  // overrides default SQLite
-  }
-}
-```
+### Verification
 
-### Example Requirements
+Before an example is complete:
+- [ ] Can be cloned fresh
+- [ ] Dependencies install without errors  
+- [ ] Application runs
+- [ ] Tests pass
 
-- **Minimal but complete** - Smallest possible while functional
-- **Self-contained** - Can run independently
-- **Well-commented** - Comments reference article sections
-- **Tested** - Pest tests for PHP (default: true for code examples)
-- **SQLite** - Default for database examples (configurable in settings.json)
-
-Example info is tracked in `article_tasks.json`:
-
-```json
-{
-  "example": {
-    "type": "code",
-    "path": "code/",
-    "description": "Minimal Laravel app demonstrating rate limiting",
-    "technologies": ["Laravel 12", "SQLite", "Pest 4"],
-    "has_tests": true
-  }
-}
-```
+See `skills/example-creator/SKILL.md` for complete instructions.
 
 ## Web Research
 

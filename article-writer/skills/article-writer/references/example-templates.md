@@ -1,94 +1,55 @@
 # Example Templates
 
+> **See `skills/example-creator/SKILL.md` for complete instructions on creating examples.**
+
+## Core Principle
+
+> **Examples must be COMPLETE and RUNNABLE, not snippets or partial code.**
+
 ## Global Example Defaults
 
-Example defaults are configured in `.article_writer/settings.json`. These provide default values for each example type that can be overridden per-article.
+Defaults are in `.article_writer/settings.json`. Article values override defaults.
 
-### Default Settings Structure
+### Code Example Defaults
 
 ```json
 {
-  "example_defaults": {
-    "code": {
-      "technologies": ["Laravel 12", "Pest 4", "SQLite"],
-      "has_tests": true,
-      "path": "code/",
-      "run_instructions": "composer install && ...",
-      "setup_commands": ["composer install", "..."],
-      "test_command": "php artisan test",
-      "file_structure": ["app/", "tests/", "..."]
-    },
-    "document": { ... },
-    "diagram": { ... },
-    ...
+  "code": {
+    "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+    "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
+    "has_tests": true,
+    "run_command": "php artisan serve",
+    "test_command": "php artisan test"
   }
 }
 ```
 
-### How Defaults Are Merged
-
-When creating an example, the system:
-
-1. Reads the article's `example.type` (e.g., `code`)
-2. Loads defaults for that type from `settings.json`
-3. Merges with article-specific example values
-4. **Article values always override defaults**
-
-Example:
-
-```
-settings.json (defaults)          article_tasks.json (specific)
-─────────────────────────         ─────────────────────────────
-code:                             example:
-  technologies:                     type: "code"
-    - Laravel 12                    technologies:      ← OVERRIDES
-    - Pest 4                          - Laravel 11
-    - SQLite                          - MySQL
-  has_tests: true                   description: "..." ← ADDS
-  run_instructions: "..."
-                                  
-Result:
-  type: "code"
-  technologies: ["Laravel 11", "MySQL"]  ← from article
-  has_tests: true                        ← from defaults
-  run_instructions: "..."                ← from defaults
-  description: "..."                     ← from article
-```
-
-### Customizing Defaults
-
-Edit `.article_writer/settings.json` to change defaults:
+### Article Override Example
 
 ```json
 {
-  "example_defaults": {
-    "code": {
-      "technologies": ["Laravel 12", "Pest 4", "PostgreSQL"],
-      "has_tests": true,
-      "test_command": "vendor/bin/pest"
-    }
-  }
-}
-```
-
-### Per-Article Overrides
-
-Override any default in the article task:
-
-```json
-{
-  "id": 1,
-  "title": "Legacy App Migration",
   "example": {
     "type": "code",
-    "technologies": ["Laravel 10", "PHPUnit", "MySQL"],
-    "has_tests": true,
-    "run_instructions": "Custom setup instructions..."
+    "technologies": ["Laravel 11", "MySQL"],
+    "scaffold_command": "composer create-project laravel/laravel:^11.0 code"
   }
 }
 ```
 
-## Laravel Project (Default)
+## Example Types Quick Reference
+
+| Type | Create With | Contains |
+|------|-------------|----------|
+| `code` | `composer create-project` / `npm init` | **Full runnable application** |
+| `document` | Manual creation | Templates + filled examples |
+| `diagram` | Manual creation | Valid Mermaid diagrams |
+| `config` | Manual creation | Working docker-compose |
+| `script` | Manual creation | Executable bash scripts |
+| `dataset` | Manual creation | Data files + schemas |
+| `template` | Manual creation | Reusable file templates |
+| `spreadsheet` | Manual creation | Excel/CSV with formulas |
+
+## Laravel Project (Full Installation)
 
 For Laravel-related articles, create a minimal project:
 

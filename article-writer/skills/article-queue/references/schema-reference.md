@@ -88,30 +88,42 @@ Tracks web sources researched and used in the article.
 
 Tracks the practical example created for the article.
 
+> **Examples must be COMPLETE and RUNNABLE.**
+
 ```json
 {
   "type": "code",
   "path": "code/",
-  "description": "Minimal Laravel app demonstrating rate limiting",
-  "technologies": ["Laravel 11", "SQLite", "Pest 3"],
+  "description": "Complete Laravel app demonstrating rate limiting",
+  "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+  "scaffold_command": "composer create-project laravel/laravel code",
   "has_tests": true,
   "files": [
-    "app/Providers/AppServiceProvider.php",
+    "app/Http/Middleware/RateLimitMiddleware.php",
     "tests/Feature/RateLimitTest.php"
   ],
-  "run_instructions": "composer install && php artisan test"
+  "run_command": "php artisan serve",
+  "run_instructions": "composer install && php artisan serve",
+  "test_command": "php artisan test",
+  "verified": true,
+  "verified_at": "2025-01-15T14:00:00Z"
 }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | enum | code/document/diagram/template/dataset/config/other |
+| `type` | enum | code/document/diagram/template/dataset/config/script/spreadsheet/other |
 | `path` | string | Path to example folder (usually `code/`) |
 | `description` | string | What the example demonstrates |
 | `technologies` | array | Technologies used |
+| `scaffold_command` | string | Command to create base project |
 | `has_tests` | boolean | Whether tests are included |
-| `files` | array | Key files in the example |
-| `run_instructions` | string | How to run the example |
+| `files` | array | Key files (article-specific additions) |
+| `run_command` | string | Command to run the example |
+| `run_instructions` | string | Full setup + run instructions |
+| `test_command` | string | Command to run tests |
+| `verified` | boolean | Whether example was verified working |
+| `verified_at` | datetime | When verified |
 | `skipped` | boolean | True if example was skipped |
 | `skip_reason` | string | Why example was skipped |
 

@@ -5,7 +5,14 @@
       "technologies": ["Laravel 12", "Pest 4", "SQLite"],
       "has_tests": true,
       "path": "code/",
-      "run_instructions": "composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan test",
+      "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
+      "post_scaffold": [
+        "cd code",
+        "composer require pestphp/pest pestphp/pest-plugin-laravel --dev --with-all-dependencies",
+        "php artisan pest:install",
+        "sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env",
+        "touch database/database.sqlite"
+      ],
       "setup_commands": [
         "composer install",
         "cp .env.example .env",
@@ -13,17 +20,31 @@
         "touch database/database.sqlite",
         "php artisan migrate --seed"
       ],
+      "run_command": "php artisan serve",
+      "run_instructions": "cd code && composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan serve",
       "test_command": "php artisan test",
+      "env_setup": {
+        "DB_CONNECTION": "sqlite",
+        "DB_DATABASE": "database/database.sqlite"
+      },
       "file_structure": [
         "app/",
+        "bootstrap/",
+        "config/",
         "database/migrations/",
         "database/seeders/",
+        "public/",
+        "resources/views/",
+        "routes/",
+        "storage/",
         "tests/Feature/",
-        "composer.json",
+        "tests/Unit/",
         ".env.example",
+        "artisan",
+        "composer.json",
         "README.md"
       ],
-      "notes": "All code examples should be minimal but complete. Use SQLite to avoid external dependencies."
+      "notes": "Create COMPLETE Laravel applications, not snippets. Must be runnable with php artisan serve."
     },
     "document": {
       "technologies": ["Markdown"],
@@ -35,18 +56,18 @@
         "examples/",
         "README.md"
       ],
-      "notes": "Document examples should include both empty templates and filled examples"
+      "notes": "Include both empty templates AND filled examples. Documents must be complete and usable."
     },
     "diagram": {
       "technologies": ["Mermaid"],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "View .mermaid files in any Mermaid-compatible viewer (VS Code, GitHub, etc.)",
+      "run_instructions": "View .mermaid files in VS Code, GitHub, or any Mermaid-compatible viewer",
       "file_structure": [
         "diagrams/",
         "README.md"
       ],
-      "notes": "Use Mermaid for diagrams as they render in GitHub and most markdown viewers"
+      "notes": "Diagrams must be valid Mermaid syntax and render correctly. Include comments explaining components."
     },
     "template": {
       "technologies": ["Markdown", "YAML"],
@@ -55,12 +76,13 @@
       "run_instructions": "Copy and customize the templates for your needs",
       "file_structure": [
         "templates/",
+        "generated/",
         "README.md"
       ],
-      "notes": "Templates should be well-commented with placeholders clearly marked"
+      "notes": "Templates should have clear placeholders and instructions. Include generated examples."
     },
     "dataset": {
-      "technologies": ["JSON", "CSV"],
+      "technologies": ["JSON", "CSV", "SQL"],
       "has_tests": false,
       "path": "code/",
       "run_instructions": "Import the data files into your application or database",
@@ -69,32 +91,60 @@
         "schemas/",
         "README.md"
       ],
-      "notes": "Include both sample data and schema definitions"
+      "notes": "Include schema definitions alongside sample data. Provide import instructions."
     },
     "config": {
-      "technologies": ["Docker", "YAML"],
+      "technologies": ["Docker", "Docker Compose", "YAML"],
       "has_tests": false,
       "path": "code/",
+      "scaffold_command": null,
+      "run_command": "docker-compose up -d",
       "run_instructions": "docker-compose up -d",
       "setup_commands": [
+        "cp .env.example .env",
         "docker-compose up -d"
       ],
       "file_structure": [
         "docker/",
         "docker-compose.yml",
+        ".env.example",
         "README.md"
       ],
-      "notes": "Configuration examples should be self-contained and runnable with Docker"
+      "notes": "Config examples must be self-contained and runnable with docker-compose up."
+    },
+    "script": {
+      "technologies": ["Bash", "Shell"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "chmod +x scripts/*.sh && ./scripts/main.sh",
+      "file_structure": [
+        "scripts/",
+        "lib/",
+        "README.md"
+      ],
+      "notes": "Scripts must be executable, have proper shebangs, and include error handling."
+    },
+    "spreadsheet": {
+      "technologies": ["Excel", "CSV"],
+      "has_tests": false,
+      "path": "code/",
+      "run_instructions": "Open .xlsx files in Excel or Google Sheets",
+      "file_structure": [
+        "spreadsheets/",
+        "csv/",
+        "README.md"
+      ],
+      "notes": "Include formulas and formatting. Provide CSV versions for portability."
     },
     "other": {
       "technologies": [],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "See README.md for instructions",
+      "run_instructions": "See README.md for specific instructions",
       "file_structure": [
         "README.md"
       ],
-      "notes": "Document thoroughly as the example type may not be obvious"
+      "notes": "Document thoroughly as the example type may not be obvious."
     }
   },
   "metadata": {
