@@ -1,12 +1,14 @@
 ---
 description: Process multiple articles from the queue autonomously with multi-language support
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <count | all | area:NAME | author:ID | difficulty:LEVEL>
 ---
 
 # Batch Article Processing
 
 Process multiple articles from the task queue autonomously.
+
+**Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerbatch) | [docs/PROCESS.md](../docs/PROCESS.md)
 
 ## Usage
 
@@ -45,17 +47,19 @@ Process multiple articles from the task queue autonomously.
 ## Process
 
 1. Load and validate task queue
-2. Filter articles matching criteria
-3. For each article:
+2. **Load `settings.json`** (example defaults)
+3. Filter articles matching criteria
+4. For each article:
    - Get author (from task or default)
    - Update status to `in_progress`
    - **Search web** for docs, news, tutorials
    - Write in author's primary language
+   - **Create example using settings** (scaffold_command, etc.)
    - Translate to other languages
    - Update status to `draft`
-   - Record output_files and sources_used
+   - Record output_files, sources_used, example info
    - Set written_at timestamp
-4. Report summary
+5. Report summary
 
 ## Author Handling
 

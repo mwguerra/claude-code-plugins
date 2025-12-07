@@ -8,162 +8,115 @@ argument-hint: <add | analyze | list | show ID | edit ID | remove ID>
 
 Manage author profiles in `.article_writer/authors.json`.
 
-## Usage
+**File location:** `.article_writer/authors.json`
+**Schema:** `.article_writer/schemas/authors.schema.json`
+**Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerauthor)
 
-### Add new author (manual questionnaire)
-```
-/article-writer:author add
-```
-
-### Extract voice from transcripts
-```
-/article-writer:author analyze --speaker "Name" transcripts/*.txt
-/article-writer:author analyze --speaker "Name" --author-id existing-id transcript.txt
-/article-writer:author analyze --list-speakers transcript.txt
-```
+## Commands
 
 ### List all authors
-```
+
+```bash
 /article-writer:author list
 ```
 
-### Show author details
-```
-/article-writer:author show mwguerra
+Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts authors`
+
+Shows all authors with: ID, name, languages, expertise, tone, and voice analysis status.
+
+### Show single author
+
+```bash
+/article-writer:author show <id>
 ```
 
-### Edit existing author
+Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts author <id>`
+
+Shows complete profile: identity, languages, tone (visual scale), vocabulary, phrases, opinions, voice analysis data.
+
+### Add new author (questionnaire)
+
+```bash
+/article-writer:author add
 ```
-/article-writer:author edit mwguerra
+
+Uses: `Skill(author-profile)`
+
+Interactive questionnaire covering:
+1. Identity (id, name, role, experience, expertise)
+2. Languages (primary + translations)
+3. Tone (formality 1-10, opinionated 1-10)
+4. Vocabulary (use freely, always explain)
+5. Phrases (signature, avoid)
+6. Opinions (strong positions, stay neutral)
+7. Example voice paragraph
+
+### Extract voice from transcripts
+
+```bash
+/article-writer:author analyze --list-speakers transcript.txt
+/article-writer:author analyze --speaker "Name" transcript.txt
+/article-writer:author analyze --speaker "Name" --author-id existing-id transcript.txt
+```
+
+Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/voice-extractor.ts`
+
+Uses: `Skill(voice-extractor)`
+
+Extracts from transcripts:
+- Sentence structure (length, variety, question frequency)
+- Communication style (enthusiasm, analytical, directness, etc.)
+- Characteristic expressions
+- Sentence starters
+- Signature vocabulary
+
+**Supported formats:** Plain text, timestamped, WhatsApp, SRT subtitles
+
+### Edit author
+
+```bash
+/article-writer:author edit <id>
+```
+
+Interactive editing, or use direct commands:
+
+```bash
+# Change a value
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts set-author <id> <path> <value>
+
+# Add a phrase
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts add-phrase <id> signature "New phrase"
 ```
 
 ### Remove author
-```
-/article-writer:author remove mwguerra
+
+```bash
+/article-writer:author remove <id>
 ```
 
-## Author Profile Fields
+Confirms before removing.
+
+## Author Fields Reference
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| id | string | ✓ | Unique slug-like identifier |
-| name | string | ✓ | Display name |
-| languages | array | ✓ | Writing languages (first is primary) |
-| role | string/array | | Professional role(s) |
-| experience | string/array | | Years/areas of experience |
-| expertise | string/array | | Areas of expertise |
-| tone.formality | 1-10 | | Casual (1) to Formal (10) |
-| tone.opinionated | 1-10 | | Neutral (1) to Opinionated (10) |
-| vocabulary.use_freely | array | | Terms readers know |
-| vocabulary.always_explain | array | | Terms to explain |
-| phrases.signature | array | | Phrases to use |
-| phrases.avoid | array | | Phrases to never use |
-| opinions.strong_positions | array | | Topics with strong views |
-| opinions.stay_neutral | array | | Topics to be neutral on |
-| example_voice | string | | Sample paragraph in voice |
-| voice_analysis | object | | Data extracted from transcripts |
-
-## Voice Analysis (from Transcripts)
-
-Extract authentic voice patterns from podcasts, interviews, meetings:
-
-```bash
-# List speakers in transcripts
-/article-writer:author analyze --list-speakers podcast.txt
-
-# Create new author from voice analysis
-/article-writer:author analyze --speaker "John Smith" podcast.txt interview.txt
-
-# Enhance existing author with more transcript data  
-/article-writer:author analyze --speaker "John" --author-id john-smith new_recording.txt
-```
-
-### What Gets Extracted
-
-| Data | Description |
-|------|-------------|
-| sentence_structure | Average length, variety, question frequency |
-| communication_style | Enthusiasm, hedging, directness, analytical, etc. |
-| characteristic_expressions | "you know", "I think", "the thing is" |
-| sentence_starters | "So the...", "I think...", "But the..." |
-| signature_vocabulary | Words that characterize the speaker |
-
-### Transcript Formats Supported
-
-- Plain text: `Speaker: text`
-- Timestamped: `[00:01:23] Speaker: text`
-- WhatsApp: `[17:30, 12/6/2025] Speaker: text`
-- SRT subtitles: Standard subtitle format
-
-### Recommended Data
-
-- **Minimum**: 50 speaking turns
-- **Good**: 100+ turns, 5,000+ words
-- **Best**: Multiple contexts (different topics/conversations)
-
-## Multi-Language Support
-
-Authors define their writing languages:
-- First language is primary (article written here first)
-- Other languages are translation targets
-- Each article file includes language code: `article.pt_BR.md`
-
-Example:
-```json
-{
-  "languages": ["pt_BR", "en_US", "es_ES"]
-}
-```
-
-Creates:
-- `article-name.pt_BR.md` (primary, written first)
-- `article-name.en_US.md` (translated)
-- `article-name.es_ES.md` (translated)
+| `id` | string | ✓ | Unique slug identifier (lowercase, hyphens) |
+| `name` | string | ✓ | Display name |
+| `languages` | array | ✓ | Writing languages (first = primary) |
+| `role` | string/array | | Professional role(s) |
+| `experience` | string/array | | Years/areas of experience |
+| `expertise` | string/array | | Areas of expertise |
+| `tone.formality` | 1-10 | | 1=casual, 10=formal |
+| `tone.opinionated` | 1-10 | | 1=neutral, 10=opinionated |
+| `vocabulary.use_freely` | array | | Terms readers know |
+| `vocabulary.always_explain` | array | | Terms to explain first use |
+| `phrases.signature` | array | | Phrases to use naturally |
+| `phrases.avoid` | array | | Phrases to never use |
+| `opinions.strong_positions` | array | | Topics with strong views |
+| `opinions.stay_neutral` | array | | Topics to be neutral on |
+| `example_voice` | string | | Sample paragraph in voice |
+| `voice_analysis` | object | | Data from transcript extraction |
 
 ## Default Author
 
-When creating articles:
-- If no author specified, uses first author in authors.json
-- Articles inherit author's language settings
-- Voice/tone follows author profile
-
-## Workflow Examples
-
-### Create Author from Transcripts
-
-```
-User: /article-writer:author analyze --speaker "Marcelo" podcasts/*.txt
-
-Claude: Analyzing 5 transcripts for "Marcelo"...
-Found 234 speaking turns (18,450 words).
-
-Voice Analysis:
-- Style: Moderate sentences (~14 words)
-- Tone: Enthusiastic (32%), Analytical (28%)
-- Expressions: "na prática", "tipo assim", "o ponto é"
-- Vocabulary: código, arquitetura, implementação
-
-Now I need identity info:
-1. Author ID (slug)?
-2. Display name?
-3. Languages?
-4. Expertise areas?
-```
-
-### Enhance Existing Author
-
-```
-User: /article-writer:author analyze --speaker "John" --author-id john-dev new_interview.txt
-
-Claude: Adding voice data to existing author "john-dev"...
-
-Current profile has: 0 voice samples
-New analysis: 87 speaking turns
-
-Suggested updates:
-- Add 12 characteristic expressions
-- Add 8 signature vocabulary words
-- Update tone: formality 5→4, opinionated 5→7
-
-Apply these updates? (yes/no/review)
-```
+The first author in `authors.json` is used when no author is specified for an article.

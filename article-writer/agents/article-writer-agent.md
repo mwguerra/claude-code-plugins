@@ -28,8 +28,14 @@ Before running, verify:
 
 1. Load and validate `article_tasks.json`
 2. Load `authors.json`
-3. Create backup: `article_tasks.backup.json`
-4. Report queue status
+3. **Load `settings.json`** (example defaults)
+4. Create backup: `article_tasks.backup.json`
+5. Report queue status
+
+```bash
+# To view settings before starting:
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
+```
 
 ### 2. Select Articles
 
@@ -160,24 +166,77 @@ For each article, search the web for:
 
 > **CRITICAL: Examples must be COMPLETE, RUNNABLE applications.**
 
-1. **Determine example type** from article content
-2. **Load defaults** from `settings.json`
-3. **For code examples:**
-   ```bash
-   # Execute scaffold_command from settings
-   composer create-project laravel/laravel code --prefer-dist
-   
-   # Execute post_scaffold commands
-   cd code
-   composer require pestphp/pest --dev
-   # etc.
-   ```
-4. **Add article-specific code** on top of scaffolded project
-5. **Verify example works:**
-   - Dependencies install
-   - Application runs
-   - Tests pass
-6. **Update task** with example info including `verified: true`
+#### Step 1: Read Settings
+
+**Load example defaults from `.article_writer/settings.json`:**
+
+```bash
+# View settings for the example type
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
+```
+
+Or read the JSON file directly and extract `example_defaults.code` (or relevant type).
+
+#### Step 2: Merge with Article Overrides
+
+```
+settings.json defaults    +    article.example    =    final config
+──────────────────────         ────────────────        ────────────
+scaffold_command: X            scaffold_command: Y      scaffold_command: Y  (article wins)
+technologies: [A, B]           (not specified)          technologies: [A, B] (use default)
+has_tests: true                has_tests: false         has_tests: false     (article wins)
+```
+
+#### Step 3: Execute Scaffold
+
+```bash
+# Use scaffold_command from merged config
+# Default for code:
+composer create-project laravel/laravel code --prefer-dist
+
+# Execute post_scaffold commands from settings
+cd code
+composer require pestphp/pest pestphp/pest-plugin-laravel --dev --with-all-dependencies
+php artisan pest:install
+sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+touch database/database.sqlite
+```
+
+#### Step 4: Add Article-Specific Code
+
+On top of scaffolded project, add:
+- Models, Controllers, Routes
+- Migrations, Seeders
+- Tests
+- README.md
+
+#### Step 5: Verify Example
+
+Using `test_command` from settings (default: `php artisan test`):
+
+```bash
+cd code
+php artisan test
+```
+
+Checklist:
+- [ ] Dependencies install
+- [ ] Application runs
+- [ ] Tests pass
+
+#### Step 6: Record in Task
+
+```json
+{
+  "example": {
+    "type": "code",
+    "path": "code/",
+    "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+    "verified": true,
+    "verified_at": "2025-01-15T14:00:00Z"
+  }
+}
+```
 
 **Never create partial projects with just a few files.**
 

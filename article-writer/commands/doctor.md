@@ -1,5 +1,5 @@
 ---
-description: Validate and fix article-tasks.json and authors.json against their schemas - repairs missing fields, renames keys, ensures compliance
+description: Validate and fix article-tasks.json, authors.json, and settings.json against their schemas
 allowed-tools: Bash(bun:*)
 argument-hint: [--check | --fix | --interactive]
 ---
@@ -8,21 +8,27 @@ argument-hint: [--check | --fix | --interactive]
 
 Validate and repair `.article_writer/` JSON files against their schemas.
 
+**Files validated:**
+- `.article_writer/authors.json`
+- `.article_writer/settings.json`
+- `.article_writer/article_tasks.json`
+
+**Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerdoctor)
+
 ## Usage
 
 ```bash
-# Check only (report issues, don't fix)
+# Interactive mode (default) - ask for each issue
+/article-writer:doctor
+
+# Check only - report issues without fixing
 /article-writer:doctor --check
 
-# Auto-fix with defaults (non-interactive)
+# Auto-fix - fix with defaults, no prompts
 /article-writer:doctor --fix
-
-# Interactive mode (ask for each issue)
-/article-writer:doctor --interactive
-
-# Default: interactive mode
-/article-writer:doctor
 ```
+
+Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/doctor.ts [--check | --fix]`
 
 ## What It Checks
 

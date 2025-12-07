@@ -1,12 +1,14 @@
 ---
 description: Create a new technical article with research, documentation, and multi-language support
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <topic | from-queue ID> [--author ID]
 ---
 
 # Create Article
 
 Create a single technical article interactively with multi-language support.
+
+**Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerarticle) | [docs/PROCESS.md](../docs/PROCESS.md)
 
 ## Usage
 
@@ -39,15 +41,16 @@ Create a single technical article interactively with multi-language support.
 ## Process
 
 1. Select author and load profile from `.article_writer/authors.json`
-2. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
-3. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review
-4. Search web for documentation, news, and related content
-5. Write initial draft in author's primary language
-6. Create practical example in `code/` folder
-7. Update draft with example code/content
-8. Review article for flow and voice compliance
-9. Translate to other languages
-10. Update article_tasks.json with output paths, sources, and example info
+2. **Load example defaults from `.article_writer/settings.json`**
+3. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
+4. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review
+5. Search web for documentation, news, and related content
+6. Write initial draft in author's primary language
+7. Create practical example using settings defaults (scaffold_command, post_scaffold, etc.)
+8. Update draft with example code/content
+9. Review article for flow and voice compliance
+10. Translate to other languages
+11. Update article_tasks.json with output paths, sources, and example info
 
 ## Web Research
 
@@ -61,16 +64,22 @@ All sources are recorded in `sources_used` array.
 
 ## Practical Examples
 
-Every article includes a practical example:
-- **Code articles**: Minimal project with SQLite + Pest tests
-- **Process articles**: Document templates, project plans
-- **Architecture**: Diagrams + sample code structure
+Every article includes a practical example. Example defaults come from `.article_writer/settings.json`:
+
+```bash
+# View defaults before creating
+/article-writer:settings show code
+```
 
 Example workflow:
-1. Write initial draft with `<!-- EXAMPLE: ... -->` markers
-2. Create example that fulfills the article needs
-3. Update draft with actual code from example
-4. Review integrated article as a whole
+1. **Load settings** - Get scaffold_command, post_scaffold, test_command
+2. Write initial draft with `<!-- EXAMPLE: ... -->` markers
+3. **Execute scaffold_command** from settings
+4. **Execute post_scaffold** commands from settings
+5. Add article-specific code
+6. **Verify with test_command** from settings
+7. Update draft with actual code from example
+8. Review integrated article as a whole
 
 ## Multi-Language Output
 

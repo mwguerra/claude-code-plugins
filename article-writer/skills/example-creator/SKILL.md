@@ -465,6 +465,74 @@ class Post extends Model
 
 ## Settings Integration
 
+**ALWAYS load settings.json before creating examples.**
+
+### Step 1: Load Settings
+
+```bash
+# View settings for your example type
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
+```
+
+**Or read directly:**
+```javascript
+const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
+const defaults = settings.example_defaults.code;
+```
+
+### Step 2: Get Values from Settings
+
+```json
+// .article_writer/settings.json → example_defaults.code
+{
+  "technologies": ["Laravel 12", "Pest 4", "SQLite"],
+  "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
+  "post_scaffold": [
+    "cd code",
+    "composer require pestphp/pest pestphp/pest-plugin-laravel --dev --with-all-dependencies",
+    "php artisan pest:install",
+    "sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env",
+    "touch database/database.sqlite"
+  ],
+  "run_command": "php artisan serve",
+  "test_command": "php artisan test"
+}
+```
+
+### Step 3: Merge with Article Overrides
+
+If the article task has an `example` field, those values override settings:
+
+```
+settings.json defaults    +    article.example    =    final config
+──────────────────────         ────────────────        ────────────
+scaffold_command: X            scaffold_command: Y      Y (article wins)
+technologies: [A, B]           (not set)                [A, B] (use default)
+has_tests: true                has_tests: false         false (article wins)
+```
+
+### Step 4: Execute Commands
+
+```bash
+# 1. Run scaffold_command
+composer create-project laravel/laravel code --prefer-dist
+
+# 2. Run each post_scaffold command
+cd code
+composer require pestphp/pest pestphp/pest-plugin-laravel --dev --with-all-dependencies
+php artisan pest:install
+# ... etc
+```
+
+### Step 5: Verify with test_command
+
+```bash
+# From settings.example_defaults.code.test_command
+php artisan test
+```
+
+---
+
 Global defaults from `settings.json`:
 
 ```json

@@ -116,18 +116,40 @@ Write with:
 
 A Laravel example is a FULL Laravel installation. A Node example is a FULL Node project.
 
-#### Load Example Defaults
+#### Step 1: Load Example Defaults from Settings
 
-1. Get example type from article plan
-2. Load defaults from `settings.json`
-3. Merge with article-specific overrides
-
-#### For Code Examples
-
-**ALWAYS scaffold a complete project first:**
+**Read `.article_writer/settings.json` first:**
 
 ```bash
-# Laravel (from settings.json scaffold_command)
+# View defaults for the example type
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
+```
+
+**Or read JSON and extract:**
+```javascript
+const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
+const codeDefaults = settings.example_defaults.code;
+// codeDefaults.scaffold_command = "composer create-project laravel/laravel code --prefer-dist"
+// codeDefaults.post_scaffold = ["cd code", "composer require pestphp/pest...", ...]
+// codeDefaults.technologies = ["Laravel 12", "Pest 4", "SQLite"]
+```
+
+#### Step 2: Merge with Article Overrides
+
+If article task has `example` field, those values override settings defaults:
+
+```
+settings.json                    article.example              final
+─────────────────────            ────────────────             ─────
+scaffold_command: "composer..."  scaffold_command: "npm..."   "npm..." (override)
+technologies: [Laravel 12]       (not set)                    [Laravel 12] (default)
+has_tests: true                  has_tests: false             false (override)
+```
+
+#### Step 3: Execute Scaffold Command
+
+```bash
+# From settings.example_defaults.code.scaffold_command
 composer create-project laravel/laravel code --prefer-dist
 
 # Then add article-specific code on top
@@ -158,21 +180,9 @@ See `skills/example-creator/SKILL.md` for complete instructions.
 Before completing:
 - [ ] Project can be cloned fresh
 - [ ] Dependencies install without errors
-- [ ] Application runs (e.g., `php artisan serve`)
-- [ ] Tests pass (e.g., `php artisan test`)
+- [ ] Application runs (using `run_command` from settings)
+- [ ] Tests pass (using `test_command` from settings)
 - [ ] README explains everything
-
-| Article Topic | Example Type | What to Create |
-|---------------|--------------|----------------|
-| Laravel/PHP code | `code` | Minimal Laravel project with SQLite + Pest tests |
-| JavaScript/Node | `code` | Minimal Node project with tests |
-| DevOps/Docker | `config` | Docker Compose setup, scripts |
-| Architecture | `diagram` + `code` | Mermaid diagrams + sample structure |
-| Project management | `document` | Mini project plan, template |
-| Database | `code` | Migrations, seeders, queries |
-| API design | `code` | OpenAPI spec + minimal implementation |
-| Testing | `code` | Test suite demonstrating concepts |
-| Soft skills | `document` | Templates, checklists, examples |
 
 #### For Code Examples (Laravel)
 

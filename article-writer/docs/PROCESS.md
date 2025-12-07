@@ -1,0 +1,479 @@
+# Article Writer Process
+
+Complete workflow guide for creating articles with the article-writer plugin.
+
+---
+
+## Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           ARTICLE WRITER WORKFLOW                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. SETUP (once)           2. CREATE AUTHOR         3. WRITE ARTICLE        │
+│  ─────────────────         ───────────────────      ────────────────────    │
+│  /article-writer:init      /author add              /article <topic>        │
+│       │                         OR                        │                 │
+│       │                    /author analyze                │                 │
+│       ▼                         │                         ▼                 │
+│  Creates structure              │              Plan → Research → Draft      │
+│  + settings.json                │              → Example → Review           │
+│  + authors.json                 ▼              → Translate → Finalize       │
+│                           authors.json                    │                 │
+│                                                          ▼                 │
+│                                               content/articles/YYYY_MM_DD/  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Phase 1: Setup (One Time)
+
+### Step 1: Initialize Plugin
+
+```bash
+/article-writer:init
+```
+
+This creates:
+
+```
+your-project/
+├── .article_writer/
+│   ├── schemas/
+│   │   ├── article-tasks.schema.json    # Article task schema
+│   │   ├── authors.schema.json          # Author profile schema
+│   │   └── settings.schema.json         # Settings schema
+│   ├── article_tasks.json               # Empty article queue
+│   ├── authors.json                     # Empty (add authors next)
+│   └── settings.json                    # Example defaults configured
+├── content/
+│   └── articles/                        # Output folder for articles
+└── docs/                                # Documentation folder
+```
+
+### Step 2: Review Default Settings
+
+```bash
+/article-writer:settings show
+```
+
+This shows the default configuration for each example type (code, document, diagram, etc.).
+
+**To customize defaults:**
+
+```bash
+# View code example defaults
+/article-writer:settings show code
+
+# Change Laravel version
+/article-writer:settings set code.technologies '["Laravel 11", "Pest 3", "SQLite"]'
+
+# Change test command
+/article-writer:settings set code.test_command "vendor/bin/pest"
+```
+
+**Settings file location:** `.article_writer/settings.json`
+
+---
+
+## Phase 2: Create Author Profile
+
+Every article needs an author. You have two options:
+
+### Option A: Manual Questionnaire
+
+```bash
+/article-writer:author add
+```
+
+Claude will ask about:
+
+| Category | Questions |
+|----------|-----------|
+| **Identity** | ID (slug), display name, role, experience, expertise |
+| **Languages** | Primary language, translation targets |
+| **Tone** | Formality (1-10), opinionated (1-10) |
+| **Vocabulary** | Terms to use freely, terms to always explain |
+| **Phrases** | Signature phrases, phrases to avoid |
+| **Opinions** | Strong positions, topics to stay neutral on |
+| **Voice** | Example paragraph in their voice |
+
+### Option B: Extract from Transcripts (Recommended)
+
+If you have recordings (podcasts, interviews, meetings):
+
+```bash
+# 1. First, list speakers to find the right name
+/article-writer:author analyze --list-speakers podcast.txt
+
+# Output:
+# Speakers found:
+#   - John Smith: 156 turns
+#   - Jane Doe: 142 turns
+
+# 2. Extract voice for target speaker
+/article-writer:author analyze --speaker "John Smith" podcast.txt interview.txt
+```
+
+Claude will:
+1. Analyze speaking patterns
+2. Show extracted voice characteristics
+3. Ask for identity info (id, name, languages, expertise)
+4. Create complete author profile
+
+### Verify Author
+
+```bash
+# List all authors
+/article-writer:author list
+
+# View full details
+/article-writer:author show mwguerra
+```
+
+**Authors file location:** `.article_writer/authors.json`
+
+---
+
+## Phase 3: Create Article
+
+### Single Article
+
+```bash
+# With default author (first in authors.json)
+/article-writer:article implementing rate limiting in Laravel
+
+# With specific author
+/article-writer:article API versioning best practices --author tech-writer
+```
+
+### From Queue
+
+If you have articles queued in `article_tasks.json`:
+
+```bash
+# View queue
+/article-writer:queue list
+
+# Create specific article
+/article-writer:article from-queue 42
+```
+
+### Batch Processing
+
+```bash
+# Process next 5 pending
+/article-writer:batch 5
+
+# Process all by author
+/article-writer:batch author:mwguerra
+```
+
+---
+
+## Article Creation Phases
+
+When you run `/article-writer:article`, these phases execute:
+
+### Phase 3.1: Initialize
+
+- Load author profile from `authors.json`
+- Generate article slug from title
+- Create folder structure:
+
+```
+content/articles/YYYY_MM_DD_slug/
+├── 00_context/
+│   └── author_profile.json      # Copy of author for reference
+├── 01_planning/
+│   ├── classification.md        # Article type, audience
+│   └── outline.md               # Section outline
+├── 02_research/
+│   ├── sources.json             # All researched URLs
+│   └── research_notes.md        # Key findings
+├── 03_drafts/
+│   ├── draft_v1.{lang}.md       # Initial draft
+│   └── draft_v2.{lang}.md       # After example integration
+├── 04_review/
+│   └── checklists/              # Review checklists
+├── 05_assets/
+│   └── images/                  # Article images
+└── code/                        # Practical example
+```
+
+### Phase 3.2: Plan
+
+- Classify article type (Tutorial, Deep-dive, Guide, etc.)
+- Identify target audience
+- Create section outline
+- Plan example type and scope
+
+**CHECKPOINT:** Claude shows plan and asks for approval before continuing.
+
+### Phase 3.3: Research (Web Search)
+
+Claude searches the web for:
+
+1. **Official Documentation** - Primary sources for accuracy
+2. **Recent Updates** - News from the past year
+3. **Best Practices** - Community recommendations
+4. **Related Repositories** - GitHub examples
+
+All sources are recorded in:
+- `02_research/sources.json` (during writing)
+- `article_tasks.json` → `sources_used` (after completion)
+
+### Phase 3.4: Draft (Initial)
+
+- Write in author's primary language
+- Apply author's voice profile:
+  - Tone (formality, opinionated level)
+  - Signature phrases
+  - Vocabulary rules
+  - Voice analysis patterns (if present)
+- Mark example locations: `<!-- EXAMPLE: description -->`
+- Save as `03_drafts/draft_v1.{lang}.md`
+
+### Phase 3.5: Create Example
+
+> **CRITICAL: Examples must be COMPLETE and RUNNABLE**
+
+#### Step 1: Load Settings
+
+**ALWAYS load settings before creating examples:**
+
+```bash
+# View settings for your example type
+/article-writer:settings show code
+```
+
+This reads `.article_writer/settings.json` and shows:
+- `scaffold_command`: Command to create base project
+- `post_scaffold`: Commands to run after scaffolding  
+- `technologies`: Default tech stack
+- `test_command`: Command to verify example
+
+#### Step 2: Merge with Article Overrides
+
+If the article task has `example` settings, those override the defaults.
+
+#### Step 3: Execute Scaffold
+
+**For Code Examples (e.g., Laravel):**
+
+```bash
+# Execute scaffold_command from settings
+composer create-project laravel/laravel code --prefer-dist
+
+# Execute post_scaffold commands from settings
+cd code
+composer require pestphp/pest pestphp/pest-plugin-laravel --dev
+php artisan pest:install
+sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+touch database/database.sqlite
+```
+
+#### Step 4: Add Article-Specific Code
+
+Then add article-specific code:
+- Models, Controllers, Routes
+- Migrations, Seeders
+- Tests
+- README explaining the example
+
+#### Step 5: Verify with test_command
+
+```bash
+# From settings.example_defaults.code.test_command
+php artisan test
+```
+
+**For Other Types:**
+
+| Type | What to Create |
+|------|----------------|
+| `document` | Templates + filled examples |
+| `diagram` | Valid Mermaid diagrams |
+| `config` | Working docker-compose |
+| `script` | Executable bash scripts |
+| `dataset` | Data files + schemas |
+
+### Phase 3.6: Integrate Example
+
+- Replace `<!-- EXAMPLE: -->` markers with actual code
+- Add file references: "See `code/app/Models/Post.php`"
+- Add run instructions
+- Save as `03_drafts/draft_v2.{lang}.md`
+
+### Phase 3.7: Review
+
+Check:
+- [ ] Explanation flows logically
+- [ ] Example code matches article snippets
+- [ ] Voice matches author profile
+- [ ] Technical accuracy
+- [ ] All outline points covered
+
+**CHECKPOINT:** Claude confirms article + example are ready.
+
+### Phase 3.8: Translate
+
+For each additional language in author's profile:
+- Translate article content
+- Keep code snippets unchanged
+- Optionally translate code comments
+- Save as `{slug}.{lang}.md`
+
+### Phase 3.9: Finalize
+
+- Write final article with frontmatter
+- Move from `03_drafts/` to root of article folder
+- Update `article_tasks.json`:
+  - `output_folder`: folder path
+  - `output_files`: per-language file paths
+  - `sources_used`: all researched URLs
+  - `example`: example info
+  - `status`: "draft"
+  - `written_at`: timestamp
+
+---
+
+## Output Structure
+
+After completion, your article folder looks like:
+
+```
+content/articles/2025_01_15_rate-limiting/
+├── 00_context/
+│   └── author_profile.json
+├── 01_planning/
+│   ├── classification.md
+│   └── outline.md
+├── 02_research/
+│   ├── sources.json
+│   └── research_notes.md
+├── 03_drafts/
+│   ├── draft_v1.pt_BR.md
+│   └── draft_v2.pt_BR.md
+├── 04_review/
+│   └── checklists/
+├── 05_assets/images/
+├── code/                              # COMPLETE Laravel project
+│   ├── app/
+│   │   ├── Http/Controllers/
+│   │   └── Models/
+│   ├── database/
+│   │   ├── migrations/
+│   │   └── seeders/
+│   ├── routes/
+│   ├── tests/Feature/
+│   ├── .env.example
+│   ├── artisan
+│   ├── composer.json
+│   └── README.md
+├── rate-limiting.pt_BR.md             # Primary article
+└── rate-limiting.en_US.md             # Translation
+```
+
+---
+
+## Queue Management
+
+### View Queue Status
+
+```bash
+/article-writer:queue status
+```
+
+Shows summary: total articles, by status, by author, top areas.
+
+### View Queue Details
+
+```bash
+/article-writer:queue list                    # All
+/article-writer:queue list pending            # By status
+/article-writer:queue list author:mwguerra    # By author
+```
+
+### Article Statuses
+
+| Status | Meaning |
+|--------|---------|
+| `pending` | Waiting to be written |
+| `in_progress` | Currently being written |
+| `draft` | Written, needs review |
+| `review` | Under review |
+| `published` | Published |
+| `archived` | No longer active |
+
+---
+
+## Troubleshooting
+
+### Validate Configuration
+
+```bash
+/article-writer:doctor
+```
+
+Checks all JSON files against schemas and offers to fix issues.
+
+### Reset Settings
+
+```bash
+/article-writer:settings reset              # Reset all
+/article-writer:settings reset-type code    # Reset just code defaults
+```
+
+### Check Initialization
+
+```bash
+/article-writer:init --check
+```
+
+Shows what's missing without creating anything.
+
+---
+
+## File Reference
+
+| File | Purpose | View Command |
+|------|---------|--------------|
+| `.article_writer/authors.json` | Author profiles | `/author list` |
+| `.article_writer/settings.json` | Example defaults | `/settings show` |
+| `.article_writer/article_tasks.json` | Article queue | `/queue status` |
+| `.article_writer/schemas/` | JSON schemas | `/doctor` |
+
+---
+
+## Best Practices
+
+### Authors
+
+1. **Use voice extraction** when you have transcripts - it captures authentic patterns
+2. **Start with one author** and refine their profile over multiple articles
+3. **Review generated articles** and update phrases based on what sounds wrong
+
+### Settings
+
+1. **Keep SQLite default** for code examples - no external dependencies needed
+2. **Customize per-article** rather than changing global defaults
+3. **Run doctor** after manual edits to catch errors
+
+### Articles
+
+1. **Approve the plan** before Claude starts writing
+2. **Check the example first** - if it doesn't run, the article is incomplete
+3. **Review voice compliance** - does it sound like the author?
+
+---
+
+## See Also
+
+- [COMMANDS.md](COMMANDS.md) - Complete command reference
+- [README.md](../README.md) - Plugin overview
+- [skills/article-writer/SKILL.md](../skills/article-writer/SKILL.md) - Detailed writing guidelines
+- [skills/example-creator/SKILL.md](../skills/example-creator/SKILL.md) - Example creation guidelines
