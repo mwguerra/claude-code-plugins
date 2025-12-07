@@ -67,6 +67,48 @@ content/articles/YYYY_MM_DD_slug/
 - Mark places where example code will go: `<!-- EXAMPLE: description -->`
 - Save as `03_drafts/draft_v1.{lang}.md`
 
+#### Applying Author Voice
+
+**Use ALL author profile data when writing:**
+
+1. **Manual Profile Data**
+   - `tone.formality`: 1=very casual, 10=very formal
+   - `tone.opinionated`: 1=always hedge, 10=strong opinions
+   - `phrases.signature`: Use naturally (don't overdo)
+   - `phrases.avoid`: Never use these
+   - `vocabulary.use_freely`: Assume reader knows these
+   - `vocabulary.always_explain`: Explain on first use
+
+2. **Voice Analysis Data** (if present in `voice_analysis`)
+   - `sentence_structure.avg_length`: Target this sentence length
+   - `sentence_structure.variety`: Match style (short/moderate/long)
+   - `communication_style`: Reflect top traits in tone
+   - `characteristic_expressions`: Sprinkle these naturally
+   - `sentence_starters`: Use these patterns
+   - `signature_vocabulary`: Prefer these words
+
+**Example:**
+
+For author with:
+```json
+{
+  "tone": { "formality": 4, "opinionated": 7 },
+  "voice_analysis": {
+    "sentence_structure": { "avg_length": 14, "variety": "moderate" },
+    "communication_style": [{ "trait": "enthusiasm", "percentage": 32 }],
+    "characteristic_expressions": ["na prática", "o ponto é"],
+    "sentence_starters": ["Então", "O interessante é"]
+  }
+}
+```
+
+Write with:
+- Conversational but confident tone
+- Medium sentences (~14 words)
+- Enthusiastic energy
+- Occasional "na prática" and "o ponto é"
+- Some sentences starting with "Então" or "O interessante é"
+
 ### Phase 4: Create Example ⭐
 **Use Skill(example-creator) for this phase**
 
@@ -191,6 +233,10 @@ code/
    - Uses signature phrases appropriately?
    - Avoids forbidden phrases?
    - Opinions expressed match author's positions?
+   - If voice_analysis present:
+     - Sentence length matches avg_length?
+     - Communication style traits reflected?
+     - Characteristic expressions used (not overused)?
 
 4. **Technical Accuracy**
    - Code snippets are correct?

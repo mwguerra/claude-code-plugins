@@ -1,7 +1,7 @@
 {
   "name": "article-writer",
-  "description": "Create high-quality technical articles with research, documentation, and quality checks. Supports single article creation via commands or autonomous batch processing via agent mode.",
   "version": "1.0.0",
+  "description": "Create high-quality technical articles with authentic author voice (extracted from transcripts or manual), web research, complete runnable examples, and multi-language support. Supports single article creation or autonomous batch processing.",
   "author": {
     "name": "mwguerra"
   },
@@ -11,10 +11,14 @@
     "blog",
     "documentation",
     "research",
+    "voice-profile",
+    "transcription",
     "laravel",
     "php",
     "automation",
     "batch-processing",
+    "multi-language",
+    "examples",
     "agent"
   ]
 }

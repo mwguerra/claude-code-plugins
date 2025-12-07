@@ -60,21 +60,30 @@
 ```markdown
 # Voice Review
 
-## Tone Match
-- [ ] Formality level matches profile
+## Tone Match (Manual Profile)
+- [ ] Formality level matches profile (1-10 scale)
 - [ ] Opinion strength matches profile
 - [ ] Consistent throughout article
 
-## Vocabulary
+## Vocabulary (Manual Profile)
 - [ ] Uses "allowed" terms freely
 - [ ] Explains terms marked "always explain"
 - [ ] Avoids forbidden phrases
 
-## Style
+## Style (Manual Profile)
 - [ ] Signature phrases used naturally
 - [ ] No anti-pattern phrases
 - [ ] Opinions stated confidently (if opinionated profile)
 - [ ] Appropriate hedging (if neutral profile)
+
+## Voice Analysis Data (if present)
+- [ ] Sentence length matches avg_length (~X words)
+- [ ] Sentence variety matches style (short/moderate/long)
+- [ ] Top communication traits reflected in tone
+- [ ] Characteristic expressions used (but not overused)
+- [ ] Sentence starters used naturally
+- [ ] Signature vocabulary words included
+- [ ] Question frequency matches question_ratio
 ```
 
 ## SEO Checklist

@@ -92,6 +92,47 @@ Translations: {author.languages[1:]}
 Tone: Formality {tone.formality}/10, Opinionated {tone.opinionated}/10
 ```
 
+### 4b. Apply Author Voice
+
+**Use all author profile data when writing:**
+
+1. **Manual Profile Data**
+   - Match `tone.formality` (1=casual, 10=formal)
+   - Match `tone.opinionated` (1=hedging, 10=strong opinions)
+   - Use `phrases.signature` naturally
+   - Avoid `phrases.avoid` completely
+   - Assume reader knows `vocabulary.use_freely`
+   - Explain `vocabulary.always_explain` on first use
+
+2. **Voice Analysis Data** (if present)
+   - Match `sentence_structure.avg_length` and `variety`
+   - Reflect `communication_style` traits in tone
+   - Sprinkle `characteristic_expressions` naturally (don't overuse)
+   - Use patterns from `sentence_starters`
+   - Prefer words from `signature_vocabulary`
+
+**Example voice application:**
+
+If author has:
+```json
+{
+  "tone": { "formality": 4, "opinionated": 7 },
+  "voice_analysis": {
+    "sentence_structure": { "avg_length": 14, "variety": "moderate" },
+    "communication_style": [{ "trait": "enthusiasm", "percentage": 32 }],
+    "characteristic_expressions": ["na prática", "o ponto é"],
+    "sentence_starters": ["Então", "O interessante é"]
+  }
+}
+```
+
+Then write:
+- Conversational but confident (formality 4, opinionated 7)
+- Medium-length sentences (~14 words average)
+- With enthusiasm and energy
+- Using "na prática" and "o ponto é" occasionally
+- Starting some sentences with "Então" or "O interessante é"
+
 ### 5. Web Research Phase
 
 For each article, search the web for:

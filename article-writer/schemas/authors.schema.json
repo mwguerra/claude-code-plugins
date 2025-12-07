@@ -144,6 +144,63 @@
           "type": "string",
           "description": "2-3 sentence example in author's voice"
         },
+        "voice_analysis": {
+          "type": "object",
+          "description": "Data extracted from transcript analysis",
+          "properties": {
+            "extracted_from": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Transcript files analyzed"
+            },
+            "sample_count": {
+              "type": "integer",
+              "description": "Number of speaking turns analyzed"
+            },
+            "total_words": {
+              "type": "integer",
+              "description": "Total words analyzed"
+            },
+            "sentence_structure": {
+              "type": "object",
+              "properties": {
+                "avg_length": { "type": "number" },
+                "variety": { "type": "string" },
+                "question_ratio": { "type": "number" }
+              }
+            },
+            "communication_style": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "trait": { "type": "string" },
+                  "percentage": { "type": "number" }
+                }
+              },
+              "description": "Dominant communication traits (enthusiasm, hedging, directness, etc.)"
+            },
+            "characteristic_expressions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Frequently used phrases and fillers"
+            },
+            "sentence_starters": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Common ways this person starts sentences"
+            },
+            "signature_vocabulary": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Words that characterize this speaker"
+            },
+            "analyzed_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
         "notes": {
           "oneOf": [
             { "type": "string" },
