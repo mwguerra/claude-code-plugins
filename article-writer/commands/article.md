@@ -72,14 +72,20 @@ Every article includes a practical example. Example defaults come from `.article
 ```
 
 Example workflow:
-1. **Load settings** - Get scaffold_command, post_scaffold, test_command
+1. **Load settings** - Get scaffold_command, verification commands
 2. Write initial draft with `<!-- EXAMPLE: ... -->` markers
 3. **Execute scaffold_command** from settings
 4. **Execute post_scaffold** commands from settings
-5. Add article-specific code
-6. **Verify with test_command** from settings
-7. Update draft with actual code from example
-8. Review integrated article as a whole
+5. Add article-specific code (models, controllers, tests)
+6. **⚠️ VERIFY - Actually run the code:**
+   - `install_command` - Must succeed (vendor/ exists)
+   - `run_command` - App must start without errors
+   - `test_command` - All tests must pass
+7. **If verification fails → Fix code → Re-verify**
+8. Update draft with actual code from example
+9. Review integrated article as a whole
+
+**The example is NOT complete until verification passes.**
 
 ## Multi-Language Output
 

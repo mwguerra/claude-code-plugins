@@ -12,6 +12,12 @@
         "code": {
           "$ref": "#/$defs/example_defaults"
         },
+        "node": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "python": {
+          "$ref": "#/$defs/example_defaults"
+        },
         "document": {
           "$ref": "#/$defs/example_defaults"
         },
@@ -25,6 +31,12 @@
           "$ref": "#/$defs/example_defaults"
         },
         "config": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "script": {
+          "$ref": "#/$defs/example_defaults"
+        },
+        "spreadsheet": {
           "$ref": "#/$defs/example_defaults"
         },
         "other": {
@@ -72,31 +84,42 @@
           "items": { "type": "string" },
           "description": "Commands to run after scaffolding (e.g., install test framework)"
         },
-        "run_instructions": {
-          "type": "string",
-          "description": "Default instructions to run/use the example"
+        "verification": {
+          "type": "object",
+          "description": "Commands to verify the example is complete and working",
+          "properties": {
+            "install_command": {
+              "type": ["string", "null"],
+              "description": "Command to install dependencies (e.g., composer install, npm install)"
+            },
+            "setup_commands": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Commands to run after install (e.g., php artisan migrate)"
+            },
+            "run_command": {
+              "type": ["string", "null"],
+              "description": "Command to start the application (e.g., php artisan serve)"
+            },
+            "test_command": {
+              "type": ["string", "null"],
+              "description": "Command to run tests (e.g., php artisan test)"
+            },
+            "success_indicators": {
+              "type": "object",
+              "description": "What indicates each verification step succeeded"
+            },
+            "manual_checks": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Manual verification steps for non-code examples"
+            }
+          }
         },
-        "run_command": {
-          "type": "string",
-          "description": "Command to start/run the example (e.g., php artisan serve)"
-        },
-        "setup_commands": {
+        "required_structure": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Default setup commands after cloning"
-        },
-        "test_command": {
-          "type": "string",
-          "description": "Default command to run tests"
-        },
-        "file_structure": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Expected file/folder structure"
-        },
-        "template_repo": {
-          "type": "string",
-          "description": "Git repository to clone as starting point (optional)"
+          "description": "Required files/folders that must exist"
         },
         "env_setup": {
           "type": "object",

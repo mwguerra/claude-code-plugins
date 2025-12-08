@@ -210,21 +210,43 @@ On top of scaffolded project, add:
 - Tests
 - README.md
 
-#### Step 5: Verify Example
+#### Step 5: VERIFY (Mandatory) ⚠️
 
-Using `test_command` from settings (default: `php artisan test`):
+**You MUST actually execute these commands and confirm they succeed.**
 
 ```bash
 cd code
+
+# 1. Install - MUST SUCCEED
+composer install
+# ✓ Confirm: vendor/ directory exists, no errors
+
+# 2. Setup - MUST SUCCEED
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+# ✓ Confirm: No errors, database tables created
+
+# 3. Run - MUST START
+php artisan serve &
+# ✓ Confirm: "Server running on http://127.0.0.1:8000"
+# Stop server after confirming
+
+# 4. Test - ALL MUST PASS
 php artisan test
+# ✓ Confirm: "Tests: X passed" with 0 failures
 ```
 
-Checklist:
-- [ ] Dependencies install
-- [ ] Application runs
-- [ ] Tests pass
+**If ANY step fails:**
+1. Read the error
+2. Fix the code
+3. Re-run from step 1
+4. Repeat until ALL pass
 
-#### Step 6: Record in Task
+**DO NOT mark example as verified until all commands succeed.**
+
+#### Step 6: Record in Task (only after verification passes)
 
 ```json
 {

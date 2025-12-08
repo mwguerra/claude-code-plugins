@@ -15,7 +15,7 @@ Create high-quality technical articles with authentic author voice, web research
 - **Multi-Author**: Support multiple authors with distinct voices
 - **Multi-Language**: Write in primary language, auto-translate to others
 - **Web Research**: Automatic source gathering and citation
-- **Complete Examples**: Full runnable applications, not code snippets
+- **Verified Examples**: Full runnable applications that are actually tested before completion
 - **Batch Processing**: Queue and process multiple articles
 
 ## Quick Start
@@ -69,6 +69,7 @@ Creates: `.article_writer/` folder with schemas, settings, and empty queue.
 | `/article-writer:settings show <type>` | Show example type defaults | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:settings set` | Modify a setting | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:article <topic>` | Create single article | [docs/COMMANDS.md#article](docs/COMMANDS.md#article-writerarticle) |
+| `/article-writer:next` | Get next pending article | [docs/COMMANDS.md#next](docs/COMMANDS.md#article-writernext) |
 | `/article-writer:queue status` | Show queue summary | [docs/COMMANDS.md#queue](docs/COMMANDS.md#article-writerqueue) |
 | `/article-writer:batch <n>` | Process n articles | [docs/COMMANDS.md#batch](docs/COMMANDS.md#article-writerbatch) |
 | `/article-writer:doctor` | Validate JSON files | [docs/COMMANDS.md#doctor](docs/COMMANDS.md#article-writerdoctor) |

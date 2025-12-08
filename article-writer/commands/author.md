@@ -56,7 +56,7 @@ Interactive questionnaire covering:
 ```bash
 /article-writer:author analyze --list-speakers transcript.txt
 /article-writer:author analyze --speaker "Name" transcript.txt
-/article-writer:author analyze --speaker "Speaker Name" --author-id marcelo-guerra path/to/transcript.txt
+/article-writer:author analyze --speaker "Name" --author-id existing-id transcript.txt
 ```
 
 Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/voice-extractor.ts`

@@ -26,6 +26,7 @@ Complete reference for all article-writer commands.
 | `/article-writer:settings set <path> <value>` | Update a setting |
 | `/article-writer:settings reset` | Reset to defaults |
 | `/article-writer:article <topic>` | Create new article |
+| `/article-writer:next` | Get next pending article |
 | `/article-writer:queue list` | List queued articles |
 | `/article-writer:queue status` | Show queue summary |
 | `/article-writer:batch <n>` | Process n articles |
@@ -391,6 +392,74 @@ Create a new article.
 7. **Review** - Check accuracy and voice compliance
 8. **Translate** - Create other language versions
 9. **Finalize** - Update task metadata
+
+---
+
+## /article-writer:next
+
+Get the next pending article from the queue.
+
+### Usage
+
+```bash
+/article-writer:next
+```
+
+### What It Does
+
+1. Loads `.article_writer/article_tasks.json`
+2. Filters articles with `status: "pending"`
+3. Sorts by priority (critical → high → normal → low)
+4. Returns the first pending article with details
+5. Shows the command to start writing
+
+### Example Output
+
+```
+═══════════════════════════════════════════════════════════════
+  NEXT ARTICLE
+═══════════════════════════════════════════════════════════════
+
+  ID:       laravel-rate-limiting
+  Title:    Implementing Rate Limiting in Laravel
+  Area:     Backend Development
+  Author:   mwguerra
+  Priority: high
+
+  Subject:
+  How to implement and customize rate limiting in Laravel APIs
+  using built-in middleware and Redis.
+
+────────────────────────────────────────────────────────────────
+  To start writing:
+  /article-writer:article laravel-rate-limiting
+────────────────────────────────────────────────────────────────
+
+  Queue: 1 pending, 3 draft, 2 published
+═══════════════════════════════════════════════════════════════
+```
+
+### When Queue is Empty
+
+```
+═══════════════════════════════════════════════════════════════
+  NEXT ARTICLE
+═══════════════════════════════════════════════════════════════
+
+  ✓ No pending articles in queue!
+
+  Queue: 0 pending, 5 draft, 10 published
+
+  To add articles:
+  /article-writer:queue add "Article Title" --area "Category"
+═══════════════════════════════════════════════════════════════
+```
+
+### Priority Order
+
+Articles are selected in this order:
+1. **Priority** (if set): `critical` → `high` → `normal` → `low`
+2. **Position** in file (first pending wins)
 
 ---
 

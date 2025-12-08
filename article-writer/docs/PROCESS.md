@@ -155,11 +155,14 @@ Claude will:
 If you have articles queued in `article_tasks.json`:
 
 ```bash
-# View queue
+# Get next pending article
+/article-writer:next
+
+# View full queue
 /article-writer:queue list
 
-# Create specific article
-/article-writer:article from-queue 42
+# Create specific article by ID
+/article-writer:article from-queue laravel-rate-limiting
 ```
 
 ### Batch Processing
@@ -284,24 +287,50 @@ Then add article-specific code:
 - Tests
 - README explaining the example
 
-#### Step 5: Verify with test_command
+#### Step 5: VERIFY (Mandatory) ⚠️
+
+**You MUST actually run these commands and confirm they succeed:**
 
 ```bash
-# From settings.example_defaults.code.test_command
+cd code
+
+# 1. Install dependencies - MUST SUCCEED
+composer install
+# ✓ Check: No errors, vendor/ exists
+
+# 2. Setup - MUST SUCCEED
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+# ✓ Check: No errors
+
+# 3. Run application - MUST START
+php artisan serve &
+# ✓ Check: Server starts on localhost:8000
+# Stop server after confirming
+
+# 4. Run tests - ALL MUST PASS
 php artisan test
+# ✓ Check: "Tests: X passed" (0 failures)
 ```
+
+**If ANY step fails → Fix the code → Re-verify → Repeat until all pass.**
 
 **For Other Types:**
 
-| Type | What to Create |
-|------|----------------|
-| `document` | Templates + filled examples |
-| `diagram` | Valid Mermaid diagrams |
-| `config` | Working docker-compose |
-| `script` | Executable bash scripts |
-| `dataset` | Data files + schemas |
+| Type | Verification |
+|------|--------------|
+| `node` | `npm install` → `npm start` → `npm test` |
+| `python` | `pip install -r requirements.txt` → `python src/main.py` → `pytest` |
+| `config` | `docker-compose up -d` → `docker-compose ps` (all "Up") |
+| `script` | `chmod +x` → `./script.sh --help` (runs without error) |
+| `document` | Manual: all sections complete, filled examples exist |
+| `diagram` | Manual: renders in Mermaid preview |
 
 ### Phase 3.6: Integrate Example
+
+**Only proceed here after verification passes.**
 
 - Replace `<!-- EXAMPLE: -->` markers with actual code
 - Add file references: "See `code/app/Models/Post.php`"

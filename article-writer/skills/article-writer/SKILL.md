@@ -112,9 +112,11 @@ Write with:
 ### Phase 4: Create Example ⭐
 **Use Skill(example-creator) for this phase**
 
-> **CRITICAL: Examples must be COMPLETE and RUNNABLE, not snippets.**
+> **CRITICAL: Examples must be COMPLETE, RUNNABLE, and VERIFIED.**
 
 A Laravel example is a FULL Laravel installation. A Node example is a FULL Node project.
+
+**The example is NOT complete until you have actually run and tested it.**
 
 #### Step 1: Load Example Defaults from Settings
 
@@ -129,60 +131,88 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 ```javascript
 const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
 const codeDefaults = settings.example_defaults.code;
-// codeDefaults.scaffold_command = "composer create-project laravel/laravel code --prefer-dist"
-// codeDefaults.post_scaffold = ["cd code", "composer require pestphp/pest...", ...]
-// codeDefaults.technologies = ["Laravel 12", "Pest 4", "SQLite"]
+// codeDefaults.scaffold_command
+// codeDefaults.verification.install_command
+// codeDefaults.verification.run_command
+// codeDefaults.verification.test_command
 ```
 
 #### Step 2: Merge with Article Overrides
 
-If article task has `example` field, those values override settings defaults:
-
-```
-settings.json                    article.example              final
-─────────────────────            ────────────────             ─────
-scaffold_command: "composer..."  scaffold_command: "npm..."   "npm..." (override)
-technologies: [Laravel 12]       (not set)                    [Laravel 12] (default)
-has_tests: true                  has_tests: false             false (override)
-```
+If article task has `example` field, those values override settings defaults.
 
 #### Step 3: Execute Scaffold Command
 
 ```bash
 # From settings.example_defaults.code.scaffold_command
 composer create-project laravel/laravel code --prefer-dist
-
-# Then add article-specific code on top
 ```
+
+#### Step 4: Add Article-Specific Code
+
+Add your custom code on top of the scaffolded project:
+- Models, Controllers, Routes
+- Migrations, Seeders
+- Tests
 
 **Never create partial projects with just a few files.**
 
-See `skills/example-creator/SKILL.md` for complete instructions.
+#### Step 5: VERIFY (Mandatory) ⚠️
+
+**You MUST actually run these commands and confirm they succeed:**
+
+```bash
+cd code
+
+# 1. Install dependencies - MUST SUCCEED
+composer install
+# ✓ Check: No errors, vendor/ directory exists
+
+# 2. Setup - MUST SUCCEED
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+# ✓ Check: No errors
+
+# 3. Run application - MUST START
+php artisan serve &
+# ✓ Check: "Server running on http://127.0.0.1:8000"
+# Stop the server after confirming
+
+# 4. Run tests - ALL MUST PASS
+php artisan test
+# ✓ Check: "Tests: X passed" with 0 failures
+```
+
+**If ANY step fails:**
+1. Read the error message
+2. Fix the code
+3. Re-run verification from step 1
+4. Repeat until ALL steps pass
+
+**DO NOT proceed to Phase 5 until verification passes.**
 
 #### Example Types
 
 | Article Topic | Example Type | What to Create |
 |---------------|--------------|----------------|
 | Laravel/PHP code | `code` | **Full Laravel project** via composer create-project |
-| JavaScript/Node | `code` | **Full Node project** via npm init |
+| JavaScript/Node | `node` | **Full Node project** via npm init |
+| Python | `python` | **Full Python project** with venv |
 | DevOps/Docker | `config` | Complete docker-compose setup |
 | Architecture | `diagram` | Complete Mermaid diagrams |
 | Project management | `document` | Complete templates + filled examples |
-| Database | `code` | Full Laravel project with migrations |
-| API design | `code` | Full API server (Laravel/Node) |
-| Testing | `code` | Full project with test suite |
-| Soft skills | `document` | Templates, checklists, examples |
-| Automation | `script` | Executable bash scripts |
-| Data analysis | `dataset` + `code` | Data files + analysis code |
 
-#### Verification
+#### Verification Checklist
 
-Before completing:
-- [ ] Project can be cloned fresh
-- [ ] Dependencies install without errors
-- [ ] Application runs (using `run_command` from settings)
-- [ ] Tests pass (using `test_command` from settings)
-- [ ] README explains everything
+Before proceeding to Phase 5:
+- [ ] Scaffold command executed successfully
+- [ ] All article-specific code added
+- [ ] `install_command` succeeded (vendor/node_modules exists)
+- [ ] `run_command` starts application without errors
+- [ ] `test_command` runs with 0 failures
+- [ ] README.md explains setup and usage
 
 #### For Code Examples (Laravel)
 

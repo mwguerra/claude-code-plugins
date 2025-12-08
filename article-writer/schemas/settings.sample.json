@@ -13,21 +13,27 @@
         "sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env",
         "touch database/database.sqlite"
       ],
-      "setup_commands": [
-        "composer install",
-        "cp .env.example .env",
-        "php artisan key:generate",
-        "touch database/database.sqlite",
-        "php artisan migrate --seed"
-      ],
-      "run_command": "php artisan serve",
-      "run_instructions": "cd code && composer install && cp .env.example .env && php artisan key:generate && touch database/database.sqlite && php artisan migrate --seed && php artisan serve",
-      "test_command": "php artisan test",
+      "verification": {
+        "install_command": "composer install",
+        "setup_commands": [
+          "cp .env.example .env",
+          "php artisan key:generate",
+          "touch database/database.sqlite",
+          "php artisan migrate"
+        ],
+        "run_command": "php artisan serve",
+        "test_command": "php artisan test",
+        "success_indicators": {
+          "install": "vendor/ directory exists",
+          "run": "Server starts on localhost:8000",
+          "test": "Tests: X passed (0 failures)"
+        }
+      },
       "env_setup": {
         "DB_CONNECTION": "sqlite",
         "DB_DATABASE": "database/database.sqlite"
       },
-      "file_structure": [
+      "required_structure": [
         "app/",
         "bootstrap/",
         "config/",
@@ -44,14 +50,79 @@
         "composer.json",
         "README.md"
       ],
-      "notes": "Create COMPLETE Laravel applications, not snippets. Must be runnable with php artisan serve."
+      "notes": "Create COMPLETE Laravel applications. MUST run verification commands and confirm all pass before marking complete."
+    },
+    "node": {
+      "technologies": ["Node.js", "Jest"],
+      "has_tests": true,
+      "path": "code/",
+      "scaffold_command": "npm init -y",
+      "post_scaffold": [
+        "npm install express",
+        "npm install --save-dev jest"
+      ],
+      "verification": {
+        "install_command": "npm install",
+        "setup_commands": [],
+        "run_command": "npm start",
+        "test_command": "npm test",
+        "success_indicators": {
+          "install": "node_modules/ directory exists",
+          "run": "Server starts without errors",
+          "test": "Tests passed"
+        }
+      },
+      "required_structure": [
+        "src/",
+        "tests/",
+        "package.json",
+        "README.md"
+      ],
+      "notes": "Create COMPLETE Node.js applications. MUST run verification commands and confirm all pass."
+    },
+    "python": {
+      "technologies": ["Python", "pytest"],
+      "has_tests": true,
+      "path": "code/",
+      "scaffold_command": "python -m venv venv",
+      "post_scaffold": [
+        "source venv/bin/activate",
+        "pip install pytest"
+      ],
+      "verification": {
+        "install_command": "pip install -r requirements.txt",
+        "setup_commands": ["source venv/bin/activate"],
+        "run_command": "python src/main.py",
+        "test_command": "pytest",
+        "success_indicators": {
+          "install": "All packages installed",
+          "run": "Script executes without errors",
+          "test": "X passed"
+        }
+      },
+      "required_structure": [
+        "src/",
+        "tests/",
+        "requirements.txt",
+        "README.md"
+      ],
+      "notes": "Create COMPLETE Python applications. MUST run verification commands and confirm all pass."
     },
     "document": {
       "technologies": ["Markdown"],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "Open the markdown files in any markdown viewer or editor",
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "All sections are complete",
+          "Placeholders are clearly marked",
+          "At least one filled example exists"
+        ]
+      },
+      "required_structure": [
         "templates/",
         "examples/",
         "README.md"
@@ -62,49 +133,38 @@
       "technologies": ["Mermaid"],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "View .mermaid files in VS Code, GitHub, or any Mermaid-compatible viewer",
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "Diagrams render correctly in Mermaid preview",
+          "All components are labeled",
+          "Comments explain complex parts"
+        ]
+      },
+      "required_structure": [
         "diagrams/",
         "README.md"
       ],
-      "notes": "Diagrams must be valid Mermaid syntax and render correctly. Include comments explaining components."
-    },
-    "template": {
-      "technologies": ["Markdown", "YAML"],
-      "has_tests": false,
-      "path": "code/",
-      "run_instructions": "Copy and customize the templates for your needs",
-      "file_structure": [
-        "templates/",
-        "generated/",
-        "README.md"
-      ],
-      "notes": "Templates should have clear placeholders and instructions. Include generated examples."
-    },
-    "dataset": {
-      "technologies": ["JSON", "CSV", "SQL"],
-      "has_tests": false,
-      "path": "code/",
-      "run_instructions": "Import the data files into your application or database",
-      "file_structure": [
-        "data/",
-        "schemas/",
-        "README.md"
-      ],
-      "notes": "Include schema definitions alongside sample data. Provide import instructions."
+      "notes": "Diagrams must be valid Mermaid syntax and render correctly. Verify in a Mermaid preview tool."
     },
     "config": {
       "technologies": ["Docker", "Docker Compose", "YAML"],
       "has_tests": false,
       "path": "code/",
       "scaffold_command": null,
-      "run_command": "docker-compose up -d",
-      "run_instructions": "docker-compose up -d",
-      "setup_commands": [
-        "cp .env.example .env",
-        "docker-compose up -d"
-      ],
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "setup_commands": ["cp .env.example .env"],
+        "run_command": "docker-compose up -d",
+        "test_command": "docker-compose ps",
+        "success_indicators": {
+          "run": "Containers start successfully",
+          "test": "All containers show 'Up' status"
+        }
+      },
+      "required_structure": [
         "docker/",
         "docker-compose.yml",
         ".env.example",
@@ -116,32 +176,99 @@
       "technologies": ["Bash", "Shell"],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "chmod +x scripts/*.sh && ./scripts/main.sh",
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "setup_commands": ["chmod +x scripts/*.sh"],
+        "run_command": "./scripts/main.sh --help",
+        "test_command": null,
+        "success_indicators": {
+          "run": "Script executes and shows help/output"
+        }
+      },
+      "required_structure": [
         "scripts/",
         "lib/",
         "README.md"
       ],
-      "notes": "Scripts must be executable, have proper shebangs, and include error handling."
+      "notes": "Scripts must be executable, have proper shebangs, and include error handling. Test with --help or dry-run."
     },
     "spreadsheet": {
       "technologies": ["Excel", "CSV"],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "Open .xlsx files in Excel or Google Sheets",
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "Spreadsheet opens without errors",
+          "Formulas calculate correctly",
+          "Sample data is present"
+        ]
+      },
+      "required_structure": [
         "spreadsheets/",
         "csv/",
         "README.md"
       ],
       "notes": "Include formulas and formatting. Provide CSV versions for portability."
     },
+    "template": {
+      "technologies": ["Markdown", "YAML"],
+      "has_tests": false,
+      "path": "code/",
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "Templates have clear placeholders",
+          "At least one generated example exists",
+          "Instructions are complete"
+        ]
+      },
+      "required_structure": [
+        "templates/",
+        "generated/",
+        "README.md"
+      ],
+      "notes": "Templates should have clear placeholders and instructions. Include generated examples."
+    },
+    "dataset": {
+      "technologies": ["JSON", "CSV", "SQL"],
+      "has_tests": false,
+      "path": "code/",
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "Data files are valid (JSON parses, CSV has headers)",
+          "Schema matches data",
+          "Import instructions work"
+        ]
+      },
+      "required_structure": [
+        "data/",
+        "schemas/",
+        "README.md"
+      ],
+      "notes": "Include schema definitions alongside sample data. Provide import instructions."
+    },
     "other": {
       "technologies": [],
       "has_tests": false,
       "path": "code/",
-      "run_instructions": "See README.md for specific instructions",
-      "file_structure": [
+      "verification": {
+        "install_command": null,
+        "run_command": null,
+        "test_command": null,
+        "manual_checks": [
+          "Example is complete and self-contained",
+          "README explains usage clearly"
+        ]
+      },
+      "required_structure": [
         "README.md"
       ],
       "notes": "Document thoroughly as the example type may not be obvious."
