@@ -1,9 +1,9 @@
 ---
-name: test-automation-agent
+name: test-specialist-agent
 description: Use proactively to create tests, update tests, run tests, analyze test coverage and fix test failures
 ---
-   
-# Test Automation Agent
+
+# Test Specialist Agent
 
 ## Description
 A specialized Claude Code agent for creating, maintaining, and executing Pest 4 tests across PHP, Laravel, Livewire, and Filament applications. This agent ensures comprehensive test coverage for processes, roles, policies, and page access.

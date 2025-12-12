@@ -29,8 +29,8 @@
       "description": "Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs"
     },
     {
-      "name": "test-automation",
-      "source": "./test-automation",
+      "name": "test-specialist",
+      "source": "./test-specialist",
       "version": "1.0.0",
       "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4"
     },

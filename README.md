@@ -38,12 +38,12 @@ Hierarchical task management system with project memory for planning, executing,
 /plugin install taskmanager@mwguerra-marketplace
 ```
 
-### test-automation
+### test-specialist
 
 Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4.
 
 ```bash
-/plugin install test-automation@mwguerra-marketplace
+/plugin install test-specialist@mwguerra-marketplace
 ```
 
 ### laravel-package-scaffolding
@@ -60,6 +60,14 @@ Clean code for commits by removing debug statements, fix-related comments, and d
 
 ```bash
 /plugin install code-cleanup@mwguerra-marketplace
+```
+
+### filament-specialist
+
+Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns.
+
+```bash
+/plugin install filament-specialist@mwguerra-marketplace
 ```
 
 ## Requirements
