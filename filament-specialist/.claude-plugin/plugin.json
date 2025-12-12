@@ -1,0 +1,20 @@
+{
+  "name": "filament-specialist",
+  "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "filamentphp",
+    "filament",
+    "laravel",
+    "admin-panel",
+    "resources",
+    "forms",
+    "tables",
+    "crud",
+    "php",
+    "livewire"
+  ]
+}

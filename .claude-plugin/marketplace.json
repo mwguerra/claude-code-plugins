@@ -45,6 +45,12 @@
       "source": "./code-cleanup",
       "version": "1.0.0",
       "description": "Clean code for commits by removing debug statements, fix-related comments, and development artifacts"
+    },
+    {
+      "name": "filament-specialist",
+      "source": "./filament-specialist",
+      "version": "1.0.0",
+      "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns"
     }
   ]
 }
