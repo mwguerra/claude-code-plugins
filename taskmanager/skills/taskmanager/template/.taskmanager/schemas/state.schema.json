@@ -121,8 +121,8 @@
           },
           "taskId": {
             "type": "string",
-            "pattern": "^[0-9]+(\\.[0-9]+)*$",
-            "description": "The task ID this memory is scoped to"
+            "pattern": "^([0-9]+(\\.[0-9]+)*|\\*)$",
+            "description": "The task ID this memory is scoped to. Use '*' for batch-level memories that apply to all tasks."
           },
           "source": {
             "type": "string",

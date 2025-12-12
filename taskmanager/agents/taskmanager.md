@@ -203,16 +203,40 @@ Capture long-lived project knowledge that should survive across sessions, tasks,
 - IDs are stable (`M-0001`, `M-0002`, …).
 - `status = "deprecated"` or `"superseded"` memories MUST NOT be deleted; they stay for history.
 - `importance >= 4` memories SHOULD be considered whenever planning or executing high-impact tasks.
+- `autoUpdatable` MUST be `false` for user-created memories (`source.type = "user"`).
+- `conflictResolutions[]` MUST record every conflict resolution with timestamp and reason.
+
+**Memory Types**
+
+There are two scopes of memory:
+
+1. **Global Memory** (persisted in `memories.json`):
+   - Added via `--memory` / `-gm` command argument or `/memory add` command.
+   - Persists across all tasks and sessions.
+   - User-created memories require user approval for any changes.
+
+2. **Task-Scoped Memory** (stored in `state.json.taskMemory[]`):
+   - Added via `--task-memory` / `-tm` command argument.
+   - Temporary, lives only for duration of task or batch.
+   - Reviewed for promotion to global at task completion.
+   - `taskId = "*"` indicates batch-level memory (applies to all tasks in a run).
 
 **Lifecycle**
 
-- Creation: when a user, agent, or command makes a decision that should apply to future work.
-- Update: when a memory is refined, corrected, or superseded.
-- Usage: whenever planning or executing tasks, relevant memories SHOULD be loaded into context and `useCount` / `lastUsedAt` updated.
+- **Creation**: When a user, agent, or command makes a decision that should apply to future work.
+- **Update**: When a memory is refined, corrected, or superseded.
+- **Conflict Detection**: Runs automatically at task start and end, checking for:
+  - File/pattern obsolescence (referenced files no longer exist)
+  - Implementation divergence (code contradicts memory)
+  - Test failures in memory-scoped areas
+- **Conflict Resolution**: Depends on ownership:
+  - User-created (`source.type = "user"`): ALWAYS requires user approval.
+  - System-created: Can auto-update for refinements, requires approval for reversals.
+- **Usage Tracking**: When applied to a task, `useCount++` and `lastUsedAt` updated.
 
 ---
 
-## 3. State Contract (`state.json`)
+## 4. State Contract (`state.json`)
 
 `state.json` must conform to:
 
@@ -252,8 +276,34 @@ Other optional fields:
 * `loop`
 * `contextSnapshot`
 * `lastDecision`
+* `taskMemory` — array of task-scoped memories (see 4.2)
+* `appliedMemories` — array of global memory IDs currently being applied
 
-### 3.2 Minimal valid example
+### 4.2 Task Memory fields
+
+`taskMemory` stores temporary, task-scoped memories:
+
+```jsonc
+{
+  "taskMemory": [
+    {
+      "content": "Focus on error handling in this task",
+      "addedAt": "2025-12-11T10:00:00Z",
+      "taskId": "1.2.3",       // Or "*" for batch-level
+      "source": "user"         // Or "system"
+    }
+  ],
+  "appliedMemories": ["M-0001", "M-0003"]  // Global memories currently in use
+}
+```
+
+**Invariants**:
+- `taskId` MUST be a valid task ID pattern OR `"*"` for batch-level memories.
+- `taskMemory[]` is cleared for each task at task completion (after promotion review).
+- `"*"` task memories are cleared at batch completion.
+- `appliedMemories[]` is cleared after each task's post-execution memory review.
+
+### 4.3 Minimal valid example
 
 ```jsonc
 {
@@ -283,7 +333,7 @@ Other optional fields:
 
 ---
 
-## 4. Logs Contract
+## 5. Logs Contract
 
 Logs live under:
 
@@ -310,7 +360,7 @@ Logs live under:
 
 ---
 
-## 5. Interop Rules (Very Important)
+## 6. Interop Rules (Very Important)
 
 All planning, execution, dashboard, next-task, and other features must:
 
@@ -318,12 +368,22 @@ All planning, execution, dashboard, next-task, and other features must:
 
    * `tasks.json`
    * `state.json`
+   * `memories.json`
    * Logging rules
 2. Conform strictly to the schemas in `.taskmanager/schemas/`
 3. Delegate all behavior to:
 
-   * `.claude/skills/mwguerra/taskmanager/SKILL.md`
-   * `.claude/commands/mwguerra/taskmanager/*.md`
+   * `.claude/skills/mwguerra/taskmanager/SKILL.md` — task management behavior
+   * `.claude/skills/mwguerra/taskmanager-memory/SKILL.md` — memory management behavior
+   * `.claude/commands/mwguerra/taskmanager/*.md` — command implementations
+
+4. For memory operations:
+
+   * Use the `taskmanager-memory` skill for all memory management
+   * Run conflict detection at task start AND end
+   * Always ask user for approval when modifying user-created memories
+   * Track `appliedMemories` during execution and clear after task completion
+   * Review task-scoped memories for promotion before marking task as done
 
 This file is intentionally **behavior-light**.
 Its purpose is to define *what the data must look like*, not how tasks are planned or executed.
