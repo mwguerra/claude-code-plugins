@@ -341,22 +341,97 @@ Logs live under:
 .taskmanager/logs/
 ```
 
-### 4.1 Files
+### 5.1 Log Files
 
-* `errors.log`
-* `debug.log`
-* `decisions.log`
+| File | Purpose | When to Write |
+|------|---------|---------------|
+| `errors.log` | Runtime errors, validation failures, conflicts | ALWAYS when errors occur |
+| `decisions.log` | High-level planning decisions, task status changes, memory operations | ALWAYS during execution |
+| `debug.log` | Verbose tracing, intermediate states, detailed conflict analysis | ONLY when `--debug` flag is enabled |
 
-### 4.2 Rules
+### 5.2 Logging Rules
 
-* Logs are **append-only**.
-* Agents SHOULD use timestamped lines.
-* Recommended format:
+* Logs are **append-only**. Never truncate or overwrite.
+* All log entries MUST include an ISO 8601 timestamp.
+* All log entries SHOULD include a session ID for correlation (from `state.json.logging.sessionId`).
+
+### 5.3 Log Entry Format
 
 ```text
-2025-11-11T01:00:00Z [DECISION] created tasks 1, 1.1, 1.2
-2025-11-11T01:02:00Z [ERROR] failed to parse tasks.json, auto-fixed trailing comma
+<timestamp> [<level>] [<session-id>] <message>
 ```
+
+**Levels:**
+- `ERROR` — Failures, exceptions, validation errors
+- `DECISION` — Planning choices, task transitions, memory changes
+- `DEBUG` — Verbose tracing (only when debug enabled)
+
+**Examples:**
+
+```text
+2025-12-11T10:00:00Z [DECISION] [sess-abc123] Started task 1.2.3: "Implement user auth"
+2025-12-11T10:00:01Z [DECISION] [sess-abc123] Applied memories: M-0001, M-0003
+2025-12-11T10:00:02Z [ERROR] [sess-abc123] Conflict detected: M-0001 references deleted file app/OldAuth.php
+2025-12-11T10:00:03Z [DEBUG] [sess-abc123] Loading task tree, found 15 tasks, 8 pending
+2025-12-11T10:05:00Z [DECISION] [sess-abc123] Completed task 1.2.3 with status "done"
+```
+
+### 5.4 What to Log
+
+**errors.log** — ALWAYS write:
+- JSON parse/validation failures
+- Schema validation errors
+- File I/O errors
+- Memory conflict detection results
+- Dependency resolution failures
+- Any exception or unexpected state
+
+**decisions.log** — ALWAYS write:
+- Task creation (from planning)
+- Task status transitions (planned → in-progress → done)
+- Memory creation, update, deprecation, supersession
+- Memory application (which memories applied to which task)
+- Conflict resolution outcomes
+- Batch start/end summaries
+
+**debug.log** — ONLY write when `state.json.logging.debugEnabled == true`:
+- Full task tree state before/after operations
+- Memory matching algorithm details (why a memory was/wasn't selected)
+- Conflict detection intermediate steps
+- File existence checks
+- Schema validation details
+- Performance timing information
+
+### 5.5 Debug Mode
+
+Debug logging is **disabled by default** to avoid excessive log growth.
+
+To enable debug logging for a command:
+- Pass `--debug` or `-d` flag to any command
+- This sets `state.json.logging.debugEnabled = true` for the session
+- Debug mode persists until the command completes
+
+Commands MUST:
+1. Check for `--debug` / `-d` flag at startup
+2. Set `state.json.logging.debugEnabled = true` if present
+3. Generate a unique `sessionId` for log correlation
+4. Reset `debugEnabled = false` at command completion
+
+### 5.6 Logging Configuration in state.json
+
+```jsonc
+{
+  "logging": {
+    "debugEnabled": false,      // Set to true by --debug flag
+    "sessionId": "sess-abc123"  // Unique ID for log correlation
+  }
+}
+```
+
+**Invariants:**
+- `debugEnabled` defaults to `false`
+- `sessionId` is generated at command start (e.g., `sess-<random>`)
+- Both are reset at command completion
 
 ---
 

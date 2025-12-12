@@ -383,3 +383,92 @@ Memories are **never deleted**. They are either:
 - Marked as `"superseded"` with a pointer to the new memory
 
 This preserves decision history and audit trail.
+
+---
+
+## 10. Logging Behavior
+
+This skill MUST write to the log files under `.taskmanager/logs/` for all memory operations.
+
+### 10.1 What to Log
+
+**errors.log** — ALWAYS append when:
+- Memory file parse failures
+- Schema validation errors
+- Conflict detection finds issues
+- Invalid memory IDs referenced
+
+Example:
+```text
+2025-12-11T10:00:00Z [ERROR] [sess-abc123] Failed to parse memories.json: invalid JSON
+2025-12-11T10:00:01Z [ERROR] [sess-abc123] Conflict: M-0001 references deleted file app/OldAuth.php
+2025-12-11T10:00:02Z [ERROR] [sess-abc123] Memory M-9999 not found when attempting update
+```
+
+**decisions.log** — ALWAYS append when:
+- Memory created
+- Memory updated
+- Memory deprecated or superseded
+- Memory applied to task
+- Conflict resolution completed
+- Task memory promoted to global
+
+Example:
+```text
+2025-12-11T10:00:00Z [DECISION] [sess-abc123] Created memory M-0005: "Always validate API inputs"
+2025-12-11T10:00:01Z [DECISION] [sess-abc123] Applied memories to task 1.2: M-0001, M-0003, M-0005
+2025-12-11T10:00:02Z [DECISION] [sess-abc123] Conflict resolved for M-0001: kept (user decision)
+2025-12-11T10:05:00Z [DECISION] [sess-abc123] Deprecated M-0002: "No longer using old auth pattern"
+2025-12-11T10:05:01Z [DECISION] [sess-abc123] Promoted task memory to global: M-0006
+```
+
+**debug.log** — ONLY append when `state.json.logging.debugEnabled == true`:
+- Memory matching algorithm steps
+- Conflict detection intermediate results
+- Full memory state dumps
+- File existence checks during conflict detection
+
+Example:
+```text
+2025-12-11T10:00:00Z [DEBUG] [sess-abc123] Querying memories for task 1.2.3 (domain: auth)
+2025-12-11T10:00:01Z [DEBUG] [sess-abc123] Checking 8 active memories for relevance
+2025-12-11T10:00:02Z [DEBUG] [sess-abc123] M-0001: matched by scope.domains (contains "auth")
+2025-12-11T10:00:03Z [DEBUG] [sess-abc123] M-0002: skipped (importance 2 < threshold 3)
+2025-12-11T10:00:04Z [DEBUG] [sess-abc123] Conflict detection: checking file existence for M-0003.scope.files
+2025-12-11T10:00:05Z [DEBUG] [sess-abc123] File check: app/Services/Auth.php EXISTS
+```
+
+### 10.2 Logging During Conflict Detection
+
+When running conflict detection, log:
+
+1. **Start of detection** (DEBUG):
+   ```text
+   [DEBUG] Starting conflict detection for N active memories
+   ```
+
+2. **Per-memory checks** (DEBUG):
+   ```text
+   [DEBUG] Checking M-XXXX for conflicts...
+   [DEBUG] - File check: <path> EXISTS/MISSING
+   [DEBUG] - Implementation check: <result>
+   ```
+
+3. **Conflicts found** (ERROR):
+   ```text
+   [ERROR] Conflict: M-XXXX - <conflict description>
+   ```
+
+4. **Resolution outcome** (DECISION):
+   ```text
+   [DECISION] Conflict resolved for M-XXXX: <resolution> (<reason>)
+   ```
+
+### 10.3 Debug Mode Integration
+
+This skill reads `state.json.logging.debugEnabled` to determine whether to write debug logs.
+
+- If `debugEnabled == true`: Write verbose DEBUG entries to debug.log
+- If `debugEnabled == false`: Skip DEBUG entries, only write ERROR and DECISION
+
+The calling command is responsible for setting `debugEnabled` based on `--debug` flag.

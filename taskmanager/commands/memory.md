@@ -1,7 +1,7 @@
 ---
 allowed-tools: Skill(taskmanager-memory)
 description: Manage project memories - add, list, show, update, deprecate, or check conflicts
-argument-hint: "<action> [args]"
+argument-hint: "<action> [args] [--debug]"
 ---
 
 # Memory Command
@@ -9,6 +9,18 @@ argument-hint: "<action> [args]"
 You are implementing `/mwguerra:taskmanager:memory`.
 
 This command provides direct access to the project memory system, allowing users to manage global memories outside of task execution.
+
+## Global Options
+
+- `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
+
+When `--debug` is provided:
+1. Generate a unique session ID (e.g., `sess-<8-random-chars>`).
+2. Update `.taskmanager/state.json`:
+   - Set `logging.sessionId` to the generated ID.
+   - Set `logging.debugEnabled = true`.
+3. Write verbose debug information during the operation.
+4. Reset `logging.debugEnabled = false` and `logging.sessionId = null` at completion.
 
 ## Actions
 
@@ -200,3 +212,23 @@ Usage: `/memory search "testing"`
 - If memory ID not found: "Memory '<id>' not found. Use `/memory list` to see available memories."
 - If action not recognized: "Unknown action '<action>'. Available actions: add, list, show, update, deprecate, supersede, conflicts, search"
 - If memories.json doesn't exist: "No memories file found. Initialize with `/init` first."
+
+## Logging Requirements
+
+This command MUST log to `.taskmanager/logs/`:
+
+**To errors.log** (ALWAYS):
+- Memory not found errors
+- Parse/validation errors
+- Conflict detection errors
+
+**To decisions.log** (ALWAYS):
+- Memory creation (add)
+- Memory updates
+- Memory deprecation/supersession
+- Conflict resolutions
+
+**To debug.log** (ONLY when `--debug` enabled):
+- Memory file loading details
+- Search algorithm steps
+- Conflict detection intermediate results

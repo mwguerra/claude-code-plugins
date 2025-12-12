@@ -1,7 +1,7 @@
 ---
 allowed-tools: Skill(taskmanager), Skill(taskmanager-memory)
 description: Execute a single task or subtask by ID, handling dependencies interactively if needed.
-argument-hint: "<task-id> [--memory \"global memory\"] [--task-memory \"temp memory\"]"
+argument-hint: "<task-id> [--memory \"global memory\"] [--task-memory \"temp memory\"] [--debug]"
 ---
 
 # Execute Task Command
@@ -13,14 +13,29 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
 - `$1` (required): Task ID to execute (e.g., `1.2.3`)
 - `--memory "description"` or `-gm "description"`: Add a global memory (persists to memories.json)
 - `--task-memory "description"` or `-tm "description"`: Add a task-scoped memory (temporary, reviewed at task end)
+- `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
 
 ## Behavior
 
-1. **Parse arguments**:
-   - `$1` must be provided (e.g., `1.2.3`).
-   - If not provided, ask the user to specify an ID or suggest running `/mwguerra:taskmanager:next-task`.
-   - Extract `--memory` / `-gm` value if provided.
-   - Extract `--task-memory` / `-tm` value if provided.
+### 0. Initialize logging session
+
+1. Generate a unique session ID (e.g., `sess-<8-random-chars>`).
+2. Check for `--debug` / `-d` flag.
+3. Update `.taskmanager/state.json`:
+   - Set `logging.sessionId` to the generated ID.
+   - Set `logging.debugEnabled = true` if `--debug` flag present, else `false`.
+4. Log to `decisions.log`:
+   ```
+   <timestamp> [DECISION] [<session-id>] Started execute-task command for task $1
+   ```
+
+### 1. Parse arguments
+
+- `$1` must be provided (e.g., `1.2.3`).
+- If not provided, ask the user to specify an ID or suggest running `/mwguerra:taskmanager:next-task`.
+- Extract `--memory` / `-gm` value if provided.
+- Extract `--task-memory` / `-tm` value if provided.
+- Extract `--debug` / `-d` flag if provided.
 
 2. **Process memory arguments**:
    - If `--memory` is provided:
@@ -100,10 +115,43 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
      - `currentStep = "idle"` (or `"done"` if requested by the user)
      - `lastUpdate` / `lastDecision`.
 
-10. **Summarize for the user**:
-    - Final status of the task.
-    - Memories that were applied and any conflicts resolved.
-    - Any follow-up tasks or dependencies suggested.
+### 10. Summarize for the user
+
+- Final status of the task.
+- Memories that were applied and any conflicts resolved.
+- Any follow-up tasks or dependencies suggested.
+
+### 11. Cleanup logging session
+
+1. Log to `decisions.log`:
+   ```
+   <timestamp> [DECISION] [<session-id>] Completed execute-task command for task $1 with status "<final-status>"
+   ```
+2. Reset `.taskmanager/state.json`:
+   - Set `logging.debugEnabled = false`
+   - Set `logging.sessionId = null`
+
+---
+
+## Logging Requirements
+
+Throughout execution, this command MUST log:
+
+**To errors.log** (ALWAYS):
+- Any errors encountered (file not found, parse errors, validation failures)
+- Conflict detection results when conflicts are found
+
+**To decisions.log** (ALWAYS):
+- Command start and completion
+- Task status transitions
+- Memory application and conflict resolutions
+- Any user decisions made
+
+**To debug.log** (ONLY when `--debug` enabled):
+- Detailed argument parsing
+- Task tree loading details
+- Memory matching algorithm steps
+- Conflict detection intermediate steps
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 allowed-tools: Skill(taskmanager), Skill(taskmanager-memory)
 description: Automatically start or resume executing tasks sequentially from .taskmanager/tasks.json.
-argument-hint: "[max-tasks] [--memory \"global memory\"] [--task-memory \"temp memory\"]"
+argument-hint: "[max-tasks] [--memory \"global memory\"] [--task-memory \"temp memory\"] [--debug]"
 ---
 
 # Run Tasks Command
@@ -13,8 +13,21 @@ You are implementing `/mwguerra:taskmanager:run-tasks`.
 - `$1` (optional): Maximum number of tasks to execute in this run (default: 3-5)
 - `--memory "description"` or `-gm "description"`: Add a global memory (persists to memories.json, applies to all tasks)
 - `--task-memory "description"` or `-tm "description"`: Add a batch task memory (applies to all tasks in this run, reviewed at batch end)
+- `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
 
 ## Behavior
+
+### 0. Initialize logging session
+
+1. Generate a unique session ID (e.g., `sess-<8-random-chars>`).
+2. Check for `--debug` / `-d` flag.
+3. Update `.taskmanager/state.json`:
+   - Set `logging.sessionId` to the generated ID.
+   - Set `logging.debugEnabled = true` if `--debug` flag present, else `false`.
+4. Log to `decisions.log`:
+   ```
+   <timestamp> [DECISION] [<session-id>] Started run-tasks batch (max: $1 tasks)
+   ```
 
 ### 1. Parse arguments and initialize
 
@@ -22,6 +35,7 @@ You are implementing `/mwguerra:taskmanager:run-tasks`.
    - Extract max tasks from `$1` (default: 3-5 if not provided).
    - Extract `--memory` / `-gm` value if provided.
    - Extract `--task-memory` / `-tm` value if provided.
+   - Extract `--debug` / `-d` flag if provided.
 
 2. **Process memory arguments at batch start**:
    - If `--memory` is provided:
@@ -132,6 +146,39 @@ After finishing or reaching the limit:
    - Any tasks that were skipped due to dependencies.
    - Any conflicts that were resolved or deferred.
    - The new high-level state (e.g. number of tasks done vs remaining).
+
+4. **Cleanup logging session**:
+   - Log to `decisions.log`:
+     ```
+     <timestamp> [DECISION] [<session-id>] Completed run-tasks batch: N tasks executed, M remaining
+     ```
+   - Reset `.taskmanager/state.json`:
+     - Set `logging.debugEnabled = false`
+     - Set `logging.sessionId = null`
+
+---
+
+## Logging Requirements
+
+Throughout batch execution, this command MUST log:
+
+**To errors.log** (ALWAYS):
+- Any errors encountered during task execution
+- Conflict detection results when conflicts are found
+- Dependency resolution failures
+
+**To decisions.log** (ALWAYS):
+- Batch start and completion
+- Each task start and completion
+- Memory application per task
+- Conflict resolutions
+- Memory promotions
+
+**To debug.log** (ONLY when `--debug` enabled):
+- Task selection algorithm details
+- Memory matching per task
+- Conflict detection steps
+- Full batch state at start/end
 
 ---
 

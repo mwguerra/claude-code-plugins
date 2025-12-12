@@ -39,9 +39,9 @@ Always work relative to the project root.
 - `.taskmanager/state.json`
 - `.taskmanager/memories.json`
 - `.taskmanager/docs/prd.md`
-- `.taskmanager/logs/errors.log`
-- `.taskmanager/logs/debug.log`
-- `.taskmanager/logs/decisions.log`
+- `.taskmanager/logs/errors.log` — Append errors here (ALWAYS)
+- `.taskmanager/logs/debug.log` — Append debug info here (ONLY when debug enabled)
+- `.taskmanager/logs/decisions.log` — Append decisions here (ALWAYS)
 
 You MAY read the JSON Schemas:
 
@@ -762,6 +762,102 @@ During `/run-tasks` (autonomous execution):
   - Review `"*"` task memories for promotion.
   - Present summary of any deferred conflicts.
   - Clear all task memories.
+
+---
+
+## 10. Logging Behavior
+
+This skill MUST write to the log files under `.taskmanager/logs/` during all operations.
+
+### 10.1 Log Entry Format
+
+All log entries follow the format:
+```text
+<ISO-timestamp> [<LEVEL>] [<session-id>] <message>
+```
+
+Where:
+- `<ISO-timestamp>` is the current time in ISO 8601 format (UTC)
+- `<LEVEL>` is one of: `ERROR`, `DECISION`, `DEBUG`
+- `<session-id>` is from `state.json.logging.sessionId` (or `no-session` if not set)
+
+### 10.2 When to Log
+
+**errors.log** — ALWAYS append when:
+- JSON parsing fails
+- Schema validation fails
+- File read/write errors occur
+- Memory conflicts are detected
+- Dependency cycles or resolution failures occur
+- Any unexpected error state
+
+Example:
+```text
+2025-12-11T10:00:00Z [ERROR] [sess-abc123] Failed to parse tasks.json: Unexpected token at line 45
+2025-12-11T10:00:01Z [ERROR] [sess-abc123] Memory conflict: M-0001 references non-existent file app/OldService.php
+```
+
+**decisions.log** — ALWAYS append when:
+- Tasks are created during planning
+- Task status changes (planned → in-progress → done)
+- Memories are created, updated, deprecated, or superseded
+- Memories are applied to a task
+- Conflict resolutions are made
+- Batch operations start or complete
+
+Example:
+```text
+2025-12-11T10:00:00Z [DECISION] [sess-abc123] Created 5 top-level tasks from PRD
+2025-12-11T10:01:00Z [DECISION] [sess-abc123] Task 1.2.3 status: planned → in-progress
+2025-12-11T10:01:01Z [DECISION] [sess-abc123] Applied memories to task 1.2.3: M-0001, M-0003
+2025-12-11T10:05:00Z [DECISION] [sess-abc123] Task 1.2.3 status: in-progress → done
+2025-12-11T10:05:01Z [DECISION] [sess-abc123] Task memory promoted to global: M-0004
+```
+
+**debug.log** — ONLY append when `state.json.logging.debugEnabled == true`:
+- Full task tree dumps
+- Memory matching algorithm details
+- Conflict detection steps
+- File existence checks
+- Intermediate computation states
+
+Example:
+```text
+2025-12-11T10:00:00Z [DEBUG] [sess-abc123] Loaded task tree: 15 total tasks, 8 pending, 5 done
+2025-12-11T10:00:01Z [DEBUG] [sess-abc123] Memory matching for task 1.2.3: checking 12 active memories
+2025-12-11T10:00:02Z [DEBUG] [sess-abc123] M-0001 matched: scope.domains includes "auth"
+2025-12-11T10:00:03Z [DEBUG] [sess-abc123] M-0002 skipped: scope.files don't overlap
+```
+
+### 10.3 Debug Mode
+
+Debug logging is controlled by `state.json.logging.debugEnabled`.
+
+When a command includes `--debug` or `-d`:
+1. Set `state.json.logging.debugEnabled = true`
+2. Generate a unique `sessionId` (e.g., `sess-<8-char-random>`)
+3. Write verbose debug information to `debug.log`
+4. At command completion, reset `debugEnabled = false`
+
+### 10.4 Logging Helper Pattern
+
+When implementing logging, use this pattern:
+
+```
+1. Read state.json to get logging config
+2. Determine if debug is enabled
+3. For errors: ALWAYS append to errors.log
+4. For decisions: ALWAYS append to decisions.log
+5. For debug info: ONLY append to debug.log if debugEnabled == true
+6. Use Edit tool to append (not Write, to preserve existing content)
+```
+
+### 10.5 Session ID Generation
+
+When starting a command session:
+1. Generate ID: `sess-` + 8 random alphanumeric characters
+2. Store in `state.json.logging.sessionId`
+3. Include in all log entries for correlation
 
 ---
 
