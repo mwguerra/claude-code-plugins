@@ -131,13 +131,14 @@ Do not invent new top-level keys; follow the schema.
 
 ---
 
-## Planning from file OR text input
+## Planning from file, folder, OR text input
 
 When the user invokes `/mwguerra:taskmanager:plan`, or directly asks you to plan:
 
 ### Step 1 — Determine input type
 Input may be:
 
+- A **folder path** (e.g., `docs/specs/`, `.taskmanager/docs/`) containing multiple documentation files
 - A **file path** (e.g., `docs/foo.md`, `.taskmanager/docs/prd.md`)
 - A **free-text prompt** describing the feature (treated as PRD content)
 
@@ -147,10 +148,52 @@ Behavior:
   - Use `Read` to load `.taskmanager/memories.json` if it exists.
   - Select relevant **active** memories (especially `importance >= 3`) based on domains, tags, or affected files.
   - Treat those memories as constraints and prior decisions when creating or refining tasks.
-- If input is a path:
+- If input is a **folder**:
+  - Use `Glob` to discover all markdown files (`**/*.md`) in the folder recursively.
+  - Use `Read` to load each file's content.
+  - Aggregate all contents into a single PRD context (see Step 1.1).
+- If input is a **file path**:
   - Use `Read` to load it.
-- If input is text:
+- If input is **text**:
   - Interpret it **as if it were the content of a PRD.md file**
+
+### Step 1.1 — Aggregating folder content
+
+When processing a folder of documentation files:
+
+1. **Discovery**: Find all `.md` files in the folder and subdirectories using `Glob` with pattern `**/*.md`.
+
+2. **Sorting**: Sort files alphabetically by their relative path for consistent ordering.
+
+3. **Reading**: Load each file's content using `Read`, skipping empty files.
+
+4. **Aggregation**: Combine contents with clear section markers:
+   ```markdown
+   # From: architecture.md
+
+   [Full content of architecture.md]
+
+   ---
+
+   # From: features/user-auth.md
+
+   [Full content of features/user-auth.md]
+
+   ---
+
+   # From: database/schema.md
+
+   [Full content of database/schema.md]
+   ```
+
+5. **Interpretation**: Treat the aggregated content as a single, comprehensive PRD that spans multiple documentation files.
+
+**Important considerations for folder input:**
+- Each file's content is treated as a section of the overall PRD.
+- Cross-references between files should be understood in context (e.g., `architecture.md` might reference entities defined in `database.md`).
+- Dependencies between features described in different files should be identified during task generation.
+- The folder structure often indicates logical groupings (e.g., `features/`, `api/`, `database/`) that can inform task organization.
+- If the folder contains README.md or index.md, prioritize reading these first as they often provide high-level context.
 
 ### Step 2 — Parse into hierarchical structure
 
