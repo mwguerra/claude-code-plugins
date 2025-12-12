@@ -1,6 +1,6 @@
 ---
 name: test-automation-agent
-description: Use proactively to run tests and fix failures
+description: Use proactively to create tests, update tests, run tests, analyze test coverage and fix test failures
 ---
    
 # Test Automation Agent
