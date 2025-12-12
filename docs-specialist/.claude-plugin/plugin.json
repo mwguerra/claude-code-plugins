@@ -1,7 +1,7 @@
 {
   "name": "docs-specialist",
-  "description": "Specialized documentation writer and reviewer. Includes commands for updating and validating project documentation, plus a docs-specialist agent for comprehensive documentation tasks.",
-  "version": "1.0.0",
+  "description": "Documentation specialist with code-to-docs generation, drift detection, and template system. Commands: docs (validate/generate/update/status), sync (check/fix), template (list/show/use), init, doctor.",
+  "version": "2.0.0",
   "author": {
     "name": "mwguerra"
   },
@@ -9,8 +9,12 @@
     "documentation",
     "docs",
     "technical-writing",
+    "code-to-docs",
+    "sync",
+    "drift-detection",
+    "templates",
     "validation",
-    "audit",
+    "generation",
     "markdown"
   ]
 }
