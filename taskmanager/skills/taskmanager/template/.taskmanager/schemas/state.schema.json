@@ -102,6 +102,45 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "additionalProperties": false
+    },
+    "taskMemory": {
+      "type": "array",
+      "description": "Temporary task-scoped memories, cleared after task completion",
+      "items": {
+        "type": "object",
+        "required": ["content", "addedAt", "taskId", "source"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "The memory content/instruction"
+          },
+          "addedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this task memory was added"
+          },
+          "taskId": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)*$",
+            "description": "The task ID this memory is scoped to"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["user", "system"],
+            "description": "Whether added by user via --task-memory or by system"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "appliedMemories": {
+      "type": "array",
+      "description": "IDs of global memories currently being applied to this task execution",
+      "items": {
+        "type": "string",
+        "pattern": "^M-[0-9]{4,}$"
+      },
+      "uniqueItems": true
     }
   },
   "additionalProperties": false

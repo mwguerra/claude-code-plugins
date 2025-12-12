@@ -20,13 +20,13 @@
         "domains": ["testing", "architecture"]
       },
       "source": {
-        "type": "user",               // 'user' | 'agent' | 'command' | 'hook' | 'other'
+        "type": "user",
         "name": "mwguerra",
-        "via": "cli"                  // free text; e.g. 'taskmanager skill', 'command tests/run-test-suite'
+        "via": "cli"
       },
-      "importance": 5,                // 1–5 (how critical)
-      "confidence": 0.95,             // 0–1 (how sure we are this is correct)
-      "status": "active",             // 'active' | 'deprecated' | 'superseded' | 'draft'
+      "importance": 5,
+      "confidence": 0.95,
+      "status": "active",
       "supersededBy": null,
       "links": {
         "docs": [".claude/docs/testing-guidelines.md"],
@@ -35,7 +35,10 @@
       "createdAt": "2025-11-22T10:00:00Z",
       "updatedAt": "2025-11-22T10:00:00Z",
       "lastUsedAt": null,
-      "useCount": 0
+      "useCount": 0,
+      "autoUpdatable": false,
+      "lastConflictAt": null,
+      "conflictResolutions": []
     }
   ]
 }

@@ -169,6 +169,41 @@
         "useCount": {
           "type": "integer",
           "minimum": 0
+        },
+        "autoUpdatable": {
+          "type": "boolean",
+          "description": "If true, system can update without user approval. Derived from source.type != 'user'"
+        },
+        "lastConflictAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Timestamp of the last detected conflict for this memory"
+        },
+        "conflictResolutions": {
+          "type": "array",
+          "description": "History of conflict resolutions for this memory",
+          "items": {
+            "type": "object",
+            "required": ["timestamp", "resolution"],
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "resolution": {
+                "type": "string",
+                "enum": ["kept", "modified", "deprecated", "superseded"]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "taskId": {
+                "type": "string",
+                "pattern": "^[0-9]+(\\.[0-9]+)*$"
+              }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false

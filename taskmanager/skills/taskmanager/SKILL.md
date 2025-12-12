@@ -647,6 +647,124 @@ You MUST always perform this propagation after:
 
 ---
 
+## 9. Memory Integration During Execution
+
+This section describes how the Task Manager integrates with the `taskmanager-memory` skill during task execution.
+
+### 9.1 Pre-Execution Memory Loading
+
+Before starting **ANY** task (whether via `/execute-task`, `/run-tasks`, or any other execution flow):
+
+1. **Load global memories**:
+   - Read `.taskmanager/memories.json`.
+   - Filter for relevant **active** memories based on:
+     - `scope.tasks` contains current task ID or any ancestor task ID.
+     - `scope.domains` overlaps with the task's `domain` or `type`.
+     - `scope.files` overlaps with files likely to be affected.
+     - `importance >= 3` (always include high-importance memories).
+   - Sort by `importance` (descending), then `useCount` (descending).
+
+2. **Load task-scoped memories**:
+   - Read `state.json.taskMemory[]`.
+   - Filter for entries where `taskId` matches current task or is `"*"`.
+
+3. **Run conflict detection**:
+   - For each loaded memory, run the conflict detection algorithm (see `taskmanager-memory` skill, section 7).
+   - If conflicts are detected, follow the conflict resolution workflow.
+
+4. **Display memory summary**:
+   - Show a brief summary of relevant memories:
+     ```
+     📋 Applying memories:
+     - [M-0001] Always use Pest for tests (importance: 5)
+     - [M-0003] API endpoints must validate input (importance: 4)
+     - [Task] Focus on error handling (from --task-memory)
+     ```
+
+5. **Track applied memories**:
+   - Store the IDs of applied global memories in `state.json.appliedMemories[]`.
+   - Increment `useCount` and update `lastUsedAt` for each applied memory.
+
+### 9.2 Memory Application During Execution
+
+While executing the task:
+
+- Treat loaded memories as **hard constraints** for implementation decisions.
+- If the task requires violating a memory (e.g., refactoring away from a pattern), this is a conflict and must be resolved.
+- When making significant decisions during execution, consider whether they should become new memories.
+
+### 9.3 Post-Execution Memory Review
+
+Before marking a task as **"done"**:
+
+1. **Run conflict detection again**:
+   - Check if any implementation changes conflict with loaded memories.
+   - Resolve conflicts before proceeding.
+
+2. **Review task-scoped memories** (if any exist):
+   - Ask the user: "Should any task memories be promoted to global memory?"
+   - For each task memory, options:
+     - "Promote to global memory" → Create new entry in `memories.json`.
+     - "Discard" → Remove from `taskMemory[]`.
+   - Clear task memories for this task from `state.json.taskMemory[]`.
+
+3. **Consider new memories**:
+   - If significant decisions were made during execution (architectural choices, conventions, constraints discovered), prompt:
+     > "Would you like to create a memory for any decisions made during this task?"
+
+4. **Update memory tracking**:
+   - Finalize `useCount` and `lastUsedAt` for all applied memories.
+   - Clear `state.json.appliedMemories[]`.
+
+### 9.4 Memory Arguments for Commands
+
+Commands that execute tasks (`execute-task`, `run-tasks`) support memory arguments:
+
+**`--memory "description"`** (or `--global-memory`, `-gm`)
+- Creates a **global memory** in `memories.json` immediately.
+- Memory applies to the current task AND all future tasks.
+- Sets `source.type = "user"`, `source.via = "<command-name>"`.
+
+**`--task-memory "description"`** (or `-tm`)
+- Creates a **task-scoped memory** in `state.json.taskMemory[]`.
+- Memory applies only to the current task (or current batch for `/run-tasks`).
+- Reviewed for promotion at task completion.
+
+Argument parsing:
+
+```
+/execute-task 1.2.3 --memory "Always validate inputs"
+/execute-task 1.2.3 -gm "Always validate inputs"
+
+/execute-task 1.2.3 --task-memory "Focus on error paths"
+/execute-task 1.2.3 -tm "Focus on error paths"
+
+/run-tasks 5 --memory "Use Pest for all tests" --task-memory "Sprint 3 context"
+```
+
+### 9.5 Memory Integration in Autonomous Mode
+
+During `/run-tasks` (autonomous execution):
+
+- **At batch start**:
+  - Parse `--memory` and create global memory if provided.
+  - Parse `--task-memory` and add to `taskMemory[]` with `taskId = "*"` (applies to all tasks in batch).
+
+- **Per-task iteration**:
+  - Load relevant global memories.
+  - Load task memories where `taskId` matches or is `"*"`.
+  - Run conflict detection.
+  - Execute task.
+  - Run post-execution conflict detection.
+  - Review task-specific memories (but defer `"*"` memories until batch end).
+
+- **At batch end**:
+  - Review `"*"` task memories for promotion.
+  - Present summary of any deferred conflicts.
+  - Clear all task memories.
+
+---
+
 ## Examples
 
 ### Planning from text input
