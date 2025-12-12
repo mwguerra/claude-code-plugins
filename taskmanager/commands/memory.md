@@ -15,7 +15,7 @@ This command provides direct access to the project memory system, allowing users
 - `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
 
 When `--debug` is provided:
-1. Generate a unique session ID (e.g., `sess-<8-random-chars>`).
+1. Generate a unique session ID using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`).
 2. Update `.taskmanager/state.json`:
    - Set `logging.sessionId` to the generated ID.
    - Set `logging.debugEnabled = true`.

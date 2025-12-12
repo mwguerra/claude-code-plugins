@@ -19,7 +19,7 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
 
 ### 0. Initialize logging session
 
-1. Generate a unique session ID (e.g., `sess-<8-random-chars>`).
+1. Generate a unique session ID using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`).
 2. Check for `--debug` / `-d` flag.
 3. Update `.taskmanager/state.json`:
    - Set `logging.sessionId` to the generated ID.

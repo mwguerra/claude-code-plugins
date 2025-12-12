@@ -423,14 +423,14 @@ Commands MUST:
 {
   "logging": {
     "debugEnabled": false,      // Set to true by --debug flag
-    "sessionId": "sess-abc123"  // Unique ID for log correlation
+    "sessionId": "sess-20251212103045"  // Unique ID for log correlation (timestamp-based)
   }
 }
 ```
 
 **Invariants:**
 - `debugEnabled` defaults to `false`
-- `sessionId` is generated at command start (e.g., `sess-<random>`)
+- `sessionId` is generated at command start using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`)
 - Both are reset at command completion
 
 ---

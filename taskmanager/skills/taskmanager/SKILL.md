@@ -836,8 +836,8 @@ Where:
 
 Example:
 ```text
-2025-12-11T10:00:00Z [ERROR] [sess-abc123] Failed to parse tasks.json: Unexpected token at line 45
-2025-12-11T10:00:01Z [ERROR] [sess-abc123] Memory conflict: M-0001 references non-existent file app/OldService.php
+2025-12-11T10:00:00Z [ERROR] [sess-20251211100000] Failed to parse tasks.json: Unexpected token at line 45
+2025-12-11T10:00:01Z [ERROR] [sess-20251211100000] Memory conflict: M-0001 references non-existent file app/OldService.php
 ```
 
 **decisions.log** — ALWAYS append when:
@@ -850,11 +850,11 @@ Example:
 
 Example:
 ```text
-2025-12-11T10:00:00Z [DECISION] [sess-abc123] Created 5 top-level tasks from PRD
-2025-12-11T10:01:00Z [DECISION] [sess-abc123] Task 1.2.3 status: planned → in-progress
-2025-12-11T10:01:01Z [DECISION] [sess-abc123] Applied memories to task 1.2.3: M-0001, M-0003
-2025-12-11T10:05:00Z [DECISION] [sess-abc123] Task 1.2.3 status: in-progress → done
-2025-12-11T10:05:01Z [DECISION] [sess-abc123] Task memory promoted to global: M-0004
+2025-12-11T10:00:00Z [DECISION] [sess-20251211100000] Created 5 top-level tasks from PRD
+2025-12-11T10:01:00Z [DECISION] [sess-20251211100000] Task 1.2.3 status: planned → in-progress
+2025-12-11T10:01:01Z [DECISION] [sess-20251211100000] Applied memories to task 1.2.3: M-0001, M-0003
+2025-12-11T10:05:00Z [DECISION] [sess-20251211100000] Task 1.2.3 status: in-progress → done
+2025-12-11T10:05:01Z [DECISION] [sess-20251211100000] Task memory promoted to global: M-0004
 ```
 
 **debug.log** — ONLY append when `state.json.logging.debugEnabled == true`:
@@ -866,10 +866,10 @@ Example:
 
 Example:
 ```text
-2025-12-11T10:00:00Z [DEBUG] [sess-abc123] Loaded task tree: 15 total tasks, 8 pending, 5 done
-2025-12-11T10:00:01Z [DEBUG] [sess-abc123] Memory matching for task 1.2.3: checking 12 active memories
-2025-12-11T10:00:02Z [DEBUG] [sess-abc123] M-0001 matched: scope.domains includes "auth"
-2025-12-11T10:00:03Z [DEBUG] [sess-abc123] M-0002 skipped: scope.files don't overlap
+2025-12-11T10:00:00Z [DEBUG] [sess-20251211100000] Loaded task tree: 15 total tasks, 8 pending, 5 done
+2025-12-11T10:00:01Z [DEBUG] [sess-20251211100000] Memory matching for task 1.2.3: checking 12 active memories
+2025-12-11T10:00:02Z [DEBUG] [sess-20251211100000] M-0001 matched: scope.domains includes "auth"
+2025-12-11T10:00:03Z [DEBUG] [sess-20251211100000] M-0002 skipped: scope.files don't overlap
 ```
 
 ### 10.3 Debug Mode
@@ -878,7 +878,7 @@ Debug logging is controlled by `state.json.logging.debugEnabled`.
 
 When a command includes `--debug` or `-d`:
 1. Set `state.json.logging.debugEnabled = true`
-2. Generate a unique `sessionId` (e.g., `sess-<8-char-random>`)
+2. Generate a unique `sessionId` using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`)
 3. Write verbose debug information to `debug.log`
 4. At command completion, reset `debugEnabled = false`
 
@@ -898,7 +898,7 @@ When implementing logging, use this pattern:
 ### 10.5 Session ID Generation
 
 When starting a command session:
-1. Generate ID: `sess-` + 8 random alphanumeric characters
+1. Generate ID using bash timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`)
 2. Store in `state.json.logging.sessionId`
 3. Include in all log entries for correlation
 
