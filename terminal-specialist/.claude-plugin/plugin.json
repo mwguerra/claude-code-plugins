@@ -1,0 +1,30 @@
+{
+  "name": "terminal-specialist",
+  "description": "Specialized terminal and shell systems expert with comprehensive documentation on TTY/PTY architecture, streams, signals, escape sequences, job control, cross-platform considerations, and terminal emulator internals",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "terminal",
+    "shell",
+    "tty",
+    "pty",
+    "bash",
+    "zsh",
+    "powershell",
+    "cmd",
+    "stdin",
+    "stdout",
+    "stderr",
+    "signals",
+    "ansi",
+    "escape-sequences",
+    "job-control",
+    "process-management",
+    "termios",
+    "console",
+    "cross-platform",
+    "cli"
+  ]
+}

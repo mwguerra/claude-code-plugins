@@ -57,6 +57,12 @@
       "source": "./docker-specialist",
       "version": "1.0.0",
       "description": "Specialized Docker and Docker Compose assistant with comprehensive documentation for container management, networking, databases, SSL, and troubleshooting"
+    },
+    {
+      "name": "terminal-specialist",
+      "source": "./terminal-specialist",
+      "version": "1.0.0",
+      "description": "Specialized terminal and shell systems expert with comprehensive documentation on TTY/PTY architecture, streams, signals, escape sequences, job control, and cross-platform CLI development"
     }
   ]
 }
