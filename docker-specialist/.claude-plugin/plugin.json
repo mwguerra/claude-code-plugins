@@ -1,0 +1,143 @@
+{
+  "name": "docker-specialist",
+  "displayName": "Docker Specialist",
+  "version": "1.0.0",
+  "description": "Specialized Docker and Docker Compose development assistant with comprehensive documentation, container management, and troubleshooting capabilities",
+  "author": "mwguerra-marketplace",
+  "repository": "https://github.com/mwguerra/claude-code-plugins",
+  "icon": "🐳",
+  "categories": ["devops", "containers", "infrastructure"],
+  "engines": {
+    "claude-code": ">=1.0.0"
+  },
+  "agents": [
+    {
+      "id": "docker-specialist",
+      "name": "Docker Specialist",
+      "description": "Ultra-specialized agent for Docker and Docker Compose development with access to comprehensive documentation",
+      "file": "agents/docker-specialist-agent.md"
+    }
+  ],
+  "skills": [
+    {
+      "id": "docker-docs",
+      "name": "Docker Documentation",
+      "description": "Search and reference Docker & Docker Compose documentation for accurate implementation patterns",
+      "file": "skills/docker-docs/SKILL.md"
+    },
+    {
+      "id": "docker-init",
+      "name": "Docker Init",
+      "description": "Initialize Docker environment for projects with Dockerfile, compose configuration, and supporting files",
+      "file": "skills/docker-init/SKILL.md"
+    },
+    {
+      "id": "docker-compose",
+      "name": "Docker Compose",
+      "description": "Generate Docker Compose configurations for multi-container applications with services, networking, and volumes",
+      "file": "skills/docker-compose/SKILL.md"
+    },
+    {
+      "id": "docker-database",
+      "name": "Docker Database",
+      "description": "Configure database containers (PostgreSQL, MySQL, MongoDB, Redis) with best practices for security, persistence, and health checks",
+      "file": "skills/docker-database/SKILL.md"
+    },
+    {
+      "id": "docker-troubleshoot",
+      "name": "Docker Troubleshoot",
+      "description": "Diagnose and fix Docker issues including container failures, networking problems, permission errors, and port conflicts",
+      "file": "skills/docker-troubleshoot/SKILL.md"
+    }
+  ],
+  "commands": [
+    {
+      "id": "init",
+      "name": "Initialize Docker",
+      "description": "Initialize Docker environment for a project with Dockerfile, compose configuration, and supporting files",
+      "file": "commands/init.md"
+    },
+    {
+      "id": "dockerfile",
+      "name": "Generate Dockerfile",
+      "description": "Generate an optimized Dockerfile for any application type",
+      "file": "commands/dockerfile.md"
+    },
+    {
+      "id": "compose",
+      "name": "Generate Compose",
+      "description": "Generate Docker Compose configuration for multi-container applications",
+      "file": "commands/compose.md"
+    },
+    {
+      "id": "database",
+      "name": "Setup Database",
+      "description": "Set up database container (PostgreSQL, MySQL, MongoDB, Redis) with best practices",
+      "file": "commands/database.md"
+    },
+    {
+      "id": "ssl",
+      "name": "Configure SSL",
+      "description": "Configure SSL/TLS with Traefik or Nginx reverse proxy",
+      "file": "commands/ssl.md"
+    },
+    {
+      "id": "troubleshoot",
+      "name": "Troubleshoot",
+      "description": "Diagnose and fix Docker issues including container failures, networking, and permissions",
+      "file": "commands/troubleshoot.md"
+    },
+    {
+      "id": "commands",
+      "name": "Commands Reference",
+      "description": "Show essential Docker and Docker Compose commands reference",
+      "file": "commands/commands.md"
+    },
+    {
+      "id": "docs",
+      "name": "Search Docs",
+      "description": "Search Docker documentation for specific topics",
+      "file": "commands/docs.md"
+    }
+  ],
+  "documentation": {
+    "references": "skills/docker-docs/references/",
+    "files": [
+      "01-introduction.md",
+      "02-dockerfile.md",
+      "03-compose-fundamentals.md",
+      "04-networking.md",
+      "05-databases.md",
+      "06-services.md",
+      "07-ports-ssl.md",
+      "08-volumes.md",
+      "09-environment.md",
+      "10-architecture.md",
+      "11-global-local.md",
+      "12-examples.md",
+      "13-commands.md",
+      "14-security.md",
+      "15-port-conflicts.md",
+      "16-restart-strategies.md",
+      "17-troubleshooting.md"
+    ]
+  },
+  "keywords": [
+    "docker",
+    "docker-compose",
+    "containers",
+    "devops",
+    "dockerfile",
+    "networking",
+    "volumes",
+    "databases",
+    "postgresql",
+    "mysql",
+    "mongodb",
+    "redis",
+    "traefik",
+    "nginx",
+    "ssl",
+    "tls"
+  ]
+}

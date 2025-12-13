@@ -70,6 +70,14 @@ Ultra-specialized plugin for FilamentPHP v4 development - generates resources, f
 /plugin install filament-specialist@mwguerra-marketplace
 ```
 
+### docker-specialist
+
+Specialized Docker and Docker Compose assistant with comprehensive documentation for container management, networking, databases, SSL, and troubleshooting.
+
+```bash
+/plugin install docker-specialist@mwguerra-marketplace
+```
+
 ## Requirements
 
 - Claude Code
