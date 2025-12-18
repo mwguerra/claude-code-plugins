@@ -1,0 +1,24 @@
+{
+  "name": "laravel-filament-package-development-specialist",
+  "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra",
+    "email": "contact@mwguerra.com"
+  },
+  "homepage": "https://github.com/mwguerra/laravel-filament-package-development-specialist",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "filament",
+    "package",
+    "plugin",
+    "scaffold",
+    "pest",
+    "testing",
+    "composer",
+    "generator",
+    "development",
+    "specialist"
+  ]
+}

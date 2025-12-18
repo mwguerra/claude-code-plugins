@@ -41,8 +41,8 @@
       "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns"
     },
     {
-      "name": "laravel-filament-package",
-      "source": "./laravel-filament-package",
+      "name": "laravel-filament-package-development-specialist",
+      "source": "./laravel-filament-package-development-specialist",
       "version": "1.0.0",
       "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing."
     },
