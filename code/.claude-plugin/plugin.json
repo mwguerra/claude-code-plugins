@@ -1,0 +1,20 @@
+{
+  "name": "code",
+  "description": "Code quality and production readiness toolkit. Includes code cleanup for commits, comprehensive app analysis, automated testing with Pest and Playwright, and production deployment preparation.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "cleanup",
+    "code-quality",
+    "production-ready",
+    "testing",
+    "pest",
+    "playwright",
+    "analysis",
+    "automation",
+    "deployment",
+    "refactoring"
+  ]
+}
