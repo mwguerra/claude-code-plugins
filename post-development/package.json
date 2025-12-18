@@ -1,0 +1,23 @@
+{
+  "name": "post-development-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for post-development plugin",
+  "type": "module",
+  "scripts": {
+    "init": "bun run scripts/init.ts",
+    "capture": "bun run scripts/capture.ts",
+    "quick-capture": "bun run scripts/quick-capture.ts",
+    "seo": "bun run scripts/seo-analyze.ts",
+    "personas": "bun run scripts/persona-create.ts",
+    "ads": "bun run scripts/ad-generate.ts",
+    "articles": "bun run scripts/article-write.ts",
+    "landing": "bun run scripts/landing-design.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "post-development",
+  "version": "1.0.0",
+  "description": "Complete post-development toolkit for app launch preparation. Includes SEO analysis, automated screenshots, persona creation, social media ads, article generation, and landing page proposals.",
+  "author": {
+    "name": "Post Development Plugin"
+  },
+  "homepage": "https://github.com/your-org/post-development",
+  "repository": "https://github.com/your-org/post-development",
+  "license": "MIT",
+  "keywords": [
+    "post-development",
+    "marketing",
+    "seo",
+    "screenshots",
+    "personas",
+    "ads",
+    "landing-pages",
+    "content",
+    "launch",
+    "automation"
+  ],
+  "commands": "./commands",
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json"
+}

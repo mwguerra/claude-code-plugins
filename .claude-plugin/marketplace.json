@@ -47,6 +47,12 @@
       "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing."
     },
     {
+      "name": "post-development",
+      "source": "./post-development",
+      "version": "1.0.0",
+      "description": "Complete post-development toolkit for app launch preparation. Includes SEO analysis, automated screenshots, persona creation, social media ads, article generation, and landing page proposals."
+    },
+    {
       "name": "taskmanager",
       "source": "./taskmanager",
       "version": "1.0.0",
@@ -62,7 +68,7 @@
       "name": "test-specialist",
       "source": "./test-specialist",
       "version": "1.0.0",
-      "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4"
+      "description": "A specialized agent for creating, maintaining, and executing Pest 4 tests across PHP, Laravel, Livewire, and Filament applications. This agent ensures comprehensive test coverage for processes, roles, policies, and page access. Use proactively to create tests, update tests, run tests, analyze test coverage and fix test failures."
     }
   ]
 }
