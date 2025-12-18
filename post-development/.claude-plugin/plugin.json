@@ -1,7 +1,7 @@
 {
   "name": "post-development",
   "version": "1.0.0",
-  "description": "Complete post-development toolkit for app launch preparation. Includes SEO analysis, automated screenshots, persona creation, social media ads, article generation, and landing page proposals.",
+  "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables.",
   "author": {
     "name": "Post Development Plugin"
   },

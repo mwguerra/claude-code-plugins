@@ -1,5 +1,5 @@
 ---
-description: Manage author profiles - add manually, extract from transcripts, list, show, or edit authors
+description: Manage author profiles - add manually, extract voice from transcripts, list, show, edit, or remove authors
 allowed-tools: Skill(author-profile), Skill(voice-extractor), Bash(bun:*)
 argument-hint: <add | analyze | list | show ID | edit ID | remove ID>
 ---

@@ -1,5 +1,5 @@
 ---
-description: Process multiple articles from the queue autonomously with multi-language support
+description: Process multiple articles from the queue autonomously with filtering by count, area, author, or difficulty
 allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <count | all | area:NAME | author:ID | difficulty:LEVEL>
 ---

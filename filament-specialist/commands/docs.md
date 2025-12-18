@@ -1,5 +1,5 @@
 ---
-description: Search and reference FilamentPHP v4 official documentation
+description: Search FilamentPHP v4 official documentation for patterns, methods, and implementation examples
 allowed-tools: Skill(filament-docs), Glob(*), Grep(*)
 argument-hint: <topic-or-search-query>
 ---

@@ -1,5 +1,5 @@
 ---
-description: Create FilamentPHP v4 dashboard widgets including stats, charts, and custom widgets
+description: Create FilamentPHP v4 widgets for dashboards - stats overviews, charts, tables, or custom components
 allowed-tools: Skill(filament-widgets), Skill(filament-docs), Skill(filament-tables), Bash(php:*)
 argument-hint: <description> [--type stats|chart|table|custom] [--resource ResourceName]
 ---

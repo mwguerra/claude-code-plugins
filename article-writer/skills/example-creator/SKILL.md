@@ -1,6 +1,6 @@
 ---
 name: example-creator
-description: Create complete, executable examples for articles. Code examples are full runnable applications, not snippets. Document examples are complete, usable files.
+description: Create complete runnable examples for articles - scaffolded projects, not snippets
 ---
 
 # Example Creator

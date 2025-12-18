@@ -1,5 +1,5 @@
 ---
-description: Generate 3 showcase articles about your app with text and images for content marketing
+description: Generate showcase articles about your app in technical, casual, or story style for content marketing
 argument-hint: [create|list|edit|export] [--article 1|2|3] [--style technical|casual|story]
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---

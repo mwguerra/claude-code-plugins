@@ -1,6 +1,6 @@
 ---
 name: filament-resource
-description: Generate complete FilamentPHP v4 resources with forms, tables, relations, and actions
+description: Generate FilamentPHP v4 resources with form, table, relation managers, and actions
 ---
 
 # FilamentPHP Resource Generation Skill

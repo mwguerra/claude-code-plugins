@@ -1,6 +1,6 @@
 {
   "name": "laravel-filament-package-development-specialist",
-  "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing.",
+  "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle.",
   "version": "1.0.0",
   "author": {
     "name": "mwguerra",

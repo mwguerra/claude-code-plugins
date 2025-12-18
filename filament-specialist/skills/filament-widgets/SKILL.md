@@ -1,6 +1,6 @@
 ---
 name: filament-widgets
-description: Create FilamentPHP v4 dashboard widgets including stats, charts, and custom widgets
+description: Create FilamentPHP v4 dashboard widgets - stats overviews, charts, and custom components
 ---
 
 # FilamentPHP Widgets Generation Skill

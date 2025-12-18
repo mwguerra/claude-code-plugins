@@ -1,5 +1,5 @@
 ---
-description: Search Docker documentation for specific topics
+description: Search Docker documentation for configuration patterns, best practices, and troubleshooting
 ---
 
 # Search Docker Documentation

@@ -1,6 +1,6 @@
 ---
 name: filament-forms
-description: Create FilamentPHP v4 form schemas with all field types, validation, and relationships
+description: Create FilamentPHP v4 forms with fields, validation, sections, tabs, and relationships
 ---
 
 # FilamentPHP Forms Generation Skill

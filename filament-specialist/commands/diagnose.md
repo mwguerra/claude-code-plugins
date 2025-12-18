@@ -1,5 +1,5 @@
 ---
-description: Diagnose and fix FilamentPHP v4 issues by consulting documentation and analyzing errors
+description: Diagnose FilamentPHP v4 errors and issues using official documentation to find solutions
 allowed-tools: Skill(filament-docs), Bash(php:*), Bash(composer:*), Glob(*), Grep(*)
 argument-hint: <error-message-or-issue-description>
 ---

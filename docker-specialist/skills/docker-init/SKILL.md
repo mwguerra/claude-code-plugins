@@ -1,6 +1,6 @@
 ---
 name: docker-init
-description: Initialize Docker environment for projects with Dockerfile, compose configuration, and supporting files
+description: Initialize Docker environment with Dockerfile, compose config, and .dockerignore
 ---
 
 # Docker Environment Initialization Skill

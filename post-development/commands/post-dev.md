@@ -1,5 +1,5 @@
 ---
-description: Post-development toolkit - orchestrate all launch preparation tasks (SEO, screenshots, personas, ads, articles, landing pages)
+description: Orchestrate launch preparation - SEO, screenshots, personas, ads, articles, and landing pages in dependency order
 argument-hint: [init|run|status|seo|screenshots|personas|ads|articles|landing] [options]
 allowed-tools: Bash, Read, Write, Glob, Grep, Task
 ---

@@ -1,5 +1,5 @@
 ---
-description: Generate Docker Compose configuration for multi-container applications
+description: Generate Docker Compose config with services, networking, volumes, and health checks
 ---
 
 # Generate Docker Compose Configuration

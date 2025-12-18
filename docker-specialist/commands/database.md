@@ -1,5 +1,5 @@
 ---
-description: Set up database container (PostgreSQL, MySQL, MongoDB, Redis) with best practices
+description: Configure database containers (PostgreSQL, MySQL, MongoDB, Redis) with security, persistence, and health checks
 ---
 
 # Set Up Database Container

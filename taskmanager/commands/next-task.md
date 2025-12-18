@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager)
-description: Show the next available task or subtask that is ready to execute.
+description: Find and display the next task ready for execution based on dependencies and priority
 argument-hint: "[--debug]"
 ---
 

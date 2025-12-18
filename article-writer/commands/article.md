@@ -1,5 +1,5 @@
 ---
-description: Create a new technical article with research, documentation, and multi-language support
+description: Create a new technical article with web research, practical examples, and multi-language output
 allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <topic | from-queue ID> [--author ID]
 ---

@@ -1,17 +1,6 @@
 ---
 name: laravel-package-scaffold
-description: |
-  Creates a complete Laravel package skeleton with ServiceProvider, Facade, Config, Commands,
-  and optional testing setup. Use when user wants to:
-  - Create a new Laravel package
-  - Scaffold a Laravel package structure  
-  - Generate a package skeleton
-  - Start a new Composer package for Laravel
-  
-  Trigger: "create package", "scaffold package", "new laravel package", "package skeleton", 
-  "create laravel package"
-  
-  Input format: vendor/package-name (e.g., mwguerra/my-package)
+description: Scaffold Laravel packages with ServiceProvider, Facade, Config, and test setup
 allowed-tools: Bash(python3:*), Write, Read, Glob
 ---
 

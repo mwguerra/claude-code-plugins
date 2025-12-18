@@ -1,17 +1,6 @@
 ---
 name: pest-testing-setup
-description: |
-  Sets up PestPHP testing infrastructure for Laravel packages with Orchestra Testbench.
-  Use when user wants to:
-  - Add tests to an existing package
-  - Set up PestPHP for a Laravel package
-  - Configure testing for a Filament plugin
-  - Create test infrastructure for a Composer package
-  
-  Trigger: "add tests", "setup testing", "pest setup", "add pest", "testing infrastructure",
-  "configure tests", "phpunit setup"
-  
-  Input: vendor/package-name (existing package path)
+description: Set up Pest testing with Orchestra Testbench for Laravel packages
 allowed-tools: Bash(python3:*), Bash(composer:*), Write, Read, Glob
 ---
 

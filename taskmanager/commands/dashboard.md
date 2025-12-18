@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager)
-description: Show a small dashboard summarizing the current .taskmanager/tasks.json state.
+description: Display task progress dashboard with status counts, completion percentage, and recent activity
 ---
 
 # Tasks Dashboard Command

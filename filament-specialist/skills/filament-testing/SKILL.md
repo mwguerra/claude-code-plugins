@@ -1,6 +1,6 @@
 ---
 name: filament-testing
-description: Generate comprehensive Pest tests for FilamentPHP v4 components including resources, forms, tables, and actions
+description: Generate Pest tests for FilamentPHP v4 resources, forms, tables, and authorization
 ---
 
 # FilamentPHP Testing Skill

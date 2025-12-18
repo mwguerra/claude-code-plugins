@@ -1,6 +1,6 @@
 ---
 name: docker-database
-description: Configure database containers (PostgreSQL, MySQL, MongoDB, Redis) with best practices for security, persistence, and health checks
+description: Configure database containers with security, persistence, and health checks
 ---
 
 # Docker Database Configuration Skill

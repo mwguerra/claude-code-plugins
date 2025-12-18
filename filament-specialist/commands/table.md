@@ -1,5 +1,5 @@
 ---
-description: Create a FilamentPHP v4 table configuration with columns, filters, and actions
+description: Create FilamentPHP v4 tables with columns, filters, search, sorting, and row/bulk actions
 allowed-tools: Skill(filament-tables), Skill(filament-docs), Skill(filament-actions), Bash(php:*)
 argument-hint: <description> [--resource ResourceName] [--for widget|relation-manager]
 ---

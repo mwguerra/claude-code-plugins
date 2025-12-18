@@ -1,6 +1,6 @@
 ---
 name: article-queue
-description: Manage article tasks queue with author references and multi-language output tracking. Use for viewing status, filtering, modifying tasks, or preparing batch processing.
+description: Manage article task queue - add, filter, update status, and track multi-language outputs
 ---
 
 # Article Queue

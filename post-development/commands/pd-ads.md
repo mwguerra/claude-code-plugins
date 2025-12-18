@@ -1,5 +1,5 @@
 ---
-description: Generate ads for Instagram, Facebook, LinkedIn, Twitter/X, and other social platforms
+description: Generate social media ads for Instagram, Facebook, LinkedIn, and Twitter/X with persona targeting
 argument-hint: [create|list|export] [--platform instagram|facebook|linkedin|twitter|all] [--persona <n>]
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---

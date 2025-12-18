@@ -1,12 +1,6 @@
 ---
 name: taskmanager
-description: >
-  Manage .taskmanager/tasks.json, .taskmanager/state.json, and .taskmanager/memories.json for this project.
-  Take input from either a PRD file (markdown) or a free-text user prompt,
-  interpret it as a PRD, and generate assertive, hierarchical, meaningful,
-  manageable tasks with priority and complexity analysis. Tasks MUST be created
-  level-by-level: first top-level tasks, then subtasks, then deeper levels only
-  when justified.
+description: Manage tasks, state, and memories - parse PRDs into hierarchical tasks with dependencies and complexity
 allowed-tools: [Read, Write, Edit, Glob, Grep]
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: Create FilamentPHP v4 infolists for read-only data display in view pages
+description: Create FilamentPHP v4 infolists with entries, layouts, and sections for read-only view pages
 allowed-tools: Skill(filament-infolists), Skill(filament-docs), Bash(php:*)
 argument-hint: <description> [--resource ResourceName]
 ---

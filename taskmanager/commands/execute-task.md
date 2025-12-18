@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager), Skill(taskmanager-memory)
-description: Execute a single task or subtask by ID, handling dependencies interactively if needed.
+description: Execute a single task by ID with dependency resolution, memory application, and status propagation
 argument-hint: "<task-id> [--memory \"global memory\"] [--task-memory \"temp memory\"] [--debug]"
 ---
 

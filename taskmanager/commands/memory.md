@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager-memory)
-description: Manage project memories - add, list, show, update, deprecate, or check conflicts
+description: Manage project memories (constraints, decisions, conventions) - add, list, update, deprecate, or detect conflicts
 argument-hint: "<action> [args] [--debug]"
 ---
 

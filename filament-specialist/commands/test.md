@@ -1,5 +1,5 @@
 ---
-description: Generate comprehensive Pest tests for FilamentPHP v4 resources and components
+description: Generate Pest tests for FilamentPHP v4 resources covering list, create, edit, view, and authorization
 allowed-tools: Skill(filament-testing), Skill(filament-docs), Bash(php:*)
 argument-hint: <ResourceName> [--type list|create|edit|view|all] [--with-auth]
 ---

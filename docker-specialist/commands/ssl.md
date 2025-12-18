@@ -1,5 +1,5 @@
 ---
-description: Configure SSL/TLS with Traefik or Nginx reverse proxy
+description: Set up SSL/TLS with automatic certificates using Traefik or Nginx reverse proxy
 ---
 
 # Configure SSL/TLS

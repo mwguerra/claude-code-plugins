@@ -1,6 +1,6 @@
 ---
 name: filament-actions
-description: Create FilamentPHP v4 actions including modals, forms, bulk operations, and custom workflows
+description: Create FilamentPHP v4 actions with modals, confirmation, forms, and bulk operations
 ---
 
 # FilamentPHP Actions Generation Skill

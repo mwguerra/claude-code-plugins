@@ -1,6 +1,6 @@
 {
   "name": "filament-specialist",
-  "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns",
+  "description": "Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns. Includes diagnosis and troubleshooting.",
   "version": "1.0.0",
   "author": {
     "name": "mwguerra"

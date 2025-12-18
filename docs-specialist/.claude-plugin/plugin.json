@@ -1,6 +1,6 @@
 {
   "name": "docs-specialist",
-  "description": "Documentation specialist with code-to-docs generation, drift detection, and template system. Commands: docs (validate/generate/update/status), sync (check/fix), template (list/show/use), init, doctor.",
+  "description": "Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates for consistent documentation.",
   "version": "2.0.0",
   "author": {
     "name": "mwguerra"

@@ -1,9 +1,6 @@
 ---
 name: production-ready
-description: >
-  Comprehensive app analysis, testing, and production readiness preparation.
-  Analyzes all features, tests with Pest and Playwright, uses taskmanager for
-  detailed task tracking, and ensures the app is spotless and production-ready.
+description: Analyze, test, and prepare apps for production with Pest and Playwright testing
 allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Task, TodoWrite, mcp__playwright__browser_snapshot, mcp__playwright__browser_click, mcp__playwright__browser_navigate, mcp__playwright__browser_type]
 ---
 

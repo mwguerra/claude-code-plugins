@@ -14,61 +14,61 @@
       "name": "article-writer",
       "source": "./article-writer",
       "version": "1.0.0",
-      "description": "Create high-quality technical articles with full research, documentation, and quality checks"
+      "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue."
     },
     {
       "name": "code",
       "source": "./code",
       "version": "1.0.0",
-      "description": "Code quality and production readiness toolkit with cleanup, analysis, testing (Pest + Playwright), and deployment preparation"
+      "description": "Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment with full verification."
     },
     {
       "name": "docs-specialist",
       "source": "./docs-specialist",
       "version": "1.0.0",
-      "description": "Specialized documentation writer and reviewer with commands for updating and validating project documentation"
+      "description": "Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates for consistent documentation."
     },
     {
       "name": "docker-specialist",
       "source": "./docker-specialist",
       "version": "1.0.0",
-      "description": "Specialized Docker and Docker Compose assistant with comprehensive documentation for container management, networking, databases, SSL, and troubleshooting"
+      "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues."
     },
     {
       "name": "filament-specialist",
       "source": "./filament-specialist",
       "version": "1.0.0",
-      "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns"
+      "description": "Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns. Includes diagnosis and troubleshooting."
     },
     {
       "name": "laravel-filament-package-development-specialist",
       "source": "./laravel-filament-package-development-specialist",
       "version": "1.0.0",
-      "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing."
+      "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle."
     },
     {
       "name": "post-development",
       "source": "./post-development",
       "version": "1.0.0",
-      "description": "Complete post-development toolkit for app launch preparation. Includes SEO analysis, automated screenshots, persona creation, social media ads, article generation, and landing page proposals."
+      "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables."
     },
     {
       "name": "taskmanager",
       "source": "./taskmanager",
       "version": "1.0.0",
-      "description": "Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs"
+      "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions."
     },
     {
       "name": "terminal-specialist",
       "source": "./terminal-specialist",
       "version": "1.0.0",
-      "description": "Specialized terminal and shell systems expert with comprehensive documentation on TTY/PTY architecture, streams, signals, escape sequences, job control, and cross-platform CLI development"
+      "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development."
     },
     {
       "name": "test-specialist",
       "source": "./test-specialist",
       "version": "1.0.0",
-      "description": "A specialized agent for creating, maintaining, and executing Pest 4 tests across PHP, Laravel, Livewire, and Filament applications. This agent ensures comprehensive test coverage for processes, roles, policies, and page access. Use proactively to create tests, update tests, run tests, analyze test coverage and fix test failures."
+      "description": "Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps and runs test suites with detailed reporting."
     }
   ]
 }

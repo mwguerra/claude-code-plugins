@@ -1,6 +1,6 @@
 ---
 name: voice-extractor
-description: Extract voice characteristics from transcripts (podcasts, interviews, meetings, videos) to enhance author profiles. Analyzes speaking patterns, phrases, vocabulary, and tone to create authentic writing guidelines. Use when user has transcript files and wants to capture their authentic voice.
+description: Extract voice patterns from transcripts - speaking style, phrases, vocabulary for authentic author profiles
 ---
 
 # Voice Extractor

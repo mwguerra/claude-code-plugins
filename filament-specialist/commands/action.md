@@ -1,5 +1,5 @@
 ---
-description: Create FilamentPHP v4 actions including modals, forms, and bulk operations
+description: Create FilamentPHP v4 actions with modals, confirmation dialogs, forms, and bulk operations
 allowed-tools: Skill(filament-actions), Skill(filament-docs), Skill(filament-forms), Bash(php:*)
 argument-hint: <description> [--type row|bulk|header|page] [--modal] [--confirmation]
 ---

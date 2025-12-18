@@ -1,5 +1,5 @@
 ---
-description: Terminal modes explanation (canonical, raw, cbreak)
+description: Guide to terminal modes - canonical, raw, and cbreak with termios configuration
 ---
 
 # Terminal Modes Guide

@@ -1,5 +1,5 @@
 ---
-description: ANSI escape sequence reference and examples
+description: ANSI escape sequence reference - colors, cursor control, screen manipulation with examples
 ---
 
 # ANSI Escape Sequence Reference

@@ -1,6 +1,6 @@
 {
   "name": "terminal-specialist",
-  "description": "Specialized terminal and shell systems expert with comprehensive documentation on TTY/PTY architecture, streams, signals, escape sequences, job control, cross-platform considerations, and terminal emulator internals",
+  "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development.",
   "version": "1.0.0",
   "author": {
     "name": "mwguerra"

@@ -1,5 +1,5 @@
 ---
-description: Run final verification checks for production readiness. Executes all tests, validates UI flows with Playwright, and checks the production checklist.
+description: Final verification - run all Pest tests, validate Playwright UI flows, and check production checklist
 ---
 
 # Verify Command

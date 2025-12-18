@@ -1,6 +1,6 @@
 ---
 name: article-writer
-description: Create publication-ready technical articles with web research, practical examples, and multi-language support. Each article includes a functional example (code project, document, etc.) that demonstrates the topic.
+description: Write technical articles with web research, runnable examples, and translations in author's voice
 ---
 
 # Article Writer

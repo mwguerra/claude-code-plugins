@@ -1,5 +1,5 @@
 ---
-description: Generate an optimized Dockerfile for any application type
+description: Generate optimized multi-stage Dockerfile with caching, non-root user, and health checks
 ---
 
 # Generate Dockerfile

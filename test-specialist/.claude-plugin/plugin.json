@@ -1,6 +1,6 @@
 {
   "name": "test-specialist",
-  "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament applications using Pest 4. Includes commands for generating tests, analyzing coverage, and running test suites.",
+  "description": "Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps and runs test suites with detailed reporting.",
   "version": "1.0.0",
   "author": {
     "name": "mwguerra"

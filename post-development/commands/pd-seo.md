@@ -1,5 +1,5 @@
 ---
-description: Analyze project and generate SEO data - meta tags, keywords, Open Graph images, favicons
+description: Analyze and generate SEO assets - meta tags, keywords, structured data, OG images, and favicons
 argument-hint: [analyze|generate|export] [--page <route>] [--all]
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---

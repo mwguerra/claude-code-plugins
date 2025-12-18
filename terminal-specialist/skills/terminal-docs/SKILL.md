@@ -1,6 +1,6 @@
 ---
 name: terminal-docs
-description: Search and reference comprehensive terminal and shell documentation for accurate implementation patterns
+description: Reference terminal documentation for TTY/PTY, streams, signals, and cross-platform patterns
 ---
 
 # Terminal Documentation Reference Skill

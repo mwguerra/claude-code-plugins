@@ -1,5 +1,5 @@
 ---
-description: Initialize Docker environment for a project with Dockerfile, compose configuration, and supporting files
+description: Initialize complete Docker environment with Dockerfile, docker-compose.yaml, .dockerignore, and .env.example
 ---
 
 # Initialize Docker Environment

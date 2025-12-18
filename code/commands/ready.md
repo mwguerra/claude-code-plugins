@@ -1,5 +1,5 @@
 ---
-description: Comprehensive production readiness audit. Analyzes all features, tests with Pest and Playwright, fixes issues, and ensures the app is spotless and production-ready. Uses taskmanager for task tracking.
+description: Full production audit - analyze features, run Pest and Playwright tests, fix issues, and verify deployment readiness
 ---
 
 # Production Ready Command

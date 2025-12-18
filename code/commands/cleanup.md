@@ -1,5 +1,5 @@
 ---
-description: Clean package folder and files for commit. Removes debug logs, fix-related comments, TODO comments about solved issues, temporary debugging code, and other development artifacts. Use with `/cleanup` or `/cleanup path/to/folder`.
+description: Remove debug logs, resolved TODOs, fix comments, and development artifacts to prepare code for clean commits
 ---
 
 # Code Cleanup Command

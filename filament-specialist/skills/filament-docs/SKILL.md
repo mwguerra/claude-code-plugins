@@ -1,6 +1,6 @@
 ---
 name: filament-docs
-description: Search and reference FilamentPHP v4 official documentation for accurate implementation patterns
+description: Reference FilamentPHP v4 documentation for patterns, methods, and implementation examples
 ---
 
 # FilamentPHP Documentation Reference Skill

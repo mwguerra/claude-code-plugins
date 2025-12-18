@@ -1,5 +1,5 @@
 ---
-description: Signal handling guide and best practices
+description: Unix signal handling - SIGINT, SIGTERM, SIGHUP with handler patterns and best practices
 ---
 
 # Signal Handling Guide

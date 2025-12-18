@@ -1,5 +1,5 @@
 ---
-description: Analyze codebase for production readiness without making changes. Discovers all features, checks test coverage, identifies issues, and generates a comprehensive report.
+description: Read-only analysis of codebase - discover features, check test coverage, identify issues, and generate report
 ---
 
 # Analyze Command

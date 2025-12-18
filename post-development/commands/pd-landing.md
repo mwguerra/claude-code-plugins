@@ -1,5 +1,5 @@
 ---
-description: Generate landing page proposals with sections, images, text, and CTAs tailored to each persona
+description: Design landing page proposals with hero, features, testimonials, and CTAs tailored to personas
 argument-hint: [create|list|export] [--persona <n>] [--template saas|product|service]
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---

@@ -1,5 +1,5 @@
 ---
-description: Search terminal documentation for specific topics
+description: Search terminal documentation for TTY/PTY, streams, signals, escape sequences, and shell configuration
 ---
 
 # Search Terminal Documentation

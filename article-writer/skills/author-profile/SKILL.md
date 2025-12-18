@@ -1,6 +1,6 @@
 ---
 name: author-profile
-description: Create and manage author profiles for consistent writing tone across articles. Supports manual creation via questionnaire OR extraction from transcripts (podcasts, interviews, meetings). Use when setting up authors, analyzing voice from transcripts, or ensuring articles match the author's established voice.
+description: Create author profiles via questionnaire or transcript analysis for consistent article voice
 ---
 
 # Author Profile

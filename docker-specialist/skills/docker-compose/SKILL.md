@@ -1,6 +1,6 @@
 ---
 name: docker-compose
-description: Generate Docker Compose configurations for multi-container applications with services, networking, and volumes
+description: Generate Compose configs with services, networking, volumes, and health checks
 ---
 
 # Docker Compose Configuration Skill

@@ -1,6 +1,6 @@
 ---
 name: docker-docs
-description: Search and reference Docker & Docker Compose official documentation for accurate implementation patterns
+description: Reference Docker and Compose documentation for configuration patterns and best practices
 ---
 
 # Docker Documentation Reference Skill

@@ -1,6 +1,6 @@
 ---
 name: filament-tables
-description: Create FilamentPHP v4 table configurations with columns, filters, actions, and bulk operations
+description: Create FilamentPHP v4 tables with columns, filters, sorting, search, and bulk actions
 ---
 
 # FilamentPHP Tables Generation Skill

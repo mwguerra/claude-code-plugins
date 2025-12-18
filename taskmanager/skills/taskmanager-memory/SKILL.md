@@ -1,10 +1,6 @@
 ---
 name: taskmanager-memory
-description: >
-  Manage .taskmanager/memories.json for this project. Create, update, and query
-  reusable project-level memories (constraints, decisions, conventions, bugfixes)
-  so other agents, commands, and skills can reuse them instead of re-deriving.
-  Also manages task-scoped temporary memories and conflict detection.
+description: Manage project memories - constraints, decisions, conventions with conflict detection and resolution
 allowed-tools: [Read, Write, Edit, Glob, Grep, AskUserQuestion]
 ---
 

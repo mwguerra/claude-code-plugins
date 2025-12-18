@@ -1,5 +1,5 @@
 ---
-description: Shell configuration and startup file help
+description: Shell configuration guide - startup files, environment variables, and shell options for bash/zsh
 ---
 
 # Shell Configuration Guide

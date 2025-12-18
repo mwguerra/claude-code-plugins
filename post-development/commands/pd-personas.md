@@ -1,5 +1,5 @@
 ---
-description: Create target personas, audience segments, and marketing strategies with CTAs for B2B, B2C, and other markets
+description: Create buyer personas, audience segments, and marketing strategies with targeted CTAs per market type
 argument-hint: [create|list|strategy|cta] [--type b2b|b2c|b2g|b2d] [--persona <name>]
 allowed-tools: Bash, Read, Write, Glob, Grep
 ---

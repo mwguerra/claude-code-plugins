@@ -1,5 +1,5 @@
 ---
-description: Standard I/O streams reference (stdin, stdout, stderr)
+description: Standard I/O streams guide - stdin, stdout, stderr with buffering, piping, and redirection
 ---
 
 # I/O Streams Reference

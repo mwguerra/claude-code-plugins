@@ -1,7 +1,7 @@
 ---
 allowed-tools: Skill(taskmanager)
 argument-hint: "[file-path-or-folder-or-prompt] [--debug]"
-description: Read a PRD (default .taskmanager/docs/prd.md) and update .taskmanager/tasks.json with a hierarchical plan.
+description: Parse a PRD file, folder, or prompt and generate hierarchical tasks with dependencies and complexity analysis
 ---
 
 # Plan Command

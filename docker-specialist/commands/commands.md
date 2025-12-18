@@ -1,5 +1,5 @@
 ---
-description: Show essential Docker and Docker Compose commands reference
+description: Quick reference for essential Docker and Docker Compose CLI commands
 ---
 
 # Docker Commands Reference

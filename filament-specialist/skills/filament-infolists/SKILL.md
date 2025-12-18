@@ -1,6 +1,6 @@
 ---
 name: filament-infolists
-description: Create FilamentPHP v4 infolists for read-only data display with entries and layouts
+description: Create FilamentPHP v4 infolists with entries, sections, and layouts for view pages
 ---
 
 # FilamentPHP Infolists Generation Skill

@@ -1,5 +1,5 @@
 ---
-description: Cross-platform terminal compatibility guide
+description: Cross-platform terminal patterns for Windows, macOS, and Linux with portable code examples
 ---
 
 # Cross-Platform Compatibility Guide

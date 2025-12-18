@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager), Skill(taskmanager-memory)
-description: Automatically start or resume executing tasks sequentially from .taskmanager/tasks.json.
+description: Autonomously execute multiple tasks in sequence with memory support and conflict resolution
 argument-hint: "[max-tasks] [--memory \"global memory\"] [--task-memory \"temp memory\"] [--debug]"
 ---
 

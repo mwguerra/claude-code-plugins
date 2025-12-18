@@ -1,5 +1,5 @@
 ---
-description: Capture screenshots of your app for marketing materials - supports multiple viewports and color modes
+description: Capture app screenshots across viewports (desktop, tablet, mobile) and color modes for marketing materials
 argument-hint: [init|capture|quick|status] [options]
 allowed-tools: Bash, Read, Write, Glob
 ---

@@ -1,6 +1,6 @@
 ---
 name: post-development
-description: Complete post-development toolkit for app launch. Orchestrates SEO analysis, screenshot capture, persona creation, ad generation, article writing, and landing page design. Use when preparing an app for launch or marketing.
+description: Orchestrate app launch preparation - SEO, screenshots, personas, ads, articles, landing pages
 allowed-tools: Bash, Read, Write, Glob, Grep, Task
 ---
 

@@ -1,17 +1,6 @@
 ---
 name: filament-plugin-scaffold
-description: |
-  Creates a complete Filament plugin skeleton (panel or standalone) with Plugin class, ServiceProvider,
-  Resources, Pages, Widgets structure, and PestPHP testing. Use when user wants to:
-  - Create a new Filament plugin
-  - Scaffold a Filament plugin structure
-  - Generate a Filament admin panel extension
-  - Start a new Filament package
-  
-  Trigger: "create filament plugin", "scaffold filament", "new filament plugin", 
-  "filament package", "admin panel plugin"
-  
-  Input format: vendor/filament-plugin-name (e.g., mwguerra/filament-blog)
+description: Scaffold Filament plugins with Plugin class, ServiceProvider, Resources, and Pest tests
 allowed-tools: Bash(python3:*), Write, Read, Glob
 ---
 

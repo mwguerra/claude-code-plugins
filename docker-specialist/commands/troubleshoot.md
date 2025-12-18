@@ -1,5 +1,5 @@
 ---
-description: Diagnose and fix Docker issues including container failures, networking, and permissions
+description: Diagnose Docker issues - container failures, networking problems, permission errors, and port conflicts
 ---
 
 # Troubleshoot Docker Issues
