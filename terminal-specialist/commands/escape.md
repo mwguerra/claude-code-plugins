@@ -1,5 +1,4 @@
 ---
-name: escape
 description: ANSI escape sequence reference and examples
 ---
 

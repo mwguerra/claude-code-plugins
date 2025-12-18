@@ -1,5 +1,4 @@
 ---
-name: docs
 description: Search Docker documentation for specific topics
 ---
 

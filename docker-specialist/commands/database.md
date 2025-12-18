@@ -1,5 +1,4 @@
 ---
-name: database
 description: Set up database container (PostgreSQL, MySQL, MongoDB, Redis) with best practices
 ---
 

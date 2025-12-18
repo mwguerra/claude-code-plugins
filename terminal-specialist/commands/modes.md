@@ -1,5 +1,4 @@
 ---
-name: modes
 description: Terminal modes explanation (canonical, raw, cbreak)
 ---
 

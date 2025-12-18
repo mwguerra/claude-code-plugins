@@ -1,5 +1,4 @@
 ---
-name: troubleshoot
 description: Diagnose and fix Docker issues including container failures, networking, and permissions
 ---
 

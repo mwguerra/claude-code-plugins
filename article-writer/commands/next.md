@@ -1,5 +1,4 @@
 ---
-name: next
 description: Get the next pending article from the queue to work on
 usage: /article-writer:next
 arguments: []

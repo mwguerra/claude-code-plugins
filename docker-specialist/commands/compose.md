@@ -1,5 +1,4 @@
 ---
-name: compose
 description: Generate Docker Compose configuration for multi-container applications
 ---
 

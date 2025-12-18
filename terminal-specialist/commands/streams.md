@@ -1,5 +1,4 @@
 ---
-name: streams
 description: Standard I/O streams reference (stdin, stdout, stderr)
 ---
 

@@ -1,5 +1,4 @@
 ---
-name: dockerfile
 description: Generate an optimized Dockerfile for any application type
 ---
 

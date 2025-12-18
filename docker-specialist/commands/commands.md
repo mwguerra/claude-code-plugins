@@ -1,5 +1,4 @@
 ---
-name: commands
 description: Show essential Docker and Docker Compose commands reference
 ---
 

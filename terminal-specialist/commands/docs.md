@@ -1,5 +1,4 @@
 ---
-name: docs
 description: Search terminal documentation for specific topics
 ---
 

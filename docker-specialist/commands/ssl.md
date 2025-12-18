@@ -1,5 +1,4 @@
 ---
-name: ssl
 description: Configure SSL/TLS with Traefik or Nginx reverse proxy
 ---
 

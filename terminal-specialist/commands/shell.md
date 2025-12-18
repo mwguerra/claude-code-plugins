@@ -1,5 +1,4 @@
 ---
-name: shell
 description: Shell configuration and startup file help
 ---
 

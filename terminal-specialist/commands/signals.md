@@ -1,5 +1,4 @@
 ---
-name: signals
 description: Signal handling guide and best practices
 ---
 

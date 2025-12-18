@@ -1,5 +1,4 @@
 ---
-name: cross-platform
 description: Cross-platform terminal compatibility guide
 ---
 

@@ -1,5 +1,4 @@
 ---
-name: init
 description: Initialize Docker environment for a project with Dockerfile, compose configuration, and supporting files
 ---
 
