@@ -17,40 +17,16 @@
       "description": "Create high-quality technical articles with full research, documentation, and quality checks"
     },
     {
+      "name": "code",
+      "source": "./code",
+      "version": "1.0.0",
+      "description": "Code quality and production readiness toolkit with cleanup, analysis, testing (Pest + Playwright), and deployment preparation"
+    },
+    {
       "name": "docs-specialist",
       "source": "./docs-specialist",
       "version": "1.0.0",
       "description": "Specialized documentation writer and reviewer with commands for updating and validating project documentation"
-    },
-    {
-      "name": "taskmanager",
-      "source": "./taskmanager",
-      "version": "1.0.0",
-      "description": "Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs"
-    },
-    {
-      "name": "test-specialist",
-      "source": "./test-specialist",
-      "version": "1.0.0",
-      "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4"
-    },
-    {
-      "name": "laravel-package-scaffolding",
-      "source": "./laravel-package-scaffolding",
-      "version": "1.0.0",
-      "description": "Scaffold new Laravel Composer package skeletons with ServiceProvider and test command"
-    },
-    {
-      "name": "code-cleanup",
-      "source": "./code-cleanup",
-      "version": "1.0.0",
-      "description": "Clean code for commits by removing debug statements, fix-related comments, and development artifacts"
-    },
-    {
-      "name": "filament-specialist",
-      "source": "./filament-specialist",
-      "version": "1.0.0",
-      "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns"
     },
     {
       "name": "docker-specialist",
@@ -59,10 +35,34 @@
       "description": "Specialized Docker and Docker Compose assistant with comprehensive documentation for container management, networking, databases, SSL, and troubleshooting"
     },
     {
+      "name": "filament-specialist",
+      "source": "./filament-specialist",
+      "version": "1.0.0",
+      "description": "Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns"
+    },
+    {
+      "name": "laravel-filament-package",
+      "source": "./laravel-filament-package",
+      "version": "1.0.0",
+      "description": "Complete toolkit for creating, developing, and testing Laravel packages and Filament plugins. Uses latest versions of Laravel, Pest, and Filament for testing."
+    },
+    {
+      "name": "taskmanager",
+      "source": "./taskmanager",
+      "version": "1.0.0",
+      "description": "Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs"
+    },
+    {
       "name": "terminal-specialist",
       "source": "./terminal-specialist",
       "version": "1.0.0",
       "description": "Specialized terminal and shell systems expert with comprehensive documentation on TTY/PTY architecture, streams, signals, escape sequences, job control, and cross-platform CLI development"
+    },
+    {
+      "name": "test-specialist",
+      "source": "./test-specialist",
+      "version": "1.0.0",
+      "description": "Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4"
     }
   ]
 }
