@@ -1,5 +1,4 @@
 ---
-name: persona-strategist
 description: Marketing persona and strategy specialist. Creates detailed buyer personas, audience segments, marketing strategies, and CTAs for B2B, B2C, and other markets. Use for persona and strategy creation.
 tools: Read, Write, Glob, Grep
 model: sonnet

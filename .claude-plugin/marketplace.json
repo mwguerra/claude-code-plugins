@@ -14,61 +14,389 @@
       "name": "article-writer",
       "source": "./article-writer",
       "version": "1.0.0",
-      "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue."
+      "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue.",
+      "keywords": [
+        "content",
+        "writing",
+        "technical",
+        "articles",
+        "blog",
+        "publishing",
+        "research",
+        "multilingual"
+      ],
+      "category": "content-creation",
+      "tags": [
+        "content-writing",
+        "technical-articles",
+        "blog-posts",
+        "research",
+        "batch-processing",
+        "author-profiles"
+      ],
+      "commands": [
+        "./commands/article.md",
+        "./commands/author.md",
+        "./commands/batch.md",
+        "./commands/doctor.md",
+        "./commands/init.md",
+        "./commands/next.md",
+        "./commands/queue.md",
+        "./commands/settings.md"
+      ],
+      "agents": [
+        "./agents/article-writer-agent.md"
+      ]
     },
     {
       "name": "code",
       "source": "./code",
       "version": "1.0.0",
-      "description": "Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment with full verification."
+      "description": "Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment with full verification.",
+      "keywords": [
+        "production",
+        "deployment",
+        "cleanup",
+        "testing",
+        "verification",
+        "code-quality",
+        "automation"
+      ],
+      "category": "development-tools",
+      "tags": [
+        "code-cleanup",
+        "production-ready",
+        "testing",
+        "verification",
+        "pest",
+        "playwright",
+        "deployment"
+      ],
+      "commands": [
+        "./commands/analyze.md",
+        "./commands/cleanup.md",
+        "./commands/ready.md",
+        "./commands/showcase.md",
+        "./commands/verify.md"
+      ],
+      "agents": [
+        "./agents/production-ready-agent.md"
+      ]
     },
     {
       "name": "docs-specialist",
       "source": "./docs-specialist",
       "version": "1.0.0",
-      "description": "Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates for consistent documentation."
+      "description": "Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates for consistent documentation.",
+      "keywords": [
+        "documentation",
+        "docs",
+        "generation",
+        "sync",
+        "templates",
+        "drift-detection",
+        "markdown"
+      ],
+      "category": "documentation",
+      "tags": [
+        "documentation",
+        "auto-generation",
+        "drift-detection",
+        "templates",
+        "sync",
+        "markdown",
+        "code-docs"
+      ],
+      "commands": [
+        "./commands/docs.md",
+        "./commands/doctor.md",
+        "./commands/init.md",
+        "./commands/sync.md",
+        "./commands/template.md"
+      ],
+      "agents": [
+        "./agents/docs-specialist.md"
+      ]
     },
     {
       "name": "docker-specialist",
       "source": "./docker-specialist",
       "version": "1.0.0",
-      "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues."
+      "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues.",
+      "keywords": [
+        "docker",
+        "containers",
+        "compose",
+        "devops",
+        "ssl",
+        "traefik",
+        "nginx",
+        "database"
+      ],
+      "category": "devops",
+      "tags": [
+        "docker",
+        "docker-compose",
+        "containers",
+        "ssl-tls",
+        "traefik",
+        "nginx",
+        "databases",
+        "devops"
+      ],
+      "commands": [
+        "./commands/commands.md",
+        "./commands/compose.md",
+        "./commands/database.md",
+        "./commands/dockerfile.md",
+        "./commands/docs.md",
+        "./commands/init.md",
+        "./commands/ssl.md",
+        "./commands/troubleshoot.md"
+      ],
+      "agents": [
+        "./agents/docker-specialist-agent.md"
+      ]
     },
     {
       "name": "filament-specialist",
       "source": "./filament-specialist",
       "version": "1.0.0",
-      "description": "Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns. Includes diagnosis and troubleshooting."
+      "description": "Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns. Includes diagnosis and troubleshooting.",
+      "keywords": [
+        "filament",
+        "filamentphp",
+        "laravel",
+        "admin-panel",
+        "php",
+        "forms",
+        "tables",
+        "widgets"
+      ],
+      "category": "laravel",
+      "tags": [
+        "filamentphp",
+        "filament-v4",
+        "laravel",
+        "admin-panel",
+        "resources",
+        "forms",
+        "tables",
+        "widgets",
+        "infolists"
+      ],
+      "commands": [
+        "./commands/action.md",
+        "./commands/diagnose.md",
+        "./commands/docs.md",
+        "./commands/form.md",
+        "./commands/infolist.md",
+        "./commands/resource.md",
+        "./commands/table.md",
+        "./commands/test.md",
+        "./commands/widget.md"
+      ],
+      "agents": [
+        "./agents/filament-specialist-agent.md"
+      ]
     },
     {
       "name": "laravel-filament-package-development-specialist",
       "source": "./laravel-filament-package-development-specialist",
       "version": "1.0.0",
-      "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle."
+      "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle.",
+      "keywords": [
+        "laravel",
+        "package",
+        "filament",
+        "plugin",
+        "pest",
+        "testing",
+        "github-actions",
+        "ci-cd"
+      ],
+      "category": "laravel",
+      "tags": [
+        "laravel-packages",
+        "filament-plugins",
+        "package-development",
+        "pest-testing",
+        "github-actions",
+        "ci-cd",
+        "scaffolding"
+      ],
+      "commands": [
+        "./commands/add-filament-resource.md",
+        "./commands/create-filament-plugin.md",
+        "./commands/create-laravel-package.md",
+        "./commands/package-status.md",
+        "./commands/run-package-tests.md",
+        "./commands/setup-pest-testing.md"
+      ],
+      "agents": [
+        "./agents/filament-plugin-developer.md",
+        "./agents/laravel-package-developer.md",
+        "./agents/package-test-writer.md"
+      ],
+      "hooks": "./hooks/hooks.json"
     },
     {
       "name": "post-development",
       "source": "./post-development",
       "version": "1.0.0",
-      "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables."
+      "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables.",
+      "keywords": [
+        "marketing",
+        "seo",
+        "screenshots",
+        "ads",
+        "landing-pages",
+        "personas",
+        "launch",
+        "content"
+      ],
+      "category": "marketing",
+      "tags": [
+        "post-launch",
+        "seo-analysis",
+        "screenshots",
+        "social-media-ads",
+        "landing-pages",
+        "buyer-personas",
+        "marketing-automation"
+      ],
+      "commands": [
+        "./commands/pd-ads.md",
+        "./commands/pd-articles.md",
+        "./commands/pd-landing.md",
+        "./commands/pd-personas.md",
+        "./commands/pd-screenshots.md",
+        "./commands/pd-seo.md",
+        "./commands/post-dev.md"
+      ],
+      "agents": [
+        "./agents/ad-creator.md",
+        "./agents/content-writer.md",
+        "./agents/landing-designer.md",
+        "./agents/persona-strategist.md",
+        "./agents/post-dev-orchestrator.md",
+        "./agents/screenshot-planner.md",
+        "./agents/seo-analyst.md"
+      ],
+      "hooks": "./hooks/hooks.json"
     },
     {
       "name": "taskmanager",
       "source": "./taskmanager",
       "version": "1.0.0",
-      "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions."
+      "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions.",
+      "keywords": [
+        "tasks",
+        "planning",
+        "prd",
+        "project-management",
+        "automation",
+        "memory",
+        "workflow"
+      ],
+      "category": "productivity",
+      "tags": [
+        "task-management",
+        "prd-execution",
+        "project-planning",
+        "batch-execution",
+        "project-memory",
+        "dependencies",
+        "workflow"
+      ],
+      "commands": [
+        "./commands/dashboard.md",
+        "./commands/execute-task.md",
+        "./commands/init.md",
+        "./commands/memory.md",
+        "./commands/next-task.md",
+        "./commands/plan.md",
+        "./commands/run-tasks.md"
+      ],
+      "agents": [
+        "./agents/taskmanager.md"
+      ]
     },
     {
       "name": "terminal-specialist",
       "source": "./terminal-specialist",
       "version": "1.0.0",
-      "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development."
+      "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development.",
+      "keywords": [
+        "terminal",
+        "shell",
+        "cli",
+        "tty",
+        "pty",
+        "ansi",
+        "signals",
+        "cross-platform"
+      ],
+      "category": "development-tools",
+      "tags": [
+        "terminal",
+        "shell",
+        "cli-development",
+        "tty-pty",
+        "ansi-escape",
+        "signals",
+        "cross-platform",
+        "streams"
+      ],
+      "commands": [
+        "./commands/cross-platform.md",
+        "./commands/docs.md",
+        "./commands/escape.md",
+        "./commands/modes.md",
+        "./commands/shell.md",
+        "./commands/signals.md",
+        "./commands/streams.md"
+      ],
+      "agents": [
+        "./agents/terminal-specialist-agent.md"
+      ]
     },
     {
       "name": "test-specialist",
       "source": "./test-specialist",
       "version": "1.0.0",
-      "description": "Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps and runs test suites with detailed reporting."
+      "description": "Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps and runs test suites with detailed reporting.",
+      "keywords": [
+        "testing",
+        "pest",
+        "php",
+        "laravel",
+        "livewire",
+        "filament",
+        "coverage",
+        "tdd"
+      ],
+      "category": "testing",
+      "tags": [
+        "pest-testing",
+        "php-testing",
+        "laravel-testing",
+        "livewire-testing",
+        "filament-testing",
+        "code-coverage",
+        "test-generation"
+      ],
+      "commands": [
+        "./commands/analyze-coverage.md",
+        "./commands/generate-pest-test.md",
+        "./commands/run-test-suite.md",
+        "./commands/test-filament.md",
+        "./commands/test-livewire.md",
+        "./commands/test-policies.md"
+      ],
+      "agents": [
+        "./agents/test-specialist-agent.md"
+      ]
     }
   ]
 }

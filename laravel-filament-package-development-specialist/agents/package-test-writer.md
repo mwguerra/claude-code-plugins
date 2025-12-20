@@ -1,5 +1,4 @@
 ---
-name: package-test-writer
 description: |
   Expert in writing Pest v4 tests for Laravel 12+ packages and Filament v4 plugins.
   Use when setting up tests (Orchestra Testbench ^10), creating a minimal Filament

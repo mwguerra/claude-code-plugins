@@ -1,5 +1,4 @@
 ---
-name: filament-specialist-agent
 description: Ultra-specialized agent for FilamentPHP v4 development. Use for creating resources, forms, tables, actions, widgets, infolists, testing Filament components, or diagnosing and fixing any Filament-related issues. This agent has access to complete official FilamentPHP v4 documentation.
 ---
 

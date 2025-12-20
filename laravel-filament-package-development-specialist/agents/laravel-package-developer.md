@@ -1,5 +1,4 @@
 ---
-name: laravel-package-developer
 description: |
   Expert Laravel package developer specializing in creating, testing, and maintaining
   Laravel/Composer packages. Use when developing packages, writing tests, or setting up

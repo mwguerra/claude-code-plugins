@@ -1,5 +1,4 @@
 ---
-name: docs-specialist
 description: Specialized documentation writer and reviewer with code-to-docs generation and drift detection
 ---
 

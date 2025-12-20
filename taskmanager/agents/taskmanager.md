@@ -1,5 +1,4 @@
 ---
-name: taskmanager
 description: >
   Data and invariants spec for the MWGuerra Task Manager. Defines the structure
   and rules for .taskmanager/tasks.json, .taskmanager/state.json, and logs.

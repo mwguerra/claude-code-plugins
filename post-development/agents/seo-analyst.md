@@ -1,5 +1,4 @@
 ---
-name: seo-analyst
 description: SEO analysis specialist. Analyzes project to generate meta tags, keywords, Open Graph data, favicon specs, and sitemap. Use for SEO-related post-development tasks.
 tools: Read, Write, Glob, Grep, Bash
 model: sonnet

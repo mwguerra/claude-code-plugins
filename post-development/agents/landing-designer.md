@@ -1,5 +1,4 @@
 ---
-name: landing-designer
 description: Landing page design specialist. Creates persona-specific landing page proposals with sections, copy, images, and CTAs. Use for generating landing page specifications.
 tools: Read, Write, Glob, Grep
 model: sonnet

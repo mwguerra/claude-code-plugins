@@ -1,5 +1,4 @@
 ---
-name: screenshot-planner
 description: Screenshot planning and capture specialist. Analyzes project routes and creates comprehensive screenshot plans for marketing materials. Use for capturing app screenshots.
 tools: Read, Write, Glob, Grep, Bash
 model: sonnet

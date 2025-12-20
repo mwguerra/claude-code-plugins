@@ -1,5 +1,4 @@
 ---
-name: test-specialist-agent
 description: A specialized agent for creating, maintaining, and executing Pest 4 tests across PHP, Laravel, Livewire, and Filament applications. This agent ensures comprehensive test coverage for processes, roles, policies, and page access. Use proactively to create tests, update tests, run tests, analyze test coverage and fix test failures.
 ---
 

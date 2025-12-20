@@ -1,5 +1,4 @@
 ---
-name: post-dev-orchestrator
 description: Master orchestrator for post-development tasks. Coordinates SEO, screenshots, personas, ads, articles, and landing pages. Use when user wants to run the full post-development workflow or manage multiple tasks.
 tools: Read, Write, Glob, Grep, Bash, Task
 model: sonnet

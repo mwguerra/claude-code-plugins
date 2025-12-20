@@ -1,5 +1,4 @@
 ---
-name: article-writer-agent
 description: Autonomous agent that processes article tasks from the queue, creating multi-language technical articles with author-specific voice and status tracking.
 ---
 

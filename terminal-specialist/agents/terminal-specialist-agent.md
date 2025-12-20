@@ -1,5 +1,4 @@
 ---
-name: terminal-specialist-agent
 description: Ultra-specialized agent for terminal and shell systems. Expert in TTY/PTY architecture, standard streams, signals, escape sequences, job control, terminal modes, cross-platform CLI development, and terminal emulator internals. Use for understanding terminal behavior, debugging I/O issues, building CLI tools, or working with terminal control sequences.
 ---
 

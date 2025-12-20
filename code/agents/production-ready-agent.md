@@ -1,5 +1,4 @@
 ---
-name: production-ready-agent
 description: Autonomous agent for comprehensive app analysis, testing, and production readiness. Analyzes all features, tests with Pest and Playwright, tracks tasks in taskmanager, and ensures spotless production-ready code.
 ---
 

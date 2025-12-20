@@ -1,5 +1,4 @@
 ---
-name: content-writer
 description: Content marketing specialist. Creates showcase articles with compelling narratives, SEO optimization, and strategic image placement. Use for generating marketing articles.
 tools: Read, Write, Glob, Grep
 model: sonnet

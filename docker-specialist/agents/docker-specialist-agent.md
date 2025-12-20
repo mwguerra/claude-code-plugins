@@ -1,5 +1,4 @@
 ---
-name: docker-specialist-agent
 description: Ultra-specialized agent for Docker and Docker Compose development. Use for creating Dockerfiles, compose configurations, managing containers, networking, volumes, SSL setup, troubleshooting, and optimizing Docker environments. This agent has access to complete Docker documentation.
 ---
 

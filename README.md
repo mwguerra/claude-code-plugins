@@ -15,67 +15,73 @@ A collection of Claude Code plugins for development workflows.
 ## Available Plugins
 
 ### article-writer
-
-Create high-quality technical articles with full research, documentation, and quality checks.
+Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing.
 
 ```bash
 /plugin install article-writer@mwguerra-marketplace
 ```
 
-### docs-specialist
+### code
+Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment.
 
-Specialized documentation writer and reviewer with commands for updating and validating project documentation.
+```bash
+/plugin install code@mwguerra-marketplace
+```
+
+### docs-specialist
+Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates.
 
 ```bash
 /plugin install docs-specialist@mwguerra-marketplace
 ```
 
-### taskmanager
-
-Hierarchical task management system with project memory for planning, executing, and tracking tasks from PRDs.
-
-```bash
-/plugin install taskmanager@mwguerra-marketplace
-```
-
-### test-specialist
-
-Automated test generation and execution for PHP, Laravel, Livewire, and Filament using Pest 4.
+### docker-specialist
+Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting.
 
 ```bash
-/plugin install test-specialist@mwguerra-marketplace
-```
-
-### laravel-package-scaffolding
-
-Scaffold new Laravel Composer package skeletons with ServiceProvider and test command.
-
-```bash
-/plugin install laravel-package-scaffolding@mwguerra-marketplace
-```
-
-### code-cleanup
-
-Clean code for commits by removing debug statements, fix-related comments, and development artifacts.
-
-```bash
-/plugin install code-cleanup@mwguerra-marketplace
+/plugin install docker-specialist@mwguerra-marketplace
 ```
 
 ### filament-specialist
-
-Ultra-specialized plugin for FilamentPHP v4 development - generates resources, forms, tables, actions, widgets, infolists, and tests following official documentation patterns.
+Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns.
 
 ```bash
 /plugin install filament-specialist@mwguerra-marketplace
 ```
 
-### docker-specialist
-
-Specialized Docker and Docker Compose assistant with comprehensive documentation for container management, networking, databases, SSL, and troubleshooting.
+### laravel-filament-package-development-specialist
+Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI.
 
 ```bash
-/plugin install docker-specialist@mwguerra-marketplace
+/plugin install laravel-filament-package-development-specialist@mwguerra-marketplace
+```
+
+### post-development
+App launch preparation toolkit with SEO analysis, automated screenshots, buyer persona creation, social media ad generation, technical article writing, and landing page proposals.
+
+```bash
+/plugin install post-development@mwguerra-marketplace
+```
+
+### taskmanager
+Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory.
+
+```bash
+/plugin install taskmanager@mwguerra-marketplace
+```
+
+### terminal-specialist
+Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, and terminal modes.
+
+```bash
+/plugin install terminal-specialist@mwguerra-marketplace
+```
+
+### test-specialist
+Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps.
+
+```bash
+/plugin install test-specialist@mwguerra-marketplace
 ```
 
 ## Requirements
@@ -85,3 +91,4 @@ Specialized Docker and Docker Compose assistant with comprehensive documentation
 ## License
 
 MIT
+

@@ -1,5 +1,4 @@
 ---
-name: filament-plugin-developer
 description: |
   Expert Filament v4 plugin developer (Laravel 12). Use when creating Filament plugins (panel or standalone),
   wiring plugin classes, registering assets with FilamentAsset, and scaffolding resources,

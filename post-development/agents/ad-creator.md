@@ -1,5 +1,4 @@
 ---
-name: ad-creator
 description: Social media ad creation specialist. Creates ads for Instagram, Facebook, LinkedIn, Twitter/X with copy, image specs, and targeting. Use for generating marketing ads.
 tools: Read, Write, Glob, Grep
 model: sonnet
