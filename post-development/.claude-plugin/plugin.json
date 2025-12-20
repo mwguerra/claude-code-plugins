@@ -21,6 +21,14 @@
     "automation"
   ],
   "commands": "./commands",
-  "agents": "./agents",
+  "agents": [
+    "./agents/ad-creator.md",
+    "./agents/content-writer.md",
+    "./agents/landing-designer.md",
+    "./agents/persona-strategist.md",
+    "./agents/post-dev-orchestrator.md",
+    "./agents/screenshot-planner.md",
+    "./agents/seo-analyst.md"
+  ],
   "hooks": "./hooks/hooks.json"
 }
