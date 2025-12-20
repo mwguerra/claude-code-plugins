@@ -29,6 +29,5 @@
     "./agents/post-dev-orchestrator.md",
     "./agents/screenshot-planner.md",
     "./agents/seo-analyst.md"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
