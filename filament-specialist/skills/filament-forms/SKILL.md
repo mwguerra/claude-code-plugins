@@ -43,6 +43,7 @@ Build the form schema with proper structure:
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -51,7 +52,164 @@ public static function form(Form $form): Form
 {
     return $form
         ->schema([
-            // Fields here
+            // Fields organized in sections/fieldsets
+        ]);
+}
+```
+
+## Schema Organization Requirement
+
+**CRITICAL:** All form schemas MUST be organized using layout components. Never place fields directly at the root level of a form schema.
+
+### Minimum Organization Rules
+
+1. **Always use Sections or Fieldsets** - Every form must have at least one Section or Fieldset wrapping its fields
+2. **Group related fields** - Fields that belong together logically should be in the same Section/Fieldset
+3. **Use descriptive labels** - Sections and Fieldsets should have meaningful titles
+4. **Consider collapsibility** - Make sections collapsible when forms are long
+
+### Recommended Hierarchy
+
+```
+Form Schema
+├── Section: "Primary Information"
+│   ├── Fieldset: "Basic Details" (optional grouping)
+│   │   ├── TextInput: name
+│   │   └── TextInput: email
+│   └── Fieldset: "Contact" (optional grouping)
+│       ├── TextInput: phone
+│       └── TextInput: address
+├── Section: "Settings"
+│   ├── Toggle: is_active
+│   └── Select: status
+└── Section: "Media" (collapsible)
+    └── FileUpload: avatar
+```
+
+### Bad Example (DO NOT DO THIS)
+
+```php
+// ❌ WRONG: Fields at root level without organization
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            TextInput::make('name'),
+            TextInput::make('email'),
+            TextInput::make('phone'),
+            Toggle::make('is_active'),
+            FileUpload::make('avatar'),
+        ]);
+}
+```
+
+### Good Example (ALWAYS DO THIS)
+
+```php
+// ✅ CORRECT: Fields organized in sections
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            Section::make('Personal Information')
+                ->description('Basic user details')
+                ->schema([
+                    TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+                    TextInput::make('email')
+                        ->email()
+                        ->required(),
+                    TextInput::make('phone')
+                        ->tel(),
+                ]),
+
+            Section::make('Settings')
+                ->schema([
+                    Toggle::make('is_active')
+                        ->label('Active')
+                        ->default(true),
+                ]),
+
+            Section::make('Profile Image')
+                ->collapsible()
+                ->schema([
+                    FileUpload::make('avatar')
+                        ->image()
+                        ->disk('public')
+                        ->directory('avatars'),
+                ]),
+        ]);
+}
+```
+
+### When to Use Section vs Fieldset
+
+| Component | Use Case |
+|-----------|----------|
+| **Section** | Major logical groupings, can have description, icon, collapsible |
+| **Fieldset** | Smaller sub-groupings within a section, lighter visual weight |
+| **Tabs** | When sections are numerous and would cause scrolling |
+| **Grid** | Column layout within sections (not a replacement for sections) |
+
+### Complex Form Example
+
+```php
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            Section::make('Product Details')
+                ->icon('heroicon-o-cube')
+                ->schema([
+                    Fieldset::make('Basic Information')
+                        ->schema([
+                            TextInput::make('name')
+                                ->required()
+                                ->maxLength(255),
+                            TextInput::make('sku')
+                                ->required()
+                                ->unique(ignoreRecord: true),
+                        ])
+                        ->columns(2),
+
+                    Fieldset::make('Pricing')
+                        ->schema([
+                            TextInput::make('price')
+                                ->numeric()
+                                ->prefix('$')
+                                ->required(),
+                            TextInput::make('compare_at_price')
+                                ->numeric()
+                                ->prefix('$'),
+                        ])
+                        ->columns(2),
+
+                    RichEditor::make('description')
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Inventory')
+                ->icon('heroicon-o-archive-box')
+                ->collapsible()
+                ->schema([
+                    TextInput::make('quantity')
+                        ->numeric()
+                        ->default(0),
+                    Toggle::make('track_inventory')
+                        ->default(true),
+                ]),
+
+            Section::make('Media')
+                ->icon('heroicon-o-photo')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    FileUpload::make('images')
+                        ->multiple()
+                        ->image()
+                        ->reorderable(),
+                ]),
         ]);
 }
 ```
@@ -514,9 +672,11 @@ TextInput::make('tax_id')
 ## Output
 
 Generated forms include:
-1. Proper imports
+1. Proper imports (including Section, Fieldset as needed)
 2. Type declarations
-3. Validation rules
-4. Layout structure
-5. Relationship handling
-6. Conditional logic
+3. **Schema organized in Sections/Fieldsets** (mandatory)
+4. Validation rules
+5. Layout structure with columns where appropriate
+6. Relationship handling
+7. Conditional logic
+8. Collapsible sections for optional/secondary content
