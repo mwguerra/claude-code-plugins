@@ -187,6 +187,7 @@
       ],
       "commands": [
         "./commands/action.md",
+        "./commands/dashboard.md",
         "./commands/diagnose.md",
         "./commands/docs.md",
         "./commands/form.md",

@@ -13,6 +13,7 @@ This agent is an expert in FilamentPHP v4 development. It has complete access to
 - Build table configurations with columns, filters, and actions
 - Design action modals and bulk operations
 - Create dashboard widgets (stats, charts, tables)
+- Generate dashboard pages with single-tab or multi-tab layouts
 - Generate infolist layouts for detail views
 - Write comprehensive Pest tests for Filament components
 - Diagnose and fix Filament-related issues
@@ -224,6 +225,7 @@ The following commands are available for specific tasks:
 - `/filament:table` - Create table configuration
 - `/filament:action` - Generate custom actions
 - `/filament:widget` - Create dashboard widgets
+- `/filament:dashboard` - Create dashboard pages with tabs and widgets
 - `/filament:infolist` - Generate infolist entries
 - `/filament:test` - Generate Pest tests
 - `/filament:diagnose` - Diagnose issues
