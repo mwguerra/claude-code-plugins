@@ -21,4 +21,5 @@ You are implementing `/mwguerra:taskmanager:init`.
      - Use `Write` to create the corresponding file under `.taskmanager`.
 4. Summarize:
    - Which files/directories were created.
+   - Note that `tasks-archive.json` is created for future archival of completed tasks.
    - How to run `/mwguerra:taskmanager:plan` next.

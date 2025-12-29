@@ -117,7 +117,12 @@ For each iteration up to the limit:
 - Update the leaf task `status` based on outcome:
   - `"done"`, `"blocked"`, or `"canceled"` as appropriate.
 - **Recompute the macro status for all ancestor tasks** using the _Status propagation helper_ rules below.
-- Write the updated `.taskmanager/tasks.json` back to disk.
+- **Archive if terminal status**: If the final status is `"done"`, `"canceled"`, or `"duplicate"`:
+  - Follow the archival procedure from SKILL.md section 8.7.
+  - Archive the task to `.taskmanager/tasks-archive.json`.
+  - Replace with stub in `tasks.json`.
+  - Check and archive parent if all its children are now archived.
+- Write the updated files back to disk.
 - Update `.taskmanager/state.json`:
   - `currentTaskId = null` if not immediately chaining to another task.
   - `currentSubtaskPath = null`

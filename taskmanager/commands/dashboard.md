@@ -11,8 +11,10 @@ You are implementing `/mwguerra:taskmanager:dashboard`.
 
 1. Ask the `taskmanager` skill to:
    - Read `.taskmanager/tasks.json`.
-   - Flatten all tasks and subtasks into a single list.
-   - Ensure `estimateSeconds` is populated for all leaf tasks and rollups are recomputed for parents (see the skill’s estimation rules).
+   - Note: Completed tasks may appear as **stubs** (with `archivedRef: true`). Stubs retain all fields needed for metrics: `id`, `title`, `status`, `priority`, `estimateSeconds`, `durationSeconds`, `completedAt`.
+   - No need to read `.taskmanager/tasks-archive.json` for standard metrics - stubs contain everything needed.
+   - Flatten all tasks and subtasks (including stubs) into a single list.
+   - Ensure `estimateSeconds` is populated for all leaf tasks and rollups are recomputed for parents (see the skill's estimation rules).
    - Ensure `status` propagation is up to date for all parents.
 
 2. Compute summary metrics such as:

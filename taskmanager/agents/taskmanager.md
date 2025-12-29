@@ -30,10 +30,12 @@ At the project root:
 ```text
 .taskmanager/
   AGENT-SPEC.md                 # This file – data contract & invariants
-  tasks.json                    # Active tasks + nested subtasks
+  tasks.json                    # Active tasks + stubs for archived tasks
+  tasks-archive.json            # Full details of archived (completed) tasks
   state.json                    # Current agent state
   schemas/
     tasks.schema.json           # JSON Schema for tasks.json
+    tasks-archive.schema.json   # JSON Schema for tasks-archive.json
     state.schema.json           # JSON Schema for state.json
   logs/
     errors.log                  # Append-only error log
@@ -177,9 +179,89 @@ The tree MUST match the ID structure exactly.
   - Status: macro view derived from children (see 8.5 in the skill).
   - Estimates: macro sum of child `estimateSeconds`, not hand-authored.
 
+### 2.7 Archived Tasks and Stubs
+
+When tasks reach terminal status (`done`, `canceled`, `duplicate`), they are **archived** to prevent `tasks.json` from growing too large.
+
+#### Stub structure
+
+Archived tasks remain in `tasks.json` as **stubs** with `archivedRef: true`:
+
+```jsonc
+{
+  "id": "1.2.3",
+  "title": "Implement user auth",
+  "status": "done",
+  "parentId": "1.2",
+  "priority": "high",
+  "complexity": { "score": 3, "scale": "M" },
+  "estimateSeconds": 3600,
+  "durationSeconds": 4200,
+  "completedAt": "2025-12-29T10:00:00Z",
+  "archivedRef": true,
+  "subtasks": []
+}
+```
+
+**Stub invariants:**
+- MUST contain: `id`, `title`, `status`, `parentId`, `priority`, `complexity`, `archivedRef`, `subtasks`
+- SHOULD contain for metrics: `estimateSeconds`, `durationSeconds`, `completedAt`
+- `subtasks` MUST be `[]` (children are archived separately)
+- `archivedRef` MUST be `true`
+
+#### Full task details in archive
+
+Full task objects are stored in `tasks-archive.json` with an `archivedAt` timestamp.
+
+**Archive invariants:**
+- Tasks in archive MUST have terminal status
+- Tasks in archive MUST have `archivedAt` timestamp
+- If un-archived, `unarchivedAt` is added (entry not deleted, for audit trail)
+- Corresponding stub in `tasks.json` MUST have `archivedRef: true`
+
 ---
 
-## 3. Project Memory (.taskmanager/memories.json)
+## 3. Archive Contract (`tasks-archive.json`)
+
+`tasks-archive.json` must conform to the schema in:
+
+```
+.taskmanager/schemas/tasks-archive.schema.json
+```
+
+### 3.1 Top-level structure
+
+```jsonc
+{
+  "version": "1.0.0",
+  "project": {
+    "id": "project-id",
+    "name": "Project Name"
+  },
+  "lastUpdated": "2025-12-29T15:30:00Z",
+  "tasks": [
+    /* archived task objects with archivedAt field */
+  ]
+}
+```
+
+### 3.2 Archived task shape
+
+Each archived task has the same shape as a regular task, plus:
+
+- `archivedAt` — ISO 8601 timestamp when archived (required)
+- `unarchivedAt` — ISO 8601 timestamp if restored (optional, for audit trail)
+
+### 3.3 Invariants
+
+- Archive is **append-only** for archival (new tasks are added when they complete).
+- Un-archiving adds `unarchivedAt` timestamp; entry is NOT deleted.
+- `lastUpdated` MUST be updated whenever a task is archived or un-archived.
+- All tasks in archive MUST have terminal status.
+
+---
+
+## 4. Project Memory (`.taskmanager/memories.json`)
 
 The Task Manager runtime also owns a project-wide memory store:
 
@@ -235,7 +317,7 @@ There are two scopes of memory:
 
 ---
 
-## 4. State Contract (`state.json`)
+## 5. State Contract (`state.json`)
 
 `state.json` must conform to:
 
@@ -332,7 +414,7 @@ Other optional fields:
 
 ---
 
-## 5. Logs Contract
+## 6. Logs Contract
 
 Logs live under:
 
@@ -434,13 +516,14 @@ Commands MUST:
 
 ---
 
-## 6. Interop Rules (Very Important)
+## 7. Interop Rules (Very Important)
 
 All planning, execution, dashboard, next-task, and other features must:
 
 1. Treat this document as the **contract** for:
 
    * `tasks.json`
+   * `tasks-archive.json`
    * `state.json`
    * `memories.json`
    * Logging rules

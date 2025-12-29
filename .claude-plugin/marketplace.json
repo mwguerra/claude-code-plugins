@@ -198,7 +198,7 @@
         "./commands/widget.md"
       ],
       "agents": [
-        "./agents/filament-specialist-agent.md"
+        "./agents/filament-specialist.md"
       ]
     },
     {

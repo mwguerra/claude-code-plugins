@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "MWGuerraTasks",
+  "title": "MWGuerraTasksArchive",
+  "description": "Schema for archived tasks. Contains full task objects moved from tasks.json when they reach terminal status.",
   "type": "object",
   "required": ["version", "tasks"],
   "properties": {
@@ -15,15 +16,20 @@
       },
       "additionalProperties": false
     },
+    "lastUpdated": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When the last task was archived or un-archived."
+    },
     "tasks": {
       "type": "array",
-      "items": { "$ref": "#/$defs/task" }
+      "items": { "$ref": "#/$defs/archivedTask" }
     }
   },
   "$defs": {
-    "task": {
+    "archivedTask": {
       "type": "object",
-      "required": ["id", "title", "status", "priority", "complexity", "subtasks"],
+      "required": ["id", "title", "status", "priority", "complexity", "subtasks", "archivedAt"],
       "properties": {
         "id": {
           "type": "string",
@@ -34,16 +40,11 @@
         "status": {
           "type": "string",
           "enum": [
-            "draft",
-            "planned",
-            "in-progress",
-            "blocked",
-            "paused",
             "done",
             "canceled",
-            "duplicate",
-            "needs-review"
-          ]
+            "duplicate"
+          ],
+          "description": "Archived tasks must have terminal status."
         },
         "type": {
           "type": "string",
@@ -70,33 +71,27 @@
         },
         "domain": {
           "type": "string",
-          "enum": ["software", "writing"],
-          "description": "High-level domain this task belongs to. If omitted, treat as 'software' by default."
+          "enum": ["software", "writing"]
         },
         "writingType": {
           "type": ["string", "null"],
-          "enum": ["book", "article", "blog-post", "short-story", "novella", "documentation", "whitepaper", "other"],
-          "description": "Specific format for writing-related tasks. Only relevant when domain = 'writing'."
+          "enum": ["book", "article", "blog-post", "short-story", "novella", "documentation", "whitepaper", "other"]
         },
         "contentUnit": {
           "type": ["string", "null"],
-          "enum": ["work", "part", "chapter", "section", "subsection", "scene", "appendix", "front-matter", "back-matter", "other"],
-          "description": "If this task applies to a specific unit of the work (e.g. chapter, scene)."
+          "enum": ["work", "part", "chapter", "section", "subsection", "scene", "appendix", "front-matter", "back-matter", "other"]
         },
         "targetWordCount": {
           "type": ["integer", "null"],
-          "minimum": 0,
-          "description": "Approximate word-count target for the content covered by this task (for writing domain)."
+          "minimum": 0
         },
         "currentWordCount": {
           "type": ["integer", "null"],
-          "minimum": 0,
-          "description": "Optional: current word count achieved so far for this task's content. Not required, but useful for progress tracking."
+          "minimum": 0
         },
         "writingStage": {
           "type": ["string", "null"],
-          "enum": ["idea", "outline", "research", "draft", "rewrite", "edit", "copyedit", "proofread", "ready-to-publish", "published"],
-          "description": "Fine-grained stage inside the writing process; complements the generic status field."
+          "enum": ["idea", "outline", "research", "draft", "rewrite", "edit", "copyedit", "proofread", "ready-to-publish", "published"]
         },
         "dependencies": {
           "type": "array",
@@ -131,34 +126,36 @@
         "testStrategy": { "type": "string" },
         "estimateSeconds": {
           "type": ["integer", "null"],
-          "minimum": 0,
-          "description": "Estimated effort for this task in seconds. Leaf tasks MUST have a non-null value. Parent tasks SHOULD have the sum of their direct children."
+          "minimum": 0
         },
         "startedAt": {
           "type": ["string", "null"],
-          "format": "date-time",
-          "description": "When execution of this task actually started."
+          "format": "date-time"
         },
         "completedAt": {
           "type": ["string", "null"],
-          "format": "date-time",
-          "description": "When this task first reached a terminal status (done/canceled/duplicate)."
+          "format": "date-time"
         },
         "durationSeconds": {
           "type": ["integer", "null"],
-          "minimum": 0,
-          "description": "Actual elapsed execution time in seconds, computed when the task reaches a terminal status."
+          "minimum": 0
         },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
         "meta": { "type": "object" },
         "subtasks": {
           "type": "array",
-          "items": { "$ref": "#/$defs/task" }
+          "items": { "$ref": "#/$defs/archivedTask" }
         },
-        "archivedRef": {
-          "type": "boolean",
-          "description": "If true, this is a stub and full task details are in tasks-archive.json."
+        "archivedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this task was archived."
+        },
+        "unarchivedAt": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When this task was restored from archive (if applicable)."
         }
       },
       "additionalProperties": false

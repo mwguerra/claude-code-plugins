@@ -30,6 +30,7 @@ Always work relative to the project root.
 ## Files you own
 
 - `.taskmanager/tasks.json`
+- `.taskmanager/tasks-archive.json` — Archived completed tasks (full details)
 - `.taskmanager/state.json`
 - `.taskmanager/memories.json`
 - `.taskmanager/docs/prd.md`
@@ -40,6 +41,7 @@ Always work relative to the project root.
 You MAY read the JSON Schemas:
 
 - `.taskmanager/schemas/tasks.schema.json`
+- `.taskmanager/schemas/tasks-archive.schema.json`
 - `.taskmanager/schemas/state.schema.json`
 - `.taskmanager/schemas/memories.schema.json`
 
@@ -681,6 +683,94 @@ You MUST always perform this propagation after:
 - Changing the status of any leaf or intermediate task.
 - Adding or removing subtasks from a parent.
 - Bulk operations that change multiple child statuses.
+
+### 8.7 Archival on terminal status
+
+When a task reaches a **terminal status** (`"done"`, `"canceled"`, `"duplicate"`), you SHOULD archive it to reduce the size of `tasks.json` and prevent token limit issues.
+
+#### 8.7.1 When to archive
+
+A task is eligible for archival when:
+
+1. Its status is terminal (`"done"`, `"canceled"`, or `"duplicate"`).
+2. For **leaf tasks** (no subtasks or all subtasks terminal): Archive immediately.
+3. For **parent tasks**: Archive only when ALL direct children are already archived or terminal.
+
+#### 8.7.2 Archival procedure
+
+When archiving a task:
+
+1. **Load the archive file**:
+   - Read `.taskmanager/tasks-archive.json`.
+   - If it doesn't exist, create it from the template.
+
+2. **Move the full task to archive**:
+   - Copy the complete task object (including all fields).
+   - Add `archivedAt` field with current ISO 8601 timestamp.
+   - Append to the archive's `tasks` array.
+   - Update the archive's `lastUpdated` timestamp.
+
+3. **Replace task in tasks.json with stub**:
+   - Keep only essential fields for the stub:
+     - `id`, `title`, `status`, `parentId`
+     - `priority`, `estimateSeconds`, `durationSeconds`, `completedAt`
+     - `archivedRef: true`
+     - `subtasks: []` (children are archived separately)
+   - Remove all other fields (description, details, dependencies, meta, etc.)
+
+4. **Write both files**:
+   - Write the updated `tasks-archive.json`.
+   - Write the updated `tasks.json` with the stub.
+
+5. **Log the archival**:
+   - Append to `decisions.log`: `Task <id> archived to tasks-archive.json`
+
+#### 8.7.3 Cascading archival
+
+After archiving a leaf task:
+
+1. Check its parent task.
+2. If the parent is terminal AND all its children are now archived → archive the parent.
+3. Repeat up the tree until reaching a non-archivable ancestor.
+
+#### 8.7.4 Stub structure
+
+Archived task stubs in `tasks.json` retain these fields for metrics and tree structure:
+
+```json
+{
+  "id": "1.2.3",
+  "title": "Implement user auth",
+  "status": "done",
+  "parentId": "1.2",
+  "priority": "high",
+  "complexity": { "score": 3, "scale": "M" },
+  "estimateSeconds": 3600,
+  "durationSeconds": 4200,
+  "completedAt": "2025-12-29T10:00:00Z",
+  "archivedRef": true,
+  "subtasks": []
+}
+```
+
+This allows:
+- Dashboard to compute metrics without loading the archive.
+- Tree structure to remain intact via `parentId`.
+- Dependencies to reference archived tasks by ID.
+
+#### 8.7.5 Un-archiving (restoring tasks)
+
+When a task needs to be reopened (status changed from terminal to non-terminal):
+
+1. Find the stub in `tasks.json`.
+2. Look up the full task in `tasks-archive.json` by ID.
+3. Replace the stub with the full task object.
+4. Remove the `archivedRef` flag.
+5. Update status to the new value (e.g., `"in-progress"`, `"planned"`).
+6. In the archive, add `unarchivedAt` timestamp (keep for audit trail).
+7. Run status propagation for ancestors.
+8. Write both files.
+9. Log the restoration: `Task <id> restored from archive`
 
 ---
 
