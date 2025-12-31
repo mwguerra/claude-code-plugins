@@ -1,0 +1,153 @@
+---
+description: Test all pages and flows for each user role, verifying proper access control
+allowed-tools: Skill(e2e-role-test), mcp__playwright__*
+argument-hint: <base-url> [--roles admin,user,guest] [--credentials path/to/credentials.json]
+---
+
+# Role-Based Testing
+
+Test all pages and flows for each user role using Playwright MCP. Verifies proper access control and role-specific functionality.
+
+## Usage
+
+```bash
+/e2e-test-specialist:roles http://localhost:8000
+/e2e-test-specialist:roles http://localhost:8000 --roles admin,user
+/e2e-test-specialist:roles http://localhost:8000 --credentials test-users.json
+```
+
+## Process
+
+### Step 1: Role Discovery
+
+1. **Identify All Roles**
+   - Find role definitions in codebase
+   - Map role hierarchy
+   - Note role permissions
+
+2. **Prepare Credentials**
+   - Get test user for each role
+   - Verify credentials work
+   - Note login URLs
+
+### Step 2: Guest Testing
+
+1. **Test Public Pages**
+   - Verify accessible pages load
+   - Check content displays correctly
+
+2. **Test Protected Pages**
+   - Verify redirects to login
+   - Check proper blocking
+
+### Step 3: Authenticated Role Testing
+
+For EACH role:
+
+1. **Login**
+   ```
+   mcp__playwright__browser_navigate to /login
+   mcp__playwright__browser_fill_form with credentials
+   mcp__playwright__browser_click submit
+   mcp__playwright__browser_wait_for success
+   ```
+
+2. **Test Accessible Pages**
+   - Navigate to each page role should access
+   - Verify content loads correctly
+
+3. **Test Blocked Pages**
+   - Try accessing restricted pages
+   - Verify 403 or redirect
+
+4. **Test Role Actions**
+   - Perform role-specific actions
+   - Verify correct behavior
+
+5. **Logout**
+   - Logout before next role
+
+### Step 4: Security Tests
+
+1. **Session Isolation**
+   - Verify roles can't access each other's data
+
+2. **Privilege Escalation**
+   - Try admin actions as regular user
+   - Verify blocked
+
+### Step 5: Report Generation
+
+Generate report with:
+- Roles tested
+- Pages accessible per role
+- Pages correctly blocked
+- Security test results
+
+## Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| base-url | Application URL | Required |
+| --roles | Roles to test | All discovered |
+| --credentials | Credentials file | Interactive |
+
+## Credentials File Format
+
+```json
+{
+  "admin": {
+    "email": "admin@example.com",
+    "password": "adminpass"
+  },
+  "user": {
+    "email": "user@example.com",
+    "password": "userpass"
+  }
+}
+```
+
+## Output
+
+```markdown
+# Role-Based Test Results
+
+## Summary
+| Role | Pages OK | Pages Blocked | Issues |
+|------|----------|---------------|--------|
+| guest | 5/5 | 10/10 | 0 |
+| user | 12/12 | 3/3 | 0 |
+| admin | 15/15 | 0/0 | 0 |
+
+## Details
+
+### Guest Role
+- [x] Can access public pages
+- [x] Blocked from protected pages
+
+### User Role
+- [x] Can access user pages
+- [x] Blocked from admin pages
+- [x] Can perform user actions
+
+### Admin Role
+- [x] Full access to all pages
+- [x] Can perform all actions
+```
+
+## Examples
+
+### Test All Roles
+```bash
+/e2e-test-specialist:roles http://localhost:8000
+```
+
+### Test Specific Roles
+```bash
+/e2e-test-specialist:roles http://localhost:8000 --roles admin,user
+```
+
+### Use Credentials File
+```bash
+/e2e-test-specialist:roles http://localhost:8000 --credentials tests/users.json
+```

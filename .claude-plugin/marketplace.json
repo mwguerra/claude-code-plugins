@@ -398,6 +398,44 @@
       "agents": [
         "./agents/test-specialist-agent.md"
       ]
+    },
+    {
+      "name": "e2e-test-specialist",
+      "source": "./e2e-test-specialist",
+      "version": "1.0.0",
+      "description": "Comprehensive E2E testing using Playwright MCP. Creates detailed test plans, tests all pages for errors, verifies user flows by role, and runs visual browser tests with complete coverage.",
+      "keywords": [
+        "e2e",
+        "testing",
+        "playwright",
+        "browser",
+        "automation",
+        "visual-testing",
+        "end-to-end",
+        "role-based"
+      ],
+      "category": "testing",
+      "tags": [
+        "e2e-testing",
+        "playwright",
+        "browser-testing",
+        "visual-testing",
+        "role-based-testing",
+        "flow-testing",
+        "page-testing",
+        "automation"
+      ],
+      "commands": [
+        "./commands/test.md",
+        "./commands/plan.md",
+        "./commands/pages.md",
+        "./commands/roles.md",
+        "./commands/flows.md",
+        "./commands/screenshot.md"
+      ],
+      "agents": [
+        "./agents/e2e-test-agent.md"
+      ]
     }
   ]
 }
