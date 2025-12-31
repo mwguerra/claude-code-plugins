@@ -16,6 +16,8 @@ This command provides quick, efficient access to task statistics without loading
 - `[mode]` (optional): The type of statistics to retrieve. Defaults to `--summary`.
 
 Available modes:
+
+**Read-only statistics:**
 - `--summary` - Full text summary with all statistics
 - `--json` - Full JSON output for programmatic use
 - `--next` - Next recommended task only
@@ -26,6 +28,15 @@ Available modes:
 - `--remaining` - Count of remaining tasks
 - `--time` - Estimated time remaining
 - `--completion` - Completion statistics
+
+**Task query:**
+- `--get <id> [key]` - Get task by ID, optionally extract specific property
+  - Examples: `--get 1.2.3`, `--get 1.2.3 status`, `--get 1.2.3 complexity.scale`
+
+**Write modes (modify tasks.json):**
+- `--set-status <status> <id1> [id2...]` - Update status for one or more tasks
+  - Valid statuses: draft, planned, in-progress, blocked, paused, done, canceled, duplicate, needs-review
+  - Examples: `--set-status done 1.2.3`, `--set-status done 1.2.3 1.2.4 1.2.5`
 
 ## Behavior
 
@@ -202,7 +213,10 @@ Estimate: 4 hours
 
 ## Notes
 
-- This command is **read-only** - it never modifies any files.
+- Most modes are **read-only** and do not modify any files.
+- The `--set-status` mode **modifies** `.taskmanager/tasks.json` (creates backup first).
 - Uses `jq` for efficient JSON parsing without loading entire file into context.
 - Ideal for quick status checks before starting work.
 - For full dashboard with critical path analysis, use `/mwguerra:taskmanager:dashboard`.
+- For getting a single task, use `/mwguerra:taskmanager:get-task <id> [key]`.
+- For updating status, use `/mwguerra:taskmanager:update-status <status> <id1> [id2...]`.

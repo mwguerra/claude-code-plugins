@@ -9,20 +9,35 @@ set -e
 
 # Handle --help as first argument
 if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-    echo "Usage: $0 [tasks.json path] [mode]"
+    echo "Usage: $0 [tasks.json path] [mode] [args...]"
     echo ""
-    echo "Modes:"
-    echo "  --summary     Full text summary (default)"
-    echo "  --json        Full JSON output for programmatic use"
-    echo "  --next        Next recommended task"
-    echo "  --next5       Next 5 recommended tasks"
-    echo "  --status      Task counts by status"
-    echo "  --priority    Task counts by priority"
-    echo "  --levels      Task counts by level depth"
-    echo "  --remaining   Count of remaining tasks"
-    echo "  --time        Estimated time remaining"
-    echo "  --completion  Completion statistics"
-    echo "  --help, -h    Show this help"
+    echo "Read-only Modes:"
+    echo "  --summary          Full text summary (default)"
+    echo "  --json             Full JSON output for programmatic use"
+    echo "  --next             Next recommended task"
+    echo "  --next5            Next 5 recommended tasks"
+    echo "  --status           Task counts by status"
+    echo "  --priority         Task counts by priority"
+    echo "  --levels           Task counts by level depth"
+    echo "  --remaining        Count of remaining tasks"
+    echo "  --time             Estimated time remaining"
+    echo "  --completion       Completion statistics"
+    echo ""
+    echo "Task Query Modes:"
+    echo "  --get <id> [key]   Get task by ID, optionally extract specific key"
+    echo "                     Examples: --get 1.2.3"
+    echo "                               --get 1.2.3 title"
+    echo "                               --get 1.2.3 status"
+    echo "                               --get 1.2.3 complexity.scale"
+    echo ""
+    echo "Write Modes (modify tasks.json):"
+    echo "  --set-status <status> <id1> [id2...]  Update status for one or more tasks"
+    echo "                     Valid statuses: draft, planned, in-progress, blocked,"
+    echo "                                     paused, done, canceled, duplicate, needs-review"
+    echo "                     Examples: --set-status done 1.2.3"
+    echo "                               --set-status done 1.2.3 1.2.4 1.2.5"
+    echo ""
+    echo "  --help, -h         Show this help"
     exit 0
 fi
 
@@ -231,6 +246,129 @@ get_next5_tasks() {
     '
 }
 
+# Function to get a task by ID
+get_task_by_id() {
+    local task_id="$1"
+    local key="$2"
+
+    if [[ -z "$task_id" ]]; then
+        echo "Error: Task ID required" >&2
+        exit 1
+    fi
+
+    local result
+    result=$(flatten_tasks | jq --arg id "$task_id" '
+    .[] | select(.id == $id)
+    ')
+
+    if [[ -z "$result" ]] || [[ "$result" == "null" ]]; then
+        echo "Error: Task '$task_id' not found" >&2
+        exit 1
+    fi
+
+    if [[ -z "$key" ]]; then
+        echo "$result" | jq '.'
+    else
+        # Handle nested keys like "complexity.scale"
+        echo "$result" | jq -r --arg key "$key" 'getpath($key | split("."))'
+    fi
+}
+
+# Function to get multiple tasks by IDs
+get_tasks_by_ids() {
+    local ids_json="$1"
+
+    flatten_tasks | jq --argjson ids "$ids_json" '
+    [.[] | select(.id as $tid | $ids | index($tid) != null)]
+    '
+}
+
+# Function to update task status by ID (modifies tasks.json)
+set_task_status() {
+    local new_status="$1"
+    shift
+    local task_ids=("$@")
+
+    # Validate status
+    local valid_statuses="draft planned in-progress blocked paused done canceled duplicate needs-review"
+    if ! echo "$valid_statuses" | grep -qw "$new_status"; then
+        echo "Error: Invalid status '$new_status'" >&2
+        echo "Valid statuses: $valid_statuses" >&2
+        exit 1
+    fi
+
+    if [[ ${#task_ids[@]} -eq 0 ]]; then
+        echo "Error: At least one task ID required" >&2
+        exit 1
+    fi
+
+    # Convert task IDs array to JSON array
+    local ids_json
+    ids_json=$(printf '%s\n' "${task_ids[@]}" | jq -R . | jq -s .)
+
+    # Create backup
+    cp "$TASKS_FILE" "${TASKS_FILE}.bak"
+
+    # Update tasks recursively
+    local updated
+    updated=$(jq --arg status "$new_status" --argjson ids "$ids_json" '
+    def update_status:
+      if .id as $tid | $ids | index($tid) != null then
+        .status = $status |
+        if $status == "done" or $status == "canceled" or $status == "duplicate" then
+          .completedAt = (now | todate)
+        else
+          .
+        end |
+        if $status == "in-progress" and .startedAt == null then
+          .startedAt = (now | todate)
+        else
+          .
+        end
+      else
+        .
+      end |
+      if .subtasks then
+        .subtasks = [.subtasks[] | update_status]
+      else
+        .
+      end;
+
+    .tasks = [.tasks[] | update_status]
+    ' "$TASKS_FILE")
+
+    # Validate the result is valid JSON
+    if ! echo "$updated" | jq empty 2>/dev/null; then
+        echo "Error: Failed to update tasks (invalid JSON produced)" >&2
+        mv "${TASKS_FILE}.bak" "$TASKS_FILE"
+        exit 1
+    fi
+
+    # Write the updated file
+    echo "$updated" > "$TASKS_FILE"
+
+    # Verify the IDs were found and updated
+    local updated_count
+    updated_count=$(flatten_tasks | jq --arg status "$new_status" --argjson ids "$ids_json" '
+    [.[] | select(.id as $tid | $ids | index($tid) != null) | select(.status == $status)] | length
+    ')
+
+    local requested_count=${#task_ids[@]}
+
+    if [[ "$updated_count" -eq "$requested_count" ]]; then
+        echo "Successfully updated $updated_count task(s) to status '$new_status':"
+        for id in "${task_ids[@]}"; do
+            echo "  - $id"
+        done
+        rm -f "${TASKS_FILE}.bak"
+    else
+        echo "Warning: Requested $requested_count task(s), but only $updated_count were updated" >&2
+        echo "Some task IDs may not exist. Check your IDs and try again." >&2
+        # Keep the update but warn
+        rm -f "${TASKS_FILE}.bak"
+    fi
+}
+
 # Function to output full JSON stats
 get_json_stats() {
     flatten_tasks | jq '
@@ -359,21 +497,40 @@ case "$MODE" in
     --completion)
         get_completion_stats
         ;;
+    --get)
+        # Get task by ID: --get <id> [key]
+        TASK_ID="${3:-}"
+        KEY="${4:-}"
+        get_task_by_id "$TASK_ID" "$KEY"
+        ;;
+    --set-status)
+        # Set status: --set-status <status> <id1> [id2...]
+        NEW_STATUS="${3:-}"
+        shift 3 2>/dev/null || { echo "Error: --set-status requires status and at least one task ID" >&2; exit 1; }
+        set_task_status "$NEW_STATUS" "$@"
+        ;;
     --help|-h)
-        echo "Usage: $0 [tasks.json path] [mode]"
+        echo "Usage: $0 [tasks.json path] [mode] [args...]"
         echo ""
-        echo "Modes:"
-        echo "  --summary     Full text summary (default)"
-        echo "  --json        Full JSON output for programmatic use"
-        echo "  --next        Next recommended task"
-        echo "  --next5       Next 5 recommended tasks"
-        echo "  --status      Task counts by status"
-        echo "  --priority    Task counts by priority"
-        echo "  --levels      Task counts by level depth"
-        echo "  --remaining   Count of remaining tasks"
-        echo "  --time        Estimated time remaining"
-        echo "  --completion  Completion statistics"
-        echo "  --help, -h    Show this help"
+        echo "Read-only Modes:"
+        echo "  --summary          Full text summary (default)"
+        echo "  --json             Full JSON output for programmatic use"
+        echo "  --next             Next recommended task"
+        echo "  --next5            Next 5 recommended tasks"
+        echo "  --status           Task counts by status"
+        echo "  --priority         Task counts by priority"
+        echo "  --levels           Task counts by level depth"
+        echo "  --remaining        Count of remaining tasks"
+        echo "  --time             Estimated time remaining"
+        echo "  --completion       Completion statistics"
+        echo ""
+        echo "Task Query Modes:"
+        echo "  --get <id> [key]   Get task by ID, optionally extract specific key"
+        echo ""
+        echo "Write Modes:"
+        echo "  --set-status <status> <id1> [id2...]  Update status for tasks"
+        echo ""
+        echo "  --help, -h         Show this help"
         ;;
     *)
         echo "Unknown mode: $MODE"
