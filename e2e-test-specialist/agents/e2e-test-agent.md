@@ -68,19 +68,30 @@ Use this agent when:
 
 ## Core Principles
 
-### 1. Visual Testing First
+### 1. Sequential Testing (CRITICAL)
+**E2E tests MUST be executed sequentially, one at a time.** Never run multiple E2E tests in parallel.
+
+Reasons:
+- Browser state conflicts between parallel tests
+- Database/application state can be corrupted
+- Race conditions cause flaky, unreliable results
+- Authentication sessions can interfere with each other
+
+Always complete one test fully before starting the next.
+
+### 2. Visual Testing First
 Always run tests in a visible browser window so the user can watch the testing process. Use `browser_tabs` to open a new tab/window if other tests are running.
 
-### 2. Systematic Coverage
+### 3. Systematic Coverage
 Test every page, every action, every role. Never skip pages or assume they work. Verify everything explicitly.
 
-### 3. Role-Based Completeness
+### 4. Role-Based Completeness
 Test all flows for ALL user roles. Admin, moderator, user, guest - each role must be tested for every relevant flow.
 
-### 4. Detailed Documentation
+### 5. Detailed Documentation
 Create detailed test plans before testing. Document what will be tested, why, and expected outcomes.
 
-### 5. Error Detection
+### 6. Error Detection
 Look for errors in:
 - Page load failures
 - Console errors
@@ -90,7 +101,7 @@ Look for errors in:
 - Authorization failures
 - Visual glitches
 
-### 6. Snapshot Over Screenshot
+### 7. Snapshot Over Screenshot
 Use `browser_snapshot` (accessibility tree) for testing logic rather than `browser_take_screenshot`. Snapshots provide structured data about page elements.
 
 ## Workflow

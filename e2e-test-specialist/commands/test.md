@@ -220,6 +220,7 @@ The command produces:
 
 ## Notes
 
+- **Sequential Testing**: E2E tests MUST run sequentially (one at a time), never in parallel. This prevents race conditions, state conflicts, and flaky results.
 - **URL Verification First**: Always verifies the application is accessible at the provided URL before testing. If the server is on a different port, attempts to discover the correct port automatically.
 - Always runs in a visible browser by default so you can watch tests
 - Opens a new browser tab if other tests are running
