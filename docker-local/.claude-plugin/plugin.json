@@ -1,0 +1,25 @@
+{
+  "name": "docker-local",
+  "description": "Docker-local (mwguerra/docker-local) CLI expert for Laravel Docker development environments. Provides 50+ commands for managing PHP, MySQL, PostgreSQL, Redis, MinIO, Traefik, and multi-project isolation. Diagnoses issues, checks conflicts, manages databases, queues, Xdebug, and guides users through setup and troubleshooting.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mwguerra"
+  },
+  "keywords": [
+    "docker-local",
+    "laravel",
+    "docker",
+    "development-environment",
+    "php",
+    "mysql",
+    "postgresql",
+    "redis",
+    "minio",
+    "traefik",
+    "xdebug",
+    "multi-project",
+    "mailpit",
+    "rtmp",
+    "whisper"
+  ]
+}
