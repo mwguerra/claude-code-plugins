@@ -20,9 +20,42 @@ Ensure that:
 
 ## Workflow
 
-### Step 0: URL/Port Verification (CRITICAL - DO THIS FIRST)
+### Step 0: Build Assets & Verify URL (CRITICAL - DO THIS FIRST)
 
-**Before testing any pages, verify the application is accessible at the correct URL.**
+**Before testing any pages, build assets and verify the application is accessible.**
+
+#### 0a. Build Application Assets
+
+Missing assets are a common cause of E2E test failures. Before testing:
+
+1. **Check for package.json**
+   ```
+   Look for package.json in project root
+   If found, assets likely need building
+   ```
+
+2. **Run Build Commands**
+   ```
+   npm install      # If node_modules missing
+   npm run build    # Compile production assets
+   # or for dev server:
+   npm run dev      # Start Vite/webpack dev server
+   ```
+
+3. **Detect Build Issues**
+   After loading a page, check for:
+   - Unstyled content (missing CSS)
+   - Blank pages (missing JS)
+   - Console errors: "Failed to load resource"
+   - Network 404s for .js, .css, .png files
+   - Errors about /build/, /dist/, /assets/
+
+   If assets are missing:
+   - Stop testing
+   - Run `npm install && npm run build`
+   - Restart and retest
+
+#### 0b. URL/Port Verification
 
 1. **Navigate to Base URL**
    ```
@@ -253,6 +286,30 @@ Test each page at multiple viewports:
 
 ## Test Patterns
 
+### Asset Build Verification (RUN BEFORE TESTING)
+```
+// Step 1: Check if assets need building
+1. Check for package.json in project root
+2. If node_modules missing: run npm install
+3. Run npm run build (or npm run prod)
+
+// Step 2: Verify assets after page load
+4. browser_navigate to any page
+5. browser_snapshot() - check for styled content
+6. browser_console_messages({ level: "error" })
+   - Look for "Failed to load resource"
+   - Look for "404 (Not Found)"
+   - Look for module/import errors
+7. browser_network_requests()
+   - Check for 404s on .js, .css, .png files
+   - Check for failed requests to /build/, /dist/, /assets/
+
+// If assets missing:
+8. STOP testing
+9. Report: "Assets not built. Run: npm install && npm run build"
+10. After build, restart testing
+```
+
 ### URL Verification Test (RUN FIRST)
 ```
 // Step 1: Try provided URL
@@ -432,7 +489,23 @@ Tests:
 ```markdown
 # Page Test Results
 
-## URL Verification
+## Pre-Test Verification
+
+### Asset Build Status
+- Build command run: npm run build ✓
+- Assets compiled: Yes
+- CSS loaded: Yes
+- JavaScript loaded: Yes
+- No 404 errors on assets: Yes
+
+(or if assets were missing:)
+- Build command run: No ⚠️
+- Assets compiled: No
+- Issue: Missing /build/assets/app.js (404)
+- Resolution: Ran `npm install && npm run build`
+- Retested: All assets now loading ✓
+
+### URL Verification
 - Provided URL: http://localhost:8000
 - Verified URL: http://localhost:8000 ✓
 - Status: Application confirmed

@@ -153,7 +153,40 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    Call mcp__playwright__browser_install if needed
    ```
 
-2. **Configure Browser Window**
+2. **Build Application Assets (IMPORTANT)**
+   Many E2E test failures are caused by missing or outdated assets. Before testing:
+   ```
+   Detect project type and run appropriate build commands:
+
+   For Node.js/Frontend projects:
+   - Check for package.json
+   - Run: npm install (if node_modules missing)
+   - Run: npm run build (for production assets)
+   - Or: npm run dev (start dev server if needed)
+
+   For Laravel projects:
+   - Check for package.json (frontend assets)
+   - Run: npm install && npm run build
+   - Optionally: php artisan optimize
+
+   For Vite projects:
+   - Run: npm run build (creates dist/ folder)
+   - Or: npm run dev (starts Vite dev server)
+
+   Common commands to try:
+   - npm run build
+   - npm run prod
+   - yarn build
+   - pnpm build
+   ```
+
+   **Signs of missing assets:**
+   - Blank pages or unstyled content
+   - Console errors about missing .js or .css files
+   - 404 errors for /build/, /dist/, or /assets/ paths
+   - "Failed to load resource" in network requests
+
+3. **Configure Browser Window**
    ```
    Use browser_resize to set appropriate viewport
    - Desktop: 1920x1080
@@ -161,7 +194,7 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    - Mobile: 375x812
    ```
 
-3. **Open New Window if Needed**
+4. **Open New Window if Needed**
    ```
    Use browser_tabs to check for existing sessions
    Open a new tab if tests are already running
@@ -483,6 +516,30 @@ Resolution:
 2. Check project configuration files for port settings
 3. Ask user to verify the server is running
 4. NEVER proceed with testing if wrong application is loaded
+```
+
+### Missing/Outdated Assets (Common Issue!)
+```
+Indicators of missing assets:
+- Page loads but is unstyled (no CSS)
+- Blank white page with no content
+- Console errors: "Failed to load resource", "404 (Not Found)"
+- Network errors for .js, .css, .png files
+- Errors referencing /build/, /dist/, /assets/ paths
+- JavaScript errors about undefined modules
+
+Resolution:
+1. Check for package.json in project root
+2. Run: npm install (if node_modules missing or outdated)
+3. Run: npm run build (or npm run prod)
+4. For Vite: npm run dev (if dev server needed)
+5. For Laravel: npm run build && php artisan optimize
+6. Refresh page and retest
+
+Prevention:
+- Always run build commands before starting E2E tests
+- Check browser_network_requests for 404s on asset files
+- Check browser_console_messages for module/import errors
 ```
 
 ### Browser Not Installed

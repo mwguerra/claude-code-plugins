@@ -38,11 +38,26 @@ Run comprehensive end-to-end tests using Playwright MCP. This command tests all 
    - Check if Playwright browser is installed
    - Install if needed using `mcp__playwright__browser_install`
 
-2. **Check for Existing Sessions**
+2. **Build Application Assets (IMPORTANT)**
+   Missing assets cause most E2E test failures. Before testing:
+   - Check for `package.json` in project root
+   - Run `npm install` if `node_modules` is missing
+   - Run `npm run build` to compile assets
+   - For Vite projects: assets go to `dist/` or `build/`
+   - For Laravel: run `npm run build` for frontend assets
+
+   Common build commands:
+   ```bash
+   npm install && npm run build
+   # or for development:
+   npm run dev
+   ```
+
+3. **Check for Existing Sessions**
    - Use `mcp__playwright__browser_tabs` to check for running tests
    - Open new tab if needed
 
-3. **Set Viewport**
+4. **Set Viewport**
    - Use `mcp__playwright__browser_resize` for specified viewport
    - Default: Desktop (1920x1080)
 
