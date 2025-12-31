@@ -89,6 +89,64 @@ When planning or executing complex work, you SHOULD load relevant **active** mem
 
 ## Core Behaviors
 
+### 0. Token-Efficient Task Reading
+
+**IMPORTANT:** When `tasks.json` is large (exceeds ~25k tokens), you MUST use efficient methods to read task data:
+
+#### Option 1: Use the stats command
+```
+/mwguerra:taskmanager:stats --json
+```
+
+This returns a compact JSON summary with:
+- Task counts by status, priority, and level
+- Completion percentage
+- Estimated time remaining
+- Next recommended task
+- Next 5 recommended tasks
+
+#### Option 2: Use jq queries directly
+
+For quick stats:
+```bash
+jq -r '
+def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
+[.tasks[] | flatten_all] | add // [] |
+{
+  total: length,
+  done: [.[] | select(.status == "done")] | length,
+  remaining: [.[] | select(.status != "done" and .status != "canceled" and .status != "duplicate")] | length
+}
+' .taskmanager/tasks.json
+```
+
+For next 5 tasks:
+```bash
+jq -r '
+def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
+[.tasks[] | flatten_all] | add // [] |
+[.[] | select(.status == "done" or .status == "canceled" or .status == "duplicate") | .id] as $done_ids |
+[.[] | select(
+  (.status != "done" and .status != "canceled" and .status != "duplicate" and .status != "blocked") and
+  ((.subtasks | length) == 0 or .subtasks == null)
+) | select(
+  (.dependencies == null) or (.dependencies | length == 0) or
+  (.dependencies | all(. as $dep | $done_ids | index($dep) != null))
+)] |
+sort_by(
+  (if .priority == "critical" then 0 elif .priority == "high" then 1 elif .priority == "medium" then 2 else 3 end),
+  (.complexity.score // 3)
+) |
+.[0:5] | map({id, title, priority, complexity: .complexity.scale})
+' .taskmanager/tasks.json
+```
+
+#### When to use token-efficient methods:
+- Before any batch execution (`/run-tasks`)
+- When resuming work to find next task
+- When checking progress without needing full task details
+- When `Read(.taskmanager/tasks.json)` returns a token limit error
+
 ### 1. Respect the task model
 
 When modifying `.taskmanager/tasks.json`:

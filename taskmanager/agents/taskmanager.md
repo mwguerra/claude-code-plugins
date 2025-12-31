@@ -33,15 +33,47 @@ At the project root:
   tasks.json                    # Active tasks + stubs for archived tasks
   tasks-archive.json            # Full details of archived (completed) tasks
   state.json                    # Current agent state
+  memories.json                 # Project-wide memory store
   schemas/
     tasks.schema.json           # JSON Schema for tasks.json
     tasks-archive.schema.json   # JSON Schema for tasks-archive.json
     state.schema.json           # JSON Schema for state.json
+    memories.schema.json        # JSON Schema for memories.json
   logs/
     errors.log                  # Append-only error log
     debug.log                   # Verbose debug tracing
     decisions.log               # High-level planning/decision log
 ```
+
+### 1.1 Statistics Script (Token-Efficient)
+
+For large `tasks.json` files that exceed token limits, a utility script is available:
+
+**Location:** Plugin directory at `scripts/task-stats.sh`
+
+**Usage:**
+```bash
+./task-stats.sh .taskmanager/tasks.json [mode]
+```
+
+**Available modes:**
+- `--summary` - Full text summary (default)
+- `--json` - Full JSON output for programmatic use
+- `--next` - Next recommended task
+- `--next5` - Next 5 recommended tasks
+- `--status` - Task counts by status
+- `--priority` - Task counts by priority
+- `--levels` - Task counts by level depth
+- `--remaining` - Count of remaining tasks
+- `--time` - Estimated time remaining
+- `--completion` - Completion statistics
+
+**When to use:**
+- When `tasks.json` exceeds ~25k tokens
+- Before batch execution to get quick overview
+- To find next task without loading full file
+
+Commands and skills SHOULD use `/mwguerra:taskmanager:stats` or the script to efficiently get task statistics when the full file is too large to read.
 
 Agents MUST:
 
