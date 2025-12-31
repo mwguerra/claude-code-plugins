@@ -54,7 +54,8 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
        ```
 
 3. **Load task**:
-   - Ask the `taskmanager` skill to load `.taskmanager/tasks.json` and find the task with `id == $1`.
+   - **Token-efficient option**: For large `tasks.json` files (> 25k tokens), use `/mwguerra:taskmanager:get-task $1` to retrieve the task without loading the full file.
+   - Standard approach: Ask the `taskmanager` skill to load `.taskmanager/tasks.json` and find the task with `id == $1`.
    - If not found, inform the user and stop.
 
 4. **Check dependencies**:
@@ -192,5 +193,15 @@ Conceptual algorithm (per parent, based on its **direct** children):
 Implementation notes:
 
 - This helper should walk **bottom-up** from the executed leaf task to the root.
-- You MUST NOT set a parent’s status by hand; always derive it from its children using these rules.
+- You MUST NOT set a parent's status by hand; always derive it from its children using these rules.
 - Always write back `.taskmanager/tasks.json` after propagation so other commands (like `/dashboard` and `/next-task`) see a consistent, macro view of progress.
+
+---
+
+## Related Commands
+
+- `/mwguerra:taskmanager:get-task <id> [key]` - Token-efficient way to retrieve task properties without loading full `tasks.json`
+- `/mwguerra:taskmanager:update-status <status> <id1> [id2...]` - Batch status updates without status propagation (use for quick updates when propagation is not needed)
+- `/mwguerra:taskmanager:stats` - Token-efficient statistics and task summaries
+
+**Note:** Unlike `/mwguerra:taskmanager:update-status`, this command (`execute-task`) performs full status propagation to parent tasks. Use `execute-task` when you need proper status cascading; use `update-status` only for quick batch updates where you'll handle propagation separately.

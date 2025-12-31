@@ -45,13 +45,14 @@ At the project root:
     decisions.log               # High-level planning/decision log
 ```
 
-### 1.1 Statistics Script (Token-Efficient)
+### 1.1 Token-Efficient Task Operations
 
-For large `tasks.json` files that exceed token limits, a utility script is available:
+For large `tasks.json` files that exceed token limits, utility commands and scripts are available:
 
 **Location:** Plugin directory at `scripts/task-stats.sh`
 
-**Usage:**
+#### Read-Only Statistics
+
 ```bash
 ./task-stats.sh .taskmanager/tasks.json [mode]
 ```
@@ -68,12 +69,56 @@ For large `tasks.json` files that exceed token limits, a utility script is avail
 - `--time` - Estimated time remaining
 - `--completion` - Completion statistics
 
-**When to use:**
+#### Get Task by ID
+
+```bash
+# Get full task object
+./task-stats.sh .taskmanager/tasks.json --get <id>
+
+# Get specific property
+./task-stats.sh .taskmanager/tasks.json --get <id> <key>
+```
+
+**Examples:**
+```bash
+./task-stats.sh .taskmanager/tasks.json --get 1.2.3
+./task-stats.sh .taskmanager/tasks.json --get 1.2.3 status
+./task-stats.sh .taskmanager/tasks.json --get 1.2.3 title
+./task-stats.sh .taskmanager/tasks.json --get 1.2.3 complexity.scale
+```
+
+#### Update Task Status
+
+```bash
+./task-stats.sh .taskmanager/tasks.json --set-status <status> <id1> [id2...]
+```
+
+**Valid statuses:** draft, planned, in-progress, blocked, paused, done, canceled, duplicate, needs-review
+
+**Examples:**
+```bash
+# Single task
+./task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3
+
+# Multiple tasks
+./task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3 1.2.4 1.2.5
+```
+
+**Automatic behavior:**
+- Sets `startedAt` when status becomes `in-progress` (if not already set)
+- Sets `completedAt` when status becomes terminal (done, canceled, duplicate)
+- Creates backup at `.taskmanager/tasks.json.bak` before modification
+
+#### When to use token-efficient operations:
 - When `tasks.json` exceeds ~25k tokens
 - Before batch execution to get quick overview
 - To find next task without loading full file
+- To update status for multiple tasks efficiently
 
-Commands and skills SHOULD use `/mwguerra:taskmanager:stats` or the script to efficiently get task statistics when the full file is too large to read.
+**Related commands:**
+- `/mwguerra:taskmanager:stats` - Statistics and task queries
+- `/mwguerra:taskmanager:get-task <id> [key]` - Get task by ID
+- `/mwguerra:taskmanager:update-status <status> <id1> [id2...]` - Update task status
 
 Agents MUST:
 

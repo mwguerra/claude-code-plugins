@@ -91,6 +91,15 @@ sort_by(
 ' .taskmanager/tasks.json
 ```
 
+**Option C: Use get-task command for specific task details**
+```
+/mwguerra:taskmanager:get-task <id> [key]
+```
+Use this when you need to read specific task properties without loading the full file:
+- Get task title: `/mwguerra:taskmanager:get-task 1.2.3 title`
+- Get task status: `/mwguerra:taskmanager:get-task 1.2.3 status`
+- Get task complexity: `/mwguerra:taskmanager:get-task 1.2.3 complexity.scale`
+
 **When to read full file:** Only read `.taskmanager/tasks.json` with the Read tool if:
 - The file is small enough (< 25k tokens)
 - You need the full task details (description, notes, dependencies) to execute
@@ -150,6 +159,8 @@ Standard approach (for small files):
 #### 2.6 Complete task
 - Update the leaf task `status` based on outcome:
   - `"done"`, `"blocked"`, or `"canceled"` as appropriate.
+  - **Token-efficient option**: Use `/mwguerra:taskmanager:update-status <status> <id>` for quick status updates without loading the full file. Example: `/mwguerra:taskmanager:update-status done 1.2.3`
+  - **Note**: The update-status command does NOT trigger status propagation. You must still run propagation manually.
 - **Recompute the macro status for all ancestor tasks** using the _Status propagation helper_ rules below.
 - **Archive if terminal status**: If the final status is `"done"`, `"canceled"`, or `"duplicate"`:
   - Follow the archival procedure from SKILL.md section 8.7.
