@@ -50,115 +50,51 @@ Available modes:
    command -v jq &> /dev/null && echo "jq available" || echo "jq not found"
    ```
 
-3. If the utility script exists at the plugin location, use it. Otherwise, use inline jq commands.
+3. Use the `task-stats.sh` script from the plugin directory:
+   ```bash
+   ./scripts/task-stats.sh .taskmanager/tasks.json [mode]
+   ```
 
-4. Run the appropriate jq query based on the requested mode.
+4. Run the appropriate query based on the requested mode.
 
-### Quick Inline Commands
+### Script Usage
 
-If you need to run quick stats without the full script, use these jq commands:
+**ALWAYS use the script for all task statistics operations.** The script handles shell escaping and provides consistent output:
 
-**Get summary counts:**
 ```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-{
-  total: length,
-  done: [.[] | select(.status == "done")] | length,
-  in_progress: [.[] | select(.status == "in-progress")] | length,
-  blocked: [.[] | select(.status == "blocked")] | length,
-  remaining: [.[] | select(.status != "done" and .status != "canceled" and .status != "duplicate")] | length
-}
-' .taskmanager/tasks.json
+# Summary (default)
+./scripts/task-stats.sh .taskmanager/tasks.json --summary
+
+# Next task
+./scripts/task-stats.sh .taskmanager/tasks.json --next
+
+# Next 5 tasks
+./scripts/task-stats.sh .taskmanager/tasks.json --next5
+
+# JSON output for programmatic use
+./scripts/task-stats.sh .taskmanager/tasks.json --json
+
+# Get task by ID
+./scripts/task-stats.sh .taskmanager/tasks.json --get 1.2.3
+
+# Get specific property
+./scripts/task-stats.sh .taskmanager/tasks.json --get 1.2.3 status
+./scripts/task-stats.sh .taskmanager/tasks.json --get 1.2.3 complexity.scale
+
+# Update status (single or multiple tasks)
+./scripts/task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3
+./scripts/task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3 1.2.4 1.2.5
+
+# Other statistics
+./scripts/task-stats.sh .taskmanager/tasks.json --status
+./scripts/task-stats.sh .taskmanager/tasks.json --priority
+./scripts/task-stats.sh .taskmanager/tasks.json --levels
+./scripts/task-stats.sh .taskmanager/tasks.json --remaining
+./scripts/task-stats.sh .taskmanager/tasks.json --time
+./scripts/task-stats.sh .taskmanager/tasks.json --completion
 ```
 
-**Get next recommended task:**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-[.[] | select(.status == "done" or .status == "canceled" or .status == "duplicate") | .id] as $done_ids |
-[
-  .[] |
-  select(
-    (.status != "done" and .status != "canceled" and .status != "duplicate" and .status != "blocked") and
-    ((.subtasks | length) == 0 or .subtasks == null)
-  ) |
-  select(
-    (.dependencies == null) or (.dependencies | length == 0) or
-    (.dependencies | all(. as $dep | $done_ids | index($dep) != null))
-  )
-] |
-sort_by(
-  (if .priority == "critical" then 0 elif .priority == "high" then 1 elif .priority == "medium" then 2 else 3 end),
-  (.complexity.score // 3)
-) |
-.[0] // null |
-if . then {id, title, priority, status, complexity: .complexity.scale, estimate_hours: ((.estimateSeconds // 0) / 3600)} else null end
-' .taskmanager/tasks.json
-```
-
-**Get next 5 tasks (compact):**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-[.[] | select(.status == "done" or .status == "canceled" or .status == "duplicate") | .id] as $done_ids |
-[
-  .[] |
-  select(
-    (.status != "done" and .status != "canceled" and .status != "duplicate" and .status != "blocked") and
-    ((.subtasks | length) == 0 or .subtasks == null)
-  ) |
-  select(
-    (.dependencies == null) or (.dependencies | length == 0) or
-    (.dependencies | all(. as $dep | $done_ids | index($dep) != null))
-  )
-] |
-sort_by(
-  (if .priority == "critical" then 0 elif .priority == "high" then 1 elif .priority == "medium" then 2 else 3 end),
-  (.complexity.score // 3)
-) |
-.[0:5] | map({id, title, priority})
-' .taskmanager/tasks.json
-```
-
-**Get counts by status:**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-group_by(.status) | map({status: .[0].status, count: length}) | sort_by(.status)
-' .taskmanager/tasks.json
-```
-
-**Get counts by level:**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-map({level: (.id | split(".") | length)}) |
-group_by(.level) | map({level: .[0].level, count: length}) | sort_by(.level)
-' .taskmanager/tasks.json
-```
-
-**Get estimated time remaining:**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-[
-  .[] |
-  select(
-    (.status != "done" and .status != "canceled" and .status != "duplicate") and
-    ((.subtasks | length) == 0 or .subtasks == null)
-  ) |
-  .estimateSeconds // 0
-] | add // 0 |
-{seconds: ., hours: (. / 3600 | floor), days: (. / 86400 | . * 10 | floor / 10)}
-' .taskmanager/tasks.json
-```
+**IMPORTANT:** Never call `jq` directly with inline queries containing `!=` operators. The `!` character will be escaped by bash, causing syntax errors. Always use the script instead.
 
 ## Output Format
 

@@ -63,35 +63,15 @@ For each iteration up to the limit:
 
 #### 2.1 Find next task (Token-Efficient)
 
-**IMPORTANT:** When the `tasks.json` file is large (exceeds ~25k tokens), you MUST use token-efficient methods:
+**IMPORTANT:** When the `tasks.json` file is large (exceeds ~25k tokens), you MUST use the token-efficient commands:
 
-**Option A: Use stats command first**
+**Use stats command to get next tasks:**
 ```
 /mwguerra:taskmanager:stats --next5
 ```
 This returns the next 5 recommended tasks without loading the full file.
 
-**Option B: Use jq directly**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-[.[] | select(.status == "done" or .status == "canceled" or .status == "duplicate") | .id] as $done_ids |
-[.[] | select(
-  (.status != "done" and .status != "canceled" and .status != "duplicate" and .status != "blocked") and
-  ((.subtasks | length) == 0 or .subtasks == null)
-) | select(
-  (.dependencies == null) or (.dependencies | length == 0) or
-  (.dependencies | all(. as $dep | $done_ids | index($dep) != null))
-)] |
-sort_by(
-  (if .priority == "critical" then 0 elif .priority == "high" then 1 elif .priority == "medium" then 2 else 3 end),
-  (.complexity.score // 3)
-) | .[0:5] | map({id, title, priority})
-' .taskmanager/tasks.json
-```
-
-**Option C: Use get-task command for specific task details**
+**Use get-task command for specific task details:**
 ```
 /mwguerra:taskmanager:get-task <id> [key]
 ```
