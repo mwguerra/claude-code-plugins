@@ -9,6 +9,12 @@ description: Execute comprehensive role-based E2E testing with Playwright, testi
 
 This skill executes comprehensive role-based E2E testing using Playwright MCP. It tests all pages and flows for each user role, verifying proper access control and role-specific functionality.
 
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This skill reads role definitions and test credentials from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `e2e-test-plan` skill first to generate it.
+
 ## Purpose
 
 Ensure that:
@@ -18,6 +24,21 @@ Ensure that:
 - Cross-role security is maintained
 
 ## Workflow
+
+### Step 0: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing roles, verify the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the "User Roles" and "Test Credentials" sections
+   - If the file does NOT exist, STOP and report that the plan must be generated first
+
+2. **Read Role Information from Plan**
+   - Extract role names and descriptions
+   - Extract test credentials for each role
+   - Extract role-resource access matrix
+   - Use this information for testing
 
 ### Step 1: Prepare Role Testing
 

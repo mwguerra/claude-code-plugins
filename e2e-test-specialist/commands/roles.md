@@ -1,12 +1,18 @@
 ---
 description: Test all pages and flows for each user role, verifying proper access control
-allowed-tools: Skill(e2e-role-test), mcp__playwright__*
+allowed-tools: Skill(e2e-test-plan), Skill(e2e-role-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--roles admin,user,guest] [--credentials path/to/credentials.json]
 ---
 
 # Role-Based Testing
 
 Test all pages and flows for each user role using Playwright MCP. Verifies proper access control and role-specific functionality.
+
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This command reads the test plan from `tests/e2e-test-plan.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -17,6 +23,20 @@ Test all pages and flows for each user role using Playwright MCP. Verifies prope
 ```
 
 ## Process
+
+### Step -1: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing any roles, check if the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the role definitions and credentials from it
+   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+
+2. **Read Role Information from Plan**
+   - Extract the "User Roles" section from the plan
+   - Extract test credentials from the plan
+   - Use role list for testing (unless `--roles` flag overrides)
 
 ### Step 0: URL/Port Verification (CRITICAL FIRST)
 

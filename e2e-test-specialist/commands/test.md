@@ -1,12 +1,18 @@
 ---
 description: Run comprehensive E2E tests with Playwright - test all pages, all roles, all flows in a visible browser
-allowed-tools: Skill(e2e-test-plan), Skill(e2e-page-test), Skill(e2e-role-test), Skill(e2e-flow-test), Bash(npm:*), Bash(npx:*), mcp__playwright__*
+allowed-tools: Skill(e2e-test-plan), Skill(e2e-page-test), Skill(e2e-role-test), Skill(e2e-flow-test), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--roles role1,role2] [--viewport desktop|tablet|mobile] [--headless]
 ---
 
 # Comprehensive E2E Test
 
 Run comprehensive end-to-end tests using Playwright MCP. This command tests all pages, all user roles, and all critical flows in a visible browser.
+
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This command reads the test plan from `tests/e2e-test-plan.md`. If the plan file doesn't exist, this command will automatically invoke the `/e2e-test-specialist:plan` command first to generate the plan before running tests.
 
 ## Usage
 
@@ -18,19 +24,33 @@ Run comprehensive end-to-end tests using Playwright MCP. This command tests all 
 
 ## Process
 
+### Phase 0: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before any testing, check if the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read and use it for test execution
+   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+
+2. **Plan Generation (if missing)**
+   - Invoke the e2e-test-plan skill
+   - Wait for plan to be saved to `tests/e2e-test-plan.md`
+   - Then proceed with Phase 1
+
 ### Phase 1: Discovery & Planning
 
-1. **Analyze the Project**
-   - Identify project type and framework
-   - Find route definitions
-   - Map all pages and endpoints
-   - Identify user roles
+1. **Read the Test Plan**
+   - Read `tests/e2e-test-plan.md`
+   - Extract pages to test from the plan
+   - Extract user roles from the plan
+   - Extract critical flows from the plan
 
-2. **Create Test Plan**
-   - Document all pages to test
-   - List all roles and their permissions
-   - Define critical user flows
-   - Set test priorities
+2. **Verify Plan Content**
+   - Confirm pages are listed
+   - Confirm roles are defined with credentials
+   - Confirm flows are documented
+   - Set test priorities from plan
 
 ### Phase 2: Environment Setup
 

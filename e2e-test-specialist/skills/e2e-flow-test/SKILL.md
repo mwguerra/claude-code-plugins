@@ -9,6 +9,12 @@ description: Execute complete user flow testing with Playwright MCP, testing end
 
 This skill executes complete user flow testing using Playwright MCP. It tests end-to-end journeys through the application, from start to finish, verifying that multi-step processes work correctly.
 
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This skill reads flow definitions from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `e2e-test-plan` skill first to generate it.
+
 ## Purpose
 
 Ensure that:
@@ -19,6 +25,21 @@ Ensure that:
 - Business logic executes correctly
 
 ## Workflow
+
+### Step 0: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing flows, verify the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the "Critical Flows" section
+   - If the file does NOT exist, STOP and report that the plan must be generated first
+
+2. **Read Flow Definitions from Plan**
+   - Extract authentication flows
+   - Extract core business flows
+   - Extract administrative flows
+   - Use this list for testing
 
 ### Step 1: Identify Critical Flows
 

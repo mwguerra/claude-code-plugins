@@ -9,6 +9,12 @@ description: Systematically test all pages for errors, functionality, and proper
 
 This skill systematically tests every page in an application using Playwright MCP. It verifies page loading, element rendering, interaction functionality, and error detection.
 
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This skill reads the page inventory from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `e2e-test-plan` skill first to generate it.
+
 ## Purpose
 
 Ensure that:
@@ -19,6 +25,21 @@ Ensure that:
 - Pages are accessible and functional
 
 ## Workflow
+
+### Step -1: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing pages, verify the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the "Pages to Test" section
+   - If the file does NOT exist, STOP and report that the plan must be generated first
+
+2. **Read Page List from Plan**
+   - Extract public pages
+   - Extract authenticated pages
+   - Extract admin pages
+   - Use this list for testing
 
 ### Step 0: Build Assets & Verify URL (CRITICAL - DO THIS FIRST)
 

@@ -104,9 +104,49 @@ Look for errors in:
 ### 7. Snapshot Over Screenshot
 Use `browser_snapshot` (accessibility tree) for testing logic rather than `browser_take_screenshot`. Snapshots provide structured data about page elements.
 
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+All E2E testing operations use this standard location for the test plan. This ensures:
+- Consistent location across all commands and skills
+- Automatic plan generation when missing
+- Easy integration with CI/CD pipelines
+- Simple version control of test plans
+
 ## Workflow
 
-### Phase 1: Discovery
+### Phase 0: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before any testing, check if the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md` in the project root
+   - If the file exists, read and use it for test execution
+   - If the file does NOT exist, generate it first using the `e2e-test-plan` skill
+
+2. **Generate Plan if Missing**
+   - Invoke the `e2e-test-plan` skill
+   - The plan will be saved to `tests/e2e-test-plan.md`
+   - Create the `tests/` directory if it doesn't exist
+   - Then proceed with Phase 1
+
+### Phase 1: Discovery (Read from Plan)
+
+1. **Read the Test Plan**
+   - Read `tests/e2e-test-plan.md`
+   - Extract project information
+   - Extract pages to test
+   - Extract user roles and credentials
+   - Extract critical flows
+
+2. **Verify Plan Content**
+   - Confirm all sections are present
+   - Validate page routes exist
+   - Verify role credentials are provided
+   - Check flow definitions are complete
+
+### Phase 1b: Additional Discovery (if plan is incomplete)
 
 1. **Analyze Project Structure**
    - Identify the project type (Laravel, React, Vue, etc.)
@@ -126,9 +166,14 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    - Document expected state changes
    - Note dependencies between flows
 
-### Phase 2: Test Planning
+4. **Update the Test Plan**
+   - Add newly discovered information to `tests/e2e-test-plan.md`
+   - Save the updated plan
 
-1. **Create Test Plan Document**
+### Phase 2: Use Test Plan
+
+1. **Read Test Plan from Standard Location**
+   The test plan at `tests/e2e-test-plan.md` contains:
    ```markdown
    # E2E Test Plan
 
@@ -152,7 +197,7 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    ...
    ```
 
-2. **Prioritize Tests**
+2. **Follow Plan Priorities**
    - Critical paths first (login, core features)
    - Then secondary flows
    - Finally edge cases

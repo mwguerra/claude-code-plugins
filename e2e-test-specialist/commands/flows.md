@@ -1,12 +1,18 @@
 ---
 description: Test complete user flows end-to-end (login, registration, checkout, etc.)
-allowed-tools: Skill(e2e-flow-test), mcp__playwright__*
+allowed-tools: Skill(e2e-test-plan), Skill(e2e-flow-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--flows login,register,checkout] [--role user]
 ---
 
 # Test User Flows
 
 Test complete user flows end-to-end using Playwright MCP. Executes multi-step journeys through the application.
+
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This command reads the test plan from `tests/e2e-test-plan.md` to determine which flows to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -17,6 +23,19 @@ Test complete user flows end-to-end using Playwright MCP. Executes multi-step jo
 ```
 
 ## Process
+
+### Step -1: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing any flows, check if the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the flow definitions from it
+   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+
+2. **Read Flow Definitions from Plan**
+   - Extract the "Critical Flows" section from the plan
+   - Use flow list for testing (unless `--flows` flag overrides)
 
 ### Step 0: URL/Port Verification (CRITICAL FIRST)
 

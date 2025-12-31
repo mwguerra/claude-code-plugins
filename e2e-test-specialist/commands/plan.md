@@ -1,6 +1,6 @@
 ---
 description: Create a detailed E2E test plan covering all pages, roles, and flows
-allowed-tools: Skill(e2e-test-plan), Glob(*), Grep(*), Read(*)
+allowed-tools: Skill(e2e-test-plan), Glob(*), Grep(*), Read(*), Write(*)
 argument-hint: [--output path/to/plan.md]
 ---
 
@@ -8,11 +8,17 @@ argument-hint: [--output path/to/plan.md]
 
 Generate a comprehensive E2E test plan by analyzing the codebase. The plan documents all pages, user roles, critical flows, and test scenarios.
 
+## Standard Plan Location
+
+**Default location**: `tests/e2e-test-plan.md`
+
+The test plan is always saved to `tests/e2e-test-plan.md` by default. This standard location allows all E2E testing commands to automatically find and use the plan. Other commands (test, pages, roles, flows) will look for the plan at this location and invoke this command first if the plan is missing.
+
 ## Usage
 
 ```bash
-/e2e-test-specialist:plan
-/e2e-test-specialist:plan --output docs/test-plan.md
+/e2e-test-specialist:plan                    # Saves to tests/e2e-test-plan.md (default)
+/e2e-test-specialist:plan --output custom.md # Saves to custom location
 ```
 
 ## Process
@@ -105,12 +111,20 @@ Creates a detailed test plan document:
 
 ## Examples
 
-### Generate Plan to Console
+### Generate Plan (Default Location)
 ```bash
 /e2e-test-specialist:plan
 ```
+Saves the plan to `tests/e2e-test-plan.md`.
 
-### Save Plan to File
+### Save Plan to Custom Location
 ```bash
-/e2e-test-specialist:plan --output tests/e2e-plan.md
+/e2e-test-specialist:plan --output docs/custom-plan.md
 ```
+
+## Important
+
+After generating the plan:
+1. The plan is saved to `tests/e2e-test-plan.md` (or custom path if specified)
+2. The `tests/` directory is created if it doesn't exist
+3. Other E2E commands will automatically read from this location

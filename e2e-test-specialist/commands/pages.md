@@ -1,12 +1,18 @@
 ---
 description: Test all pages for errors, missing elements, and broken interactions
-allowed-tools: Skill(e2e-page-test), mcp__playwright__*
+allowed-tools: Skill(e2e-test-plan), Skill(e2e-page-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--pages /path1,/path2] [--viewport desktop|tablet|mobile]
 ---
 
 # Test All Pages
 
 Systematically test all pages in the application for errors, missing elements, and broken interactions using Playwright MCP.
+
+## Standard Test Plan Location
+
+**Plan file**: `tests/e2e-test-plan.md`
+
+This command reads the test plan from `tests/e2e-test-plan.md` to determine which pages to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -17,6 +23,19 @@ Systematically test all pages in the application for errors, missing elements, a
 ```
 
 ## Process
+
+### Step -1: Test Plan Verification (REQUIRED FIRST)
+
+**CRITICAL**: Before testing any pages, check if the test plan exists.
+
+1. **Check for Test Plan**
+   - Look for `tests/e2e-test-plan.md`
+   - If the file exists, read the page inventory from it
+   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+
+2. **Read Page List from Plan**
+   - Extract the "Pages to Test" section from the plan
+   - Use page list for testing (unless `--pages` flag overrides)
 
 ### Step 0: URL/Port Verification (CRITICAL FIRST)
 

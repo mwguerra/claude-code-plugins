@@ -9,6 +9,17 @@ description: Create comprehensive E2E test plans with all major flows, pages, ro
 
 This skill creates detailed E2E test plans that document all pages, user roles, critical flows, and test scenarios for comprehensive Playwright-based testing.
 
+## Standard Plan Location
+
+**Default output**: `tests/e2e-test-plan.md`
+
+This skill ALWAYS saves the test plan to `tests/e2e-test-plan.md` unless a custom path is specified via the `--output` flag. This standard location allows all E2E testing commands to automatically find and use the plan.
+
+**Important**:
+- Create the `tests/` directory if it doesn't exist
+- Use the Write tool to save the plan to the standard location
+- Overwrite any existing plan at that location
+
 ## Purpose
 
 Generate structured test plans that ensure:
@@ -17,6 +28,7 @@ Generate structured test plans that ensure:
 - Critical user flows are documented
 - Test scenarios cover positive and negative cases
 - Priority levels guide test execution order
+- Plan is saved to standard location for other commands to use
 
 ## Workflow
 
@@ -246,10 +258,15 @@ For each critical page:
 ## Output
 
 The skill produces:
-1. A comprehensive test plan markdown document
+1. A comprehensive test plan markdown document saved to `tests/e2e-test-plan.md`
 2. A structured list of all tests to execute
 3. Priority ordering for test execution
 4. Test credentials and setup requirements
+
+**Final Step**: After generating the plan content, you MUST:
+1. Ensure the `tests/` directory exists (create if needed)
+2. Write the plan to `tests/e2e-test-plan.md` using the Write tool
+3. Confirm the file was saved successfully
 
 ## Best Practices
 
