@@ -37,6 +37,7 @@ docker-local config            # View current configuration
 docker-local setup:hosts       # Add Docker hostnames to /etc/hosts
 docker-local setup:dns         # Configure dnsmasq for *.test
 docker-local update            # Update Docker images
+docker-local self-update       # Update docker-local CLI itself
 ```
 
 ### Environment Management
@@ -46,7 +47,9 @@ docker-local down              # Stop all containers
 docker-local restart           # Restart all containers
 docker-local status            # Show service status
 docker-local logs [service]    # View logs
+docker-local ports             # Display all mapped ports
 docker-local clean             # Clean caches and Docker
+docker-local clean --all       # Full cleanup (including volumes)
 ```
 
 ### Project Commands

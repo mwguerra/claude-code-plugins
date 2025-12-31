@@ -40,6 +40,9 @@ docker info > /dev/null 2>&1 && echo "Docker: Running" || echo "Docker: NOT runn
 ```bash
 # Full status report
 docker-local status
+
+# Display all mapped ports
+docker-local ports
 ```
 
 ## 4. List Projects

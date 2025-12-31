@@ -131,6 +131,7 @@ docker-local config            # View current configuration
 docker-local setup:hosts       # Add Docker hostnames to /etc/hosts (sudo)
 docker-local setup:dns         # Configure dnsmasq for *.test (sudo)
 docker-local update            # Update Docker images
+docker-local self-update       # Update docker-local CLI itself
 ```
 
 ### Environment Management
@@ -140,7 +141,9 @@ docker-local down              # Stop all containers
 docker-local restart           # Restart all containers
 docker-local status            # Show service status
 docker-local logs [service]    # View logs (all or specific service)
+docker-local ports             # Display all mapped ports
 docker-local clean             # Clean caches and unused Docker resources
+docker-local clean --all       # Full cleanup (including volumes)
 ```
 
 ### Project Commands
@@ -209,18 +212,30 @@ docker-local startup status    # Show startup status
 
 ### Artisan Shortcuts
 ```bash
-docker-local new:model NAME [-mcr]       # make:model
+docker-local new:model NAME [-mcr]       # make:model (with migration, controller, resource)
+docker-local new:model NAME -a           # make:model --all (migration, factory, seeder, controller, form request, policy)
 docker-local new:controller NAME [--api] # make:controller
+docker-local new:controller NAME --resource  # make:controller --resource
 docker-local new:migration NAME          # make:migration
 docker-local new:seeder NAME             # make:seeder
 docker-local new:factory NAME            # make:factory
 docker-local new:request NAME            # make:request
 docker-local new:resource NAME           # make:resource
+docker-local new:resource NAME --collection  # make:resource --collection
 docker-local new:middleware NAME         # make:middleware
 docker-local new:event NAME              # make:event
 docker-local new:job NAME                # make:job
 docker-local new:mail NAME               # make:mail
 docker-local new:command NAME            # make:command
+```
+
+### Shell Completion
+```bash
+# Bash (add to ~/.bashrc)
+eval "$(docker-local completion bash)"
+
+# Zsh (add to ~/.zshrc)
+eval "$(docker-local completion zsh)"
 ```
 
 ## Common Workflows
