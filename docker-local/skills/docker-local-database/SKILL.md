@@ -22,6 +22,21 @@ This skill manages database operations in docker-local:
 | PostgreSQL | 17 | 5432 | Advanced features, pgvector for AI |
 | Redis | 8 | 6379 | Cache, sessions, queues |
 
+## MANDATORY: Prerequisite Check
+
+**Before ANY docker-local command, verify installation:**
+
+```bash
+which docker-local > /dev/null 2>&1
+```
+
+**If docker-local is NOT found:**
+1. Stop and ask the user if they want to install it
+2. If yes, install via: `composer global require mwguerra/docker-local`
+3. Add to PATH: `export PATH="$HOME/.composer/vendor/bin:$PATH"`
+4. Initialize: `docker-local init`
+5. Verify: `which docker-local && docker-local --version`
+
 ## Database Commands
 
 ### Connect to Database CLIs

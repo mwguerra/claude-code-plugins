@@ -6,6 +6,21 @@ description: Database operations - create, connect, backup, restore databases
 
 Manage MySQL, PostgreSQL, and Redis databases.
 
+## 0. Prerequisite Check
+
+**FIRST, verify docker-local is installed:**
+
+```bash
+which docker-local > /dev/null 2>&1 && echo "docker-local: OK" || echo "docker-local: NOT INSTALLED"
+```
+
+**If NOT installed, ask user to install:**
+```bash
+composer global require mwguerra/docker-local
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+docker-local init
+```
+
 ## Connect to Database CLIs
 
 ```bash

@@ -6,6 +6,21 @@ description: Run comprehensive health check on docker-local environment
 
 Run a full diagnostic of your docker-local environment.
 
+## 0. Prerequisite Check
+
+**FIRST, verify docker-local is installed:**
+
+```bash
+which docker-local > /dev/null 2>&1 && echo "docker-local: OK" || echo "docker-local: NOT INSTALLED"
+```
+
+**If NOT installed, ask user to install:**
+```bash
+composer global require mwguerra/docker-local
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+docker-local init
+```
+
 ## 1. Run Doctor Command
 
 ```bash

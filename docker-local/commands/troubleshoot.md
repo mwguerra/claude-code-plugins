@@ -6,6 +6,21 @@ description: Diagnose and fix docker-local issues - container failures, port con
 
 Diagnose and fix common docker-local issues.
 
+## 0. Prerequisite Check
+
+**FIRST, verify docker-local is installed:**
+
+```bash
+which docker-local > /dev/null 2>&1 && echo "docker-local: OK" || echo "docker-local: NOT INSTALLED"
+```
+
+**If NOT installed, ask user to install:**
+```bash
+composer global require mwguerra/docker-local
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+docker-local init
+```
+
 ## 1. Gather Information
 
 ```bash

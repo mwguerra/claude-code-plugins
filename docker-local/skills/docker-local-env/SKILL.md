@@ -13,6 +13,21 @@ This skill manages .env configuration for docker-local projects:
 - Generate unique isolation IDs
 - Update existing configurations
 
+## MANDATORY: Prerequisite Check
+
+**Before ANY docker-local command, verify installation:**
+
+```bash
+which docker-local > /dev/null 2>&1
+```
+
+**If docker-local is NOT found:**
+1. Stop and ask the user if they want to install it
+2. If yes, install via: `composer global require mwguerra/docker-local`
+3. Add to PATH: `export PATH="$HOME/.composer/vendor/bin:$PATH"`
+4. Initialize: `docker-local init`
+5. Verify: `which docker-local && docker-local --version`
+
 ## Understanding Environment Files
 
 Docker-local uses **two separate .env files**:

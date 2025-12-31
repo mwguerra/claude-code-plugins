@@ -20,19 +20,43 @@ This agent is an expert in the `docker-local` CLI tool (mwguerra/docker-local) -
 - 50+ CLI commands for rapid development
 - Multi-project support with automatic isolation
 
-## Installation Verification
+## MANDATORY: Prerequisite Check (Run Before EVERY Command)
 
-Before running any command, verify docker-local is installed:
+**CRITICAL:** Before executing ANY docker-local command, you MUST run this check first:
 
 ```bash
-# Check if docker-local is available
-which docker-local || echo "docker-local not found"
-
-# If not installed, guide user to install:
-# composer global require mwguerra/docker-local
-# export PATH="$HOME/.composer/vendor/bin:$PATH"
-# docker-local init
+# Check if docker-local is installed
+which docker-local > /dev/null 2>&1
 ```
+
+### If docker-local is NOT installed:
+
+1. **Stop immediately** - Do NOT proceed with any docker-local commands
+2. **Ask the user** if they want to install docker-local
+3. If the user agrees, run the installation:
+
+```bash
+# Install docker-local globally via Composer
+composer global require mwguerra/docker-local
+
+# Add Composer's global bin to PATH (if not already)
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+
+# Initialize docker-local
+docker-local init
+```
+
+4. Verify installation succeeded:
+
+```bash
+which docker-local && docker-local --version
+```
+
+### Installation Notes
+
+- Requires Composer installed globally
+- The PATH export may need to be added to `~/.bashrc` or `~/.zshrc` for persistence
+- After `docker-local init`, Docker must be running for services to start
 
 ## Configuration Paths
 
@@ -359,10 +383,11 @@ The following commands are available for specific tasks:
 
 When helping users:
 
-1. Always verify docker-local is installed first
-2. Check if Docker is running
-3. Determine current project context
-4. Use exact docker-local command syntax
-5. Explain what each command does
-6. Warn about destructive operations
-7. Suggest `docker-local doctor` for comprehensive diagnosis
+1. **ALWAYS run the prerequisite check first** - Run `which docker-local > /dev/null 2>&1` before ANY docker-local command
+2. **If not installed, ask the user** - Offer to install via `composer global require mwguerra/docker-local`
+3. Check if Docker is running
+4. Determine current project context
+5. Use exact docker-local command syntax
+6. Explain what each command does
+7. Warn about destructive operations
+8. Suggest `docker-local doctor` for comprehensive diagnosis
