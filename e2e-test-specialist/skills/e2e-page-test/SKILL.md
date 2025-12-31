@@ -20,6 +20,63 @@ Ensure that:
 
 ## Workflow
 
+### Step 0: URL/Port Verification (CRITICAL - DO THIS FIRST)
+
+**Before testing any pages, verify the application is accessible at the correct URL.**
+
+1. **Navigate to Base URL**
+   ```
+   browser_navigate({ url: base_url })
+   browser_snapshot()
+   ```
+
+2. **Verify Correct Application**
+   Check the snapshot for:
+   - ✅ Application name, logo, or known branding
+   - ✅ Expected navigation structure
+   - ✅ Known page elements from codebase analysis
+   - ❌ Default server pages ("Welcome to nginx!", "It works!", "Apache2 Ubuntu Default Page")
+   - ❌ Connection errors ("This site can't be reached", "Connection refused")
+   - ❌ Different/unexpected application content
+
+3. **Port Discovery (if verification fails)**
+   If the page doesn't match expected application:
+   ```
+   Common ports to try:
+   - http://localhost:8000  (Laravel/Django)
+   - http://localhost:8080  (Common alternative)
+   - http://localhost:3000  (Node.js/React/Next.js)
+   - http://localhost:5173  (Vite dev server)
+   - http://localhost:5174  (Vite alternative port)
+   - http://localhost:5000  (Flask/Python)
+   - http://localhost:4200  (Angular)
+   - http://localhost:8888  (Jupyter/custom)
+   ```
+
+   For each port:
+   ```
+   browser_navigate({ url: "http://localhost:{port}" })
+   browser_snapshot()
+   // Check if this matches the expected application
+   // If yes, use this as the new base URL
+   ```
+
+4. **Check Project Configuration**
+   If port discovery fails, look for hints in:
+   - `.env` file (APP_PORT, PORT, VITE_PORT, SERVER_PORT)
+   - `package.json` scripts (look for --port flags)
+   - `vite.config.js/ts` (server.port setting)
+   - `docker-compose.yml` (port mappings)
+   - `.env.example` for default port values
+
+5. **Proceed or Stop**
+   - If correct URL found: Update base_url and continue testing
+   - If URL differs from provided: Log warning in test report
+   - If no working URL found: **STOP TESTING** and report error
+     - "Application not accessible at {provided_url}"
+     - "Ports attempted: 8000, 8080, 3000, 5173, 5000, 4200"
+     - "Suggestion: Verify the development server is running"
+
 ### Step 1: Page Inventory
 
 1. **List All Pages**
@@ -196,6 +253,40 @@ Test each page at multiple viewports:
 
 ## Test Patterns
 
+### URL Verification Test (RUN FIRST)
+```
+// Step 1: Try provided URL
+1. browser_navigate({ url: base_url })
+2. snapshot = browser_snapshot()
+
+// Step 2: Check if correct application
+3. If snapshot shows:
+   - "Welcome to nginx!" → WRONG URL
+   - "It works!" → WRONG URL
+   - "Apache2 Ubuntu Default Page" → WRONG URL
+   - "This site can't be reached" → CONNECTION ERROR
+   - Expected app content → CORRECT URL ✓
+
+// Step 3: Port discovery if needed
+4. If WRONG URL:
+   ports = [8000, 8080, 3000, 5173, 5174, 5000, 4200]
+   for port in ports:
+     browser_navigate({ url: `http://localhost:${port}` })
+     snapshot = browser_snapshot()
+     if snapshot shows expected app content:
+       base_url = `http://localhost:${port}`
+       break
+
+// Step 4: Report result
+5. If correct URL found:
+   Log: "Application verified at {base_url}"
+   Continue with testing
+
+6. If no correct URL:
+   STOP TESTING
+   Report: "Cannot find application. Ports tried: ..."
+```
+
 ### Basic Page Test
 ```
 1. browser_navigate({ url: "/page" })
@@ -340,6 +431,17 @@ Tests:
 ### Page Test Results
 ```markdown
 # Page Test Results
+
+## URL Verification
+- Provided URL: http://localhost:8000
+- Verified URL: http://localhost:8000 ✓
+- Status: Application confirmed
+
+(or if port was different:)
+- Provided URL: http://localhost:8000
+- Verified URL: http://localhost:3000 ⚠️
+- Status: Application found on different port
+- Note: Server appears to be running on port 3000
 
 ## Summary
 - Total Pages: 25

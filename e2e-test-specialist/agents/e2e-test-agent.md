@@ -167,6 +167,76 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    Open a new tab if tests are already running
    ```
 
+### Phase 3.5: URL/Port Verification (CRITICAL)
+
+**IMPORTANT**: The application may not be running on the expected port. Before any testing, verify the URL is correct.
+
+1. **Navigate to Provided URL**
+   ```
+   browser_navigate to the base URL
+   browser_snapshot to capture page state
+   ```
+
+2. **Verify Application Identity**
+   Check the snapshot for indicators that confirm this is the correct application:
+   - Application name/logo in header or title
+   - Expected navigation elements
+   - Known page structure
+   - NOT a default server page (Apache, Nginx, "It works!")
+   - NOT a "connection refused" or error page
+   - NOT a different application
+
+3. **If Verification Fails - Port Discovery**
+   If the page is not the expected application, attempt port discovery:
+   ```
+   Common ports to try (in order):
+   - 8000 (Laravel/Django default)
+   - 8080 (Common alternative)
+   - 3000 (Node.js/React/Next.js)
+   - 5173 (Vite dev server)
+   - 5174 (Vite alternative)
+   - 5000 (Flask/Python)
+   - 4200 (Angular)
+   - 8888 (Jupyter/custom)
+   - 80 (Production HTTP)
+   - 443 (Production HTTPS)
+   ```
+
+   For each port:
+   ```
+   1. browser_navigate to http://localhost:{port}
+   2. browser_snapshot
+   3. Check if this matches the expected application
+   4. If match found, use this URL for all subsequent tests
+   ```
+
+4. **Analyze Project for Port Hints**
+   If port discovery fails, check project files for port configuration:
+   - `.env` files (APP_PORT, PORT, VITE_PORT)
+   - `package.json` scripts (dev server commands)
+   - `vite.config.js/ts` (server.port)
+   - `docker-compose.yml` (port mappings)
+   - `artisan serve` commands (--port flag)
+   - `.env.example` for default ports
+
+5. **Report Verified URL**
+   After successful verification:
+   ```
+   Document the verified URL in the test report
+   Use this URL for ALL subsequent test phases
+   Warn user if URL differs from what was provided
+   ```
+
+6. **Fail Early if Application Not Found**
+   If no working URL is found:
+   ```
+   - Stop testing immediately
+   - Report: "Application not accessible at provided URL"
+   - List ports attempted
+   - Suggest checking if server is running
+   - Provide hints from project configuration if found
+   ```
+
 ### Phase 4: Page Testing
 
 For EVERY page in the application:
@@ -285,6 +355,29 @@ For EACH critical flow:
 
 ## Testing Patterns
 
+### URL/Port Verification Pattern (FIRST TEST)
+```
+1. browser_navigate to provided base URL
+2. browser_snapshot - capture initial state
+3. Check snapshot for:
+   - Application-specific elements (app name, logo, expected nav)
+   - NOT default server pages ("Welcome to nginx!", "It works!", "Apache2")
+   - NOT error pages ("Connection refused", "This site can't be reached")
+   - NOT blank pages or unexpected content
+4. If verification fails:
+   a. Extract hostname from URL
+   b. Try common ports: 8000, 8080, 3000, 5173, 5174, 5000, 4200
+   c. For each port:
+      - browser_navigate to {hostname}:{port}
+      - browser_snapshot
+      - Check for application indicators
+      - If found, update base URL for all tests
+5. If all ports fail:
+   - Check project files for port configuration
+   - Report failure with suggestions
+   - STOP testing (don't test wrong application!)
+```
+
 ### Login Flow Testing
 ```
 1. browser_navigate to /login
@@ -376,6 +469,21 @@ This agent uses the following skills:
 - `e2e-flow-test` - Flow testing patterns
 
 ## Error Handling
+
+### Wrong URL/Port (CRITICAL - Check First!)
+```
+Indicators of wrong URL:
+- Default server pages: "Welcome to nginx!", "It works!", "Apache2 Default Page"
+- Connection errors: "Connection refused", "This site can't be reached"
+- Different application: Wrong app name, unexpected content
+- Blank page or minimal content
+
+Resolution:
+1. Try alternative ports (8000, 8080, 3000, 5173, 5000, 4200)
+2. Check project configuration files for port settings
+3. Ask user to verify the server is running
+4. NEVER proceed with testing if wrong application is loaded
+```
 
 ### Browser Not Installed
 ```

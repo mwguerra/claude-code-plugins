@@ -18,6 +18,26 @@ Systematically test all pages in the application for errors, missing elements, a
 
 ## Process
 
+### Step 0: URL/Port Verification (CRITICAL FIRST)
+
+**Before testing any pages, verify the application is accessible at the correct URL.**
+
+1. **Navigate to Provided URL**
+   - Use `mcp__playwright__browser_navigate` to base URL
+   - Use `mcp__playwright__browser_snapshot` to capture state
+
+2. **Verify Correct Application**
+   - Check for expected app name/logo/navigation
+   - Ensure NOT a default server page ("Welcome to nginx!", "It works!")
+   - Ensure NOT a connection error page
+
+3. **Port Discovery (if verification fails)**
+   Try common ports: 8000, 8080, 3000, 5173, 5174, 5000, 4200
+
+4. **Proceed or Stop**
+   - If correct URL found: Update base URL and continue
+   - If no working URL found: **STOP** and report error
+
 ### Step 1: Page Discovery
 
 1. **Identify All Pages**

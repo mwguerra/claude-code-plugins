@@ -46,6 +46,44 @@ Run comprehensive end-to-end tests using Playwright MCP. This command tests all 
    - Use `mcp__playwright__browser_resize` for specified viewport
    - Default: Desktop (1920x1080)
 
+### Phase 2.5: URL/Port Verification (CRITICAL FIRST TEST)
+
+**IMPORTANT**: The server may not be running on the expected port. Always verify before testing.
+
+1. **Navigate to Provided URL**
+   - Use `mcp__playwright__browser_navigate` to base URL
+   - Use `mcp__playwright__browser_snapshot` to capture state
+
+2. **Verify Correct Application**
+   Check the snapshot for indicators:
+   - ✅ Expected application name/logo
+   - ✅ Known navigation elements
+   - ✅ Expected page structure
+   - ❌ NOT default server pages ("Welcome to nginx!", "It works!")
+   - ❌ NOT connection errors
+   - ❌ NOT a different application
+
+3. **Port Discovery (if verification fails)**
+   Try common alternative ports in order:
+   - 8000, 8080, 3000, 5173, 5174, 5000, 4200, 8888
+
+   For each port:
+   - Navigate to `http://localhost:{port}`
+   - Take snapshot and check for expected application
+   - If found, use this URL for all subsequent tests
+
+4. **Check Project Configuration (if still not found)**
+   Look for port settings in:
+   - `.env` files (APP_PORT, PORT, VITE_PORT)
+   - `package.json` scripts
+   - `vite.config.js/ts`
+   - `docker-compose.yml`
+
+5. **Report and Proceed**
+   - If URL differs from provided, warn user
+   - Update base URL for all subsequent phases
+   - If no working URL found, STOP and report error
+
 ### Phase 3: Page Testing
 
 1. **Navigate to Each Page**
@@ -166,7 +204,9 @@ The command produces:
 
 ## Notes
 
+- **URL Verification First**: Always verifies the application is accessible at the provided URL before testing. If the server is on a different port, attempts to discover the correct port automatically.
 - Always runs in a visible browser by default so you can watch tests
 - Opens a new browser tab if other tests are running
 - Takes snapshots at each step for debugging
 - Checks console and network errors on every page
+- Will stop immediately if the correct application cannot be found (prevents testing wrong app)
