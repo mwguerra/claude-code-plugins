@@ -12,6 +12,9 @@
     "prd",
     "taskmanager-memory",
     "automation",
-    "workflow"
+    "workflow",
+    "stats",
+    "statistics",
+    "dashboard"
   ]
 }
