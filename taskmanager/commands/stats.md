@@ -59,9 +59,14 @@ Available modes:
 
 ### Script Usage
 
-**ALWAYS use the script for all task statistics operations.** The script handles shell escaping and provides consistent output:
+ALWAYS use the script for all task statistics operations. The script handles shell escaping and provides consistent output.
+
+IMPORTANT: Never call jq directly with inline queries. Always use the script to avoid shell escaping issues.
 
 ```bash
+# ALWAYS USE THE SCRIPT - never run jq directly!
+# The script handles shell escaping properly.
+
 # Summary (default)
 ./scripts/task-stats.sh .taskmanager/tasks.json --summary
 
@@ -94,11 +99,11 @@ Available modes:
 ./scripts/task-stats.sh .taskmanager/tasks.json --completion
 ```
 
-**IMPORTANT:** Never call `jq` directly with inline queries containing `!=` operators. The `!` character will be escaped by bash, causing syntax errors. Always use the script instead.
+---
 
 ## Output Format
 
-Present the statistics in a clean, readable format. For `--json` mode, output raw JSON that can be piped to other tools.
+Present the statistics in a clean, readable format. For the json mode, output raw JSON that can be piped to other tools.
 
 Example summary output:
 ```
