@@ -56,6 +56,7 @@ Run comprehensive end-to-end tests using Playwright MCP. This command tests all 
 3. **Check for Existing Sessions**
    - Use `mcp__playwright__browser_tabs` to check for running tests
    - Open new tab if needed
+   - **IMPORTANT**: Wait at least 1 second between opening multiple tabs
 
 4. **Set Viewport**
    - Use `mcp__playwright__browser_resize` for specified viewport

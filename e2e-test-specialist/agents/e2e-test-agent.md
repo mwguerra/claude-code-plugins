@@ -198,6 +198,13 @@ Use `browser_snapshot` (accessibility tree) for testing logic rather than `brows
    ```
    Use browser_tabs to check for existing sessions
    Open a new tab if tests are already running
+
+   IMPORTANT: When opening multiple windows/tabs, wait at least 1 second
+   between each one to prevent race conditions:
+
+   browser_tabs({ action: "new" })
+   browser_wait_for({ time: 1 })  // Wait 1 second
+   browser_tabs({ action: "new" })  // Then open next tab
    ```
 
 ### Phase 3.5: URL/Port Verification (CRITICAL)
@@ -578,7 +585,8 @@ Then retry the operation
 5. **Document Everything** - Create detailed reports
 6. **Use Waits Appropriately** - Don't rush interactions
 7. **Open New Window** - If other tests are running
-8. **Clean Up** - Close browser when done
+8. **Wait Between Windows** - Wait at least 1 second between opening multiple tabs/windows
+9. **Clean Up** - Close browser when done
 
 ## Output Format
 
