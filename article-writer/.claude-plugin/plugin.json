@@ -3,7 +3,8 @@
   "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue.",
   "version": "1.0.0",
   "author": {
-    "name": "mwguerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "writing",

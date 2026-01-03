@@ -3,7 +3,8 @@
   "description": "Ultra-specialized agent for E2E testing using Playwright MCP. Creates comprehensive test plans, tests all pages, verifies user flows by role, and ensures complete test coverage with visual browser testing.",
   "version": "1.0.0",
   "author": {
-    "name": "Marcelo Guerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "e2e",

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Tracks and logs all Claude Code plugin usage, tool calls, and session activity for workflow analysis and optimization",
   "author": {
-    "name": "mwguerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "analytics",

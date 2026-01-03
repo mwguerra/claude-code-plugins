@@ -3,7 +3,8 @@
   "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development.",
   "version": "1.0.0",
   "author": {
-    "name": "mwguerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "terminal",

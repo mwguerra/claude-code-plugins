@@ -3,7 +3,8 @@
   "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues.",
   "version": "1.0.0",
   "author": {
-    "name": "mwguerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "docker",

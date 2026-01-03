@@ -3,11 +3,9 @@
   "version": "1.0.0",
   "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables.",
   "author": {
-    "name": "Post Development Plugin"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
-  "homepage": "https://github.com/your-org/post-development",
-  "repository": "https://github.com/your-org/post-development",
-  "license": "MIT",
   "keywords": [
     "post-development",
     "marketing",

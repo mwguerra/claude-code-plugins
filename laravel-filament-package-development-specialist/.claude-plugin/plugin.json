@@ -3,8 +3,8 @@
   "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle.",
   "version": "1.0.0",
   "author": {
-    "name": "mwguerra",
-    "email": "contact@mwguerra.com"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "homepage": "https://github.com/mwguerra/laravel-filament-package-development-specialist",
   "license": "MIT",
