@@ -2,9 +2,21 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "settings.schema.json",
   "title": "Article Writer Settings",
-  "description": "Global settings for article writer plugin including example defaults",
+  "description": "Global settings for article writer plugin including example defaults and article limits",
   "type": "object",
   "properties": {
+    "article_limits": {
+      "type": "object",
+      "description": "Hard limits for article content. These limits apply to ALL articles regardless of content_type.",
+      "properties": {
+        "max_words": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 50000,
+          "description": "Maximum word count for article content (excluding frontmatter and code blocks). Articles exceeding this limit MUST be condensed while maintaining quality, flow, and author voice."
+        }
+      }
+    },
     "example_defaults": {
       "type": "object",
       "description": "Default settings for each example type. Article-specific values override these.",

@@ -41,16 +41,17 @@ Create a single technical article interactively with multi-language support.
 ## Process
 
 1. Select author and load profile from `.article_writer/authors.json`
-2. **Load example defaults from `.article_writer/settings.json`**
+2. **Load settings from `.article_writer/settings.json`** (example defaults + `article_limits.max_words`)
 3. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
-4. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review
+4. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review → **Condense**
 5. Search web for documentation, news, and related content
 6. Write initial draft in author's primary language
 7. Create practical example using settings defaults (scaffold_command, post_scaffold, etc.)
 8. Update draft with example code/content
 9. Review article for flow and voice compliance
-10. Translate to other languages
-11. Update article_tasks.json with output paths, sources, and example info
+10. **Condense if over max_words** (preserving quality and voice)
+11. Translate to other languages
+12. Update article_tasks.json with output paths, sources, and example info
 
 ## Web Research
 
@@ -97,6 +98,23 @@ content/articles/2025_01_15_rate-limiting/
 └── rate-limiting.en_US.md    # Translation
 ```
 
+## Word Limit Enforcement
+
+Articles are subject to a **hard word limit** defined in settings:
+
+```bash
+# Check current limit
+jq '.article_limits.max_words' .article_writer/settings.json
+```
+
+**Default:** 3000 words (prose only, excludes frontmatter and code blocks)
+
+If the draft exceeds `max_words`, the Condense phase:
+1. Identifies and removes redundancy
+2. Tightens verbose passages
+3. Preserves author voice and technical accuracy
+4. Maintains narrative flow and quality
+
 ## Checkpoints
 
 Confirm at:
@@ -105,6 +123,7 @@ Confirm at:
 - Outline before research
 - Research findings summary
 - Draft review (primary language)
+- **Word count compliance** (after condensation)
 - Translation review
 - Ready for finalization
 

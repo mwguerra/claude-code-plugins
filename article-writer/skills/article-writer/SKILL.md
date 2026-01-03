@@ -12,14 +12,17 @@ Create technical articles with practical examples and multi-language support.
 1. Determine author (from task or first in authors.json)
 2. Create folder structure (including `code/` folder)
 3. Load author profile
-4. Follow phases: Initialize → Plan → Research → **Draft → Example → Integrate → Review** → Translate → Finalize
+4. **Load settings.json** (including `article_limits.max_words`)
+5. Follow phases: Initialize → Plan → Research → **Draft → Example → Integrate → Review → Condense** → Translate → Finalize
 
 ## Workflow Overview
 
 ```
-Plan → Research → Draft (initial) → Create Example → Update Draft → Review → Translate → Finalize
-                         ↑                              ↓
-                         └──────── Iterate ─────────────┘
+Plan → Research → Draft (initial) → Create Example → Update Draft → Review → Condense → Translate → Finalize
+                         ↑                              ↓               ↓
+                         └──────── Iterate ─────────────┘               │
+                                                                        ↓
+                                                            (if over max_words)
 ```
 
 ## Folder Structure
@@ -50,6 +53,7 @@ content/articles/YYYY_MM_DD_slug/
 - Get author, generate slug, create folder
 - Create `code/` directory for example
 - Copy author profile to `00_context/`
+- **Load `article_limits.max_words` from settings.json**
 
 ### Phase 1: Plan
 - Classify article type
@@ -289,6 +293,86 @@ code/
    - Example fully demonstrates topic?
 
 **CHECKPOINT:** Confirm article + example are ready
+
+### Phase 6b: Condense (Word Limit Enforcement) ⚠️
+
+**This phase is MANDATORY if article exceeds `max_words` from settings.**
+
+#### Step 1: Check Word Count
+
+```bash
+# Count words in article (excluding frontmatter and code blocks)
+# Frontmatter: lines between first --- and second ---
+# Code blocks: lines between ``` markers
+
+# Simple word count of prose content only:
+sed '/^---$/,/^---$/d; /^```/,/^```$/d' draft_v2.{lang}.md | wc -w
+```
+
+#### Step 2: Load Word Limit from Settings
+
+```bash
+# Read max_words from settings.json
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
+# Or read JSON directly:
+# jq '.article_limits.max_words' .article_writer/settings.json
+```
+
+#### Step 3: Condense if Over Limit
+
+**If word count > max_words:**
+
+1. **Identify Condensation Targets** (in order of priority):
+   - Redundant explanations of the same concept
+   - Overly verbose transitions
+   - Repeated caveats or disclaimers
+   - Extended tangents not central to the topic
+   - Excessive examples when fewer would suffice
+
+2. **Condensation Techniques** (preserve quality):
+   - Combine related paragraphs
+   - Replace lengthy explanations with concise summaries
+   - Convert verbose lists to compact bullet points
+   - Remove filler words and phrases
+   - Tighten sentence structure
+
+3. **CRITICAL: Preserve Author Voice**
+   - Keep signature phrases and expressions
+   - Maintain the same tone (formality level)
+   - Preserve the author's opinion style
+   - Keep characteristic sentence structures
+   - Retain enthusiasm/energy level from voice profile
+
+4. **DO NOT Remove:**
+   - Code examples or snippets (these don't count toward word limit)
+   - Critical technical explanations
+   - Prerequisites or setup instructions
+   - Safety warnings or important notes
+   - References to the practical example
+
+#### Step 4: Verify Condensed Version
+
+After condensing:
+- [ ] Word count is now ≤ max_words
+- [ ] Article still reads naturally (not choppy)
+- [ ] All key points are preserved
+- [ ] Technical accuracy maintained
+- [ ] Author voice is consistent throughout
+- [ ] Flow and narrative structure intact
+
+#### Step 5: Save Condensed Draft
+
+```bash
+# Save as draft_v3 (condensed version)
+# 03_drafts/draft_v3.{lang}.md
+```
+
+**If unable to condense below max_words without quality loss:**
+- Document the reason in the task
+- Note the final word count achieved
+- Flag for human review
+
+**CHECKPOINT:** Article is within word limit while maintaining quality
 
 ### Phase 7: Translate
 - Create versions for other languages

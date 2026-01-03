@@ -239,7 +239,17 @@ Asks for confirmation before removing.
 
 ## /article-writer:settings
 
-View and modify global settings.
+View and modify global settings, including **article word limits** and example defaults.
+
+### Article Limits
+
+The `article_limits` section defines hard limits that apply to ALL articles regardless of content type:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `max_words` | integer | 3000 | Maximum word count for article prose (excludes frontmatter and code blocks) |
+
+Articles exceeding `max_words` are automatically condensed during the Condense phase while preserving quality, flow, and author voice.
 
 ### `show` - View Settings
 
@@ -257,6 +267,9 @@ View and modify global settings.
 ═══════════════════════════════════════════════════════════════
   File: /your/project/.article_writer/settings.json
 ────────────────────────────────────────────────────────────────
+
+  Article Limits:
+    Max Words: 3000
 
   Metadata:
     Version: 1.0.0
@@ -325,6 +338,7 @@ View and modify global settings.
 
 | Path | Example Value |
 |------|---------------|
+| `article_limits.max_words` | `3000` |
 | `code.technologies` | `'["Laravel 11", "Pest 3", "MySQL"]'` |
 | `code.has_tests` | `true` or `false` |
 | `code.scaffold_command` | `"composer create-project laravel/laravel:^11.0 code"` |
@@ -335,6 +349,12 @@ View and modify global settings.
 **Examples:**
 
 ```bash
+# Set article word limit to 2000 words
+/article-writer:settings set article_limits.max_words 2000
+
+# Set article word limit to 5000 words (for deep-dives)
+/article-writer:settings set article_limits.max_words 5000
+
 # Change Laravel version
 /article-writer:settings set code.technologies '["Laravel 11", "Pest 3", "SQLite"]'
 

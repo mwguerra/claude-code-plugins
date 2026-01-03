@@ -47,7 +47,7 @@ Process multiple articles from the task queue autonomously.
 ## Process
 
 1. Load and validate task queue
-2. **Load `settings.json`** (example defaults)
+2. **Load `settings.json`** (example defaults + `article_limits.max_words`)
 3. Filter articles matching criteria
 4. For each article:
    - Get author (from task or default)
@@ -55,17 +55,30 @@ Process multiple articles from the task queue autonomously.
    - **Search web** for docs, news, tutorials
    - Write in author's primary language
    - **Create example using settings** (scaffold_command, etc.)
+   - Review article for flow and voice
+   - **Condense if over max_words** (preserving quality and voice)
    - Translate to other languages
    - Update status to `draft`
    - Record output_files, sources_used, example info
    - Set written_at timestamp
-5. Report summary
+5. Report summary (including word count compliance)
 
 ## Author Handling
 
 - Each task can specify its own author
 - If not specified, uses first author in authors.json
 - Article follows that author's tone and languages
+
+## Word Limit Enforcement
+
+All articles processed in batch mode are subject to the `max_words` limit from settings:
+
+```bash
+# Check current limit before batch
+jq '.article_limits.max_words' .article_writer/settings.json
+```
+
+Articles exceeding the limit are automatically condensed while preserving quality and author voice.
 
 ## Controls During Processing
 

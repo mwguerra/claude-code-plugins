@@ -6,11 +6,23 @@ argument-hint: <show [type] | set <path> <value> | reset | reset-type <type>>
 
 # Settings - Global Configuration
 
-Manage global settings for the article-writer plugin.
+Manage global settings for the article-writer plugin, including **article word limits** and example defaults.
 
 **File location:** `.article_writer/settings.json`
 **Schema:** `.article_writer/schemas/settings.schema.json`
 **Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writersettings)
+
+## Article Limits
+
+The `article_limits` section defines hard limits that apply to ALL articles:
+
+| Setting | Type | Description |
+|---------|------|-------------|
+| `max_words` | integer | Maximum word count for article prose (excludes frontmatter and code blocks) |
+
+**Default:** 3000 words
+
+Articles exceeding `max_words` are automatically condensed during the Condense phase while preserving quality, flow, and author voice.
 
 ## Commands
 
@@ -48,6 +60,7 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts set <path> <value>`
 
 | Path | Example Value |
 |------|---------------|
+| `article_limits.max_words` | `3000` |
 | `code.technologies` | `'["Laravel 11", "Pest 3", "SQLite"]'` |
 | `code.has_tests` | `true` |
 | `code.scaffold_command` | `"composer create-project laravel/laravel:^11.0 code"` |
@@ -158,4 +171,24 @@ run_instructions: "..."        run_instructions: "X"   run_instructions: "X"
 
 ```bash
 /article-writer:settings reset-type code
+```
+
+## Word Limit Examples
+
+### Set max words to 2000
+
+```bash
+/article-writer:settings set article_limits.max_words 2000
+```
+
+### Set max words to 5000 (for deep-dives)
+
+```bash
+/article-writer:settings set article_limits.max_words 5000
+```
+
+### View current word limit
+
+```bash
+jq '.article_limits.max_words' .article_writer/settings.json
 ```

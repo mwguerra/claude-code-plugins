@@ -81,15 +81,20 @@ This bash script efficiently processes JSON without loading entire files into me
 1. Run `article-stats.sh --summary` to get queue overview
 2. Run `article-stats.sh --stuck` to check for interrupted articles
 3. Load `authors.json`
-4. **Load `settings.json`** (example defaults)
+4. **Load `settings.json`** (example defaults AND `article_limits.max_words`)
 5. Create backup: `article_tasks.backup.json`
+
+**CRITICAL: Read and store `article_limits.max_words` from settings.json. This is a HARD LIMIT that applies to ALL articles regardless of content_type.**
 
 ```bash
 # View queue status
 "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --summary
 
-# To view settings before starting:
+# To view settings before starting (includes article_limits):
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
+
+# Read max_words limit directly:
+jq '.article_limits.max_words' .article_writer/settings.json
 ```
 
 ### 2. Select Articles
@@ -126,19 +131,22 @@ a. Determine author:
    - Use: article-stats.sh --get <id> author.id
    - If null, use first author in authors.json
 b. Load author profile from authors.json
-c. Update status: "pending" → "in_progress"
+c. Load max_words from settings.json article_limits
+d. Update status: "pending" → "in_progress"
    - Use: article-stats.sh --set-status in_progress <id>
-d. Process article using Skill(article-writer):
+e. Process article using Skill(article-writer):
    - Research: Search web for docs, news, tutorials
    - Draft: Write initial draft in primary language
    - Example: Create practical example (code/document)
    - Integrate: Update draft with example code/content
    - Review: Check flow, voice compliance, accuracy
+   - **Condense: Enforce max_words limit (MANDATORY)**
    - Translate: Create other language versions
-e. On success:
+f. On success:
    - Use: article-stats.sh --set-status draft <id>
    - Manually update output_folder, output_files, sources_used, example
-f. On failure:
+   - Record final word count in task
+g. On failure:
    - Keep "in_progress" status
    - Use: article-stats.sh --set-error <id> "Error message"
    - Continue to next
@@ -328,18 +336,65 @@ php artisan test
 
 **Never create partial projects with just a few files.**
 
-### 7. Multi-Language Flow
+### 7. Word Limit Enforcement (Condense Phase) ⚠️
+
+**This is MANDATORY after review, before translation.**
+
+#### Check Word Count
+
+```bash
+# Count words excluding frontmatter and code blocks
+sed '/^---$/,/^---$/d; /^```/,/^```$/d' 03_drafts/draft_v2.{lang}.md | wc -w
+```
+
+#### If Over max_words:
+
+1. **Condense the article** while maintaining:
+   - Author voice (tone, phrases, style)
+   - Technical accuracy
+   - Narrative flow
+   - All essential content
+
+2. **Condensation priorities** (remove/shorten first):
+   - Redundant explanations
+   - Verbose transitions
+   - Repeated caveats
+   - Extended tangents
+   - Excessive examples
+
+3. **DO NOT touch:**
+   - Code blocks (don't count toward word limit)
+   - Critical technical explanations
+   - Setup/prerequisites
+   - Safety warnings
+
+4. **Save condensed version:**
+   ```bash
+   # 03_drafts/draft_v3.{lang}.md
+   ```
+
+5. **Verify** word count is now ≤ max_words
+
+**If condensation compromises quality:**
+- Document the issue in task notes
+- Note final word count achieved
+- Flag for human review
+- Continue with best achievable version
+
+### 8. Multi-Language Flow
 
 For author with `languages: ["pt_BR", "en_US"]`:
 
 1. Write article in pt_BR (primary)
 2. Save as `{slug}.pt_BR.md`
 3. Record in output_files
-4. Translate to en_US
+4. Translate to en_US (maintain same word economy)
 5. Save as `{slug}.en_US.md`
 6. Record with translated_at timestamp
 
-### 8. Progress Tracking
+**Note:** Translations should respect the same max_words limit. The condensed primary article serves as the template.
+
+### 9. Progress Tracking
 
 Log to `.article_writer/.processing-log.json`:
 
@@ -362,7 +417,7 @@ Log to `.article_writer/.processing-log.json`:
 }
 ```
 
-### 9. Completion
+### 10. Completion
 
 After batch:
 1. Update `metadata.last_updated`

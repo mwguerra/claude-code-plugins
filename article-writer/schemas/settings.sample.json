@@ -1,5 +1,8 @@
 {
   "$schema": "./schemas/settings.schema.json",
+  "article_limits": {
+    "max_words": 3000
+  },
   "example_defaults": {
     "code": {
       "technologies": ["Laravel 12", "Pest 4", "SQLite"],
