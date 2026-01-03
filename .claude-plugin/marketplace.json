@@ -329,32 +329,6 @@
         "page-testing",
         "automation"
       ]
-    },
-    {
-      "name": "plugin-usage-tracker",
-      "source": "./plugin-usage-tracker",
-      "version": "1.0.0",
-      "description": "Tracks and logs all Claude Code plugin usage, tool calls, and session activity. Provides workflow analytics, performance metrics, and AI-powered insights to help optimize your development productivity.",
-      "keywords": [
-        "analytics",
-        "logging",
-        "usage-tracking",
-        "workflow",
-        "optimization",
-        "productivity",
-        "statistics",
-        "metrics"
-      ],
-      "category": "productivity",
-      "tags": [
-        "usage-analytics",
-        "workflow-analysis",
-        "productivity-metrics",
-        "session-tracking",
-        "tool-usage",
-        "performance-insights",
-        "statistics"
-      ]
     }
   ]
 }

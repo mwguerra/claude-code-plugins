@@ -70,13 +70,6 @@ Scaffold and develop Laravel packages and Filament plugins with full testing sup
 /plugin install laravel-filament-package-development-specialist@mwguerra-marketplace
 ```
 
-### plugin-usage-tracker
-Track and analyze Claude Code plugin usage patterns. Monitors command invocations, skill usage, and agent spawns to provide insights on which plugins are most valuable.
-
-```bash
-/plugin install plugin-usage-tracker@mwguerra-marketplace
-```
-
 ### post-development
 App launch preparation toolkit with SEO analysis, automated screenshots, buyer persona creation, social media ad generation, technical article writing, and landing page proposals.
 
