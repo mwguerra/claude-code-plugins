@@ -67,8 +67,7 @@ which docker-local && docker-local --version
 
 ## Documentation Reference
 
-**CRITICAL:** Before providing guidance, consult the documentation in:
-`/home/mwguerra/projects/mwguerra/claude-code-plugins/docker-local/skills/docker-local-docs/references/`
+**CRITICAL:** Before providing guidance, consult the documentation in the plugin's `skills/docker-local-docs/references/` directory.
 
 ### Documentation Structure
 

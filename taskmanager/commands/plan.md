@@ -6,7 +6,7 @@ description: Parse a PRD file, folder, or prompt and generate hierarchical tasks
 
 # Plan Command
 
-You are implementing the `/mwguerra:taskmanager:plan` command.
+You are implementing the `taskmanager:plan` command.
 
 ## Arguments
 
@@ -104,15 +104,15 @@ This command MUST log to `.taskmanager/logs/`:
 ## Usage examples
 
 ### Using the default PRD file
-- `/mwguerra:taskmanager:plan`
+- `taskmanager:plan`
   - Reads from `.taskmanager/docs/prd.md`
 
 ### Using a single file
-- `/mwguerra:taskmanager:plan docs/new-feature-prd.md`
+- `taskmanager:plan docs/new-feature-prd.md`
   - Reads the specified markdown file
 
 ### Using a folder with multiple documentation files
-- `/mwguerra:taskmanager:plan docs/project-specs/`
+- `taskmanager:plan docs/project-specs/`
   - Discovers and reads all `.md` files in the folder recursively
   - Example folder structure:
     ```
@@ -128,9 +128,9 @@ This command MUST log to `.taskmanager/logs/`:
   - All files are aggregated into a single PRD context for task generation
 
 ### Using a prompt
-- `/mwguerra:taskmanager:plan "Create a react app that has a counter button that increments one each time its clicked on an on screen counter that begins at zero"`
+- `taskmanager:plan "Create a react app that has a counter button that increments one each time its clicked on an on screen counter that begins at zero"`
   - Uses the prompt text directly as PRD content
 
 ### With debug logging
-- `/mwguerra:taskmanager:plan docs/specs/ --debug`
+- `taskmanager:plan docs/specs/ --debug`
   - Enables verbose debug logging to `.taskmanager/logs/debug.log`

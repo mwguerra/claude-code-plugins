@@ -6,7 +6,7 @@ argument-hint: "<action> [args] [--debug]"
 
 # Memory Command
 
-You are implementing `/mwguerra:taskmanager:memory`.
+You are implementing `taskmanager:memory`.
 
 This command provides direct access to the project memory system, allowing users to manage global memories outside of task execution.
 
@@ -26,7 +26,7 @@ When `--debug` is provided:
 
 ### `add "description"` - Add a new global memory
 
-Usage: `/memory add "Always use TypeScript strict mode"`
+Usage: `taskmanager:memory add "Always use TypeScript strict mode"`
 
 1. Parse the description from `$2` onwards.
 2. Use `AskUserQuestion` to gather additional details:
@@ -209,9 +209,9 @@ Usage: `/memory search "testing"`
 
 ## Error Handling
 
-- If memory ID not found: "Memory '<id>' not found. Use `/memory list` to see available memories."
+- If memory ID not found: "Memory '<id>' not found. Use `taskmanager:memory list` to see available memories."
 - If action not recognized: "Unknown action '<action>'. Available actions: add, list, show, update, deprecate, supersede, conflicts, search"
-- If memories.json doesn't exist: "No memories file found. Initialize with `/init` first."
+- If memories.json doesn't exist: "No memories file found. Initialize with `taskmanager:init` first."
 
 ## Logging Requirements
 

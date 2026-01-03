@@ -6,7 +6,7 @@ argument-hint: "<task-id> [--memory \"global memory\"] [--task-memory \"temp mem
 
 # Execute Task Command
 
-You are implementing `/mwguerra:taskmanager:execute-task`.
+You are implementing `taskmanager:execute-task`.
 
 ## Arguments
 
@@ -32,7 +32,7 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
 ### 1. Parse arguments
 
 - `$1` must be provided (e.g., `1.2.3`).
-- If not provided, ask the user to specify an ID or suggest running `/mwguerra:taskmanager:next-task`.
+- If not provided, ask the user to specify an ID or suggest running `taskmanager:next-task`.
 - Extract `--memory` / `-gm` value if provided.
 - Extract `--task-memory` / `-tm` value if provided.
 - Extract `--debug` / `-d` flag if provided.
@@ -54,7 +54,7 @@ You are implementing `/mwguerra:taskmanager:execute-task`.
        ```
 
 3. **Load task**:
-   - **Token-efficient option**: For large `tasks.json` files (> 25k tokens), use `/mwguerra:taskmanager:get-task $1` to retrieve the task without loading the full file.
+   - **Token-efficient option**: For large `tasks.json` files (> 25k tokens), use `taskmanager:get-task $1` to retrieve the task without loading the full file.
    - Standard approach: Ask the `taskmanager` skill to load `.taskmanager/tasks.json` and find the task with `id == $1`.
    - If not found, inform the user and stop.
 
@@ -200,8 +200,8 @@ Implementation notes:
 
 ## Related Commands
 
-- `/mwguerra:taskmanager:get-task <id> [key]` - Token-efficient way to retrieve task properties without loading full `tasks.json`
-- `/mwguerra:taskmanager:update-status <status> <id1> [id2...]` - Batch status updates without status propagation (use for quick updates when propagation is not needed)
-- `/mwguerra:taskmanager:stats` - Token-efficient statistics and task summaries
+- `taskmanager:get-task <id> [key]` - Token-efficient way to retrieve task properties without loading full `tasks.json`
+- `taskmanager:update-status <status> <id1> [id2...]` - Batch status updates without status propagation (use for quick updates when propagation is not needed)
+- `taskmanager:stats` - Token-efficient statistics and task summaries
 
-**Note:** Unlike `/mwguerra:taskmanager:update-status`, this command (`execute-task`) performs full status propagation to parent tasks. Use `execute-task` when you need proper status cascading; use `update-status` only for quick batch updates where you'll handle propagation separately.
+**Note:** Unlike `taskmanager:update-status`, this command (`execute-task`) performs full status propagation to parent tasks. Use `execute-task` when you need proper status cascading; use `update-status` only for quick batch updates where you'll handle propagation separately.

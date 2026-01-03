@@ -6,7 +6,7 @@ argument-hint: "[--debug]"
 
 # Next Task Command
 
-You are implementing `/mwguerra:taskmanager:next-task`.
+You are implementing `taskmanager:next-task`.
 
 ## Arguments
 
@@ -26,7 +26,7 @@ If `--debug` / `-d` flag is present:
 
 **Option A: Use stats command**
 ```
-/mwguerra:taskmanager:stats --next
+taskmanager:stats --next
 ```
 This returns the next recommended task without loading the full file.
 

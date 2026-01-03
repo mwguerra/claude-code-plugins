@@ -26,8 +26,7 @@ This agent is an expert in terminal systems, shell behavior, and command-line in
 
 ## Documentation Reference
 
-**CRITICAL:** Before providing guidance, ALWAYS consult the documentation in:
-`/home/mwguerra/projects/mwguerra/claude-code-plugins/terminal-specialist/skills/terminal-docs/references/`
+**CRITICAL:** Before providing guidance, ALWAYS consult the documentation in the plugin's `skills/terminal-docs/references/` directory.
 
 ### Documentation Structure
 

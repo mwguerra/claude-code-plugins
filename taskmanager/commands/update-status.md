@@ -6,7 +6,7 @@ argument-hint: "<status> <id1> [id2...] | Example: done 1.2.3 1.2.4"
 
 # Update Status Command
 
-You are implementing `/mwguerra:taskmanager:update-status`.
+You are implementing `taskmanager:update-status`.
 
 ## Purpose
 
@@ -36,7 +36,7 @@ This command provides a token-efficient way to update task status for one or mor
 ```bash
 # Check status and IDs are provided
 if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-    echo "Usage: /mwguerra:taskmanager:update-status <status> <id1> [id2...]"
+    echo "Usage: taskmanager:update-status <status> <id1> [id2...]"
     exit 1
 fi
 ```
@@ -101,22 +101,22 @@ Successfully updated 3 task(s) to status 'done':
 
 **Mark single task as done:**
 ```
-/mwguerra:taskmanager:update-status done 1.2.3
+taskmanager:update-status done 1.2.3
 ```
 
 **Mark multiple tasks as done:**
 ```
-/mwguerra:taskmanager:update-status done 1.2.3 1.2.4 1.2.5
+taskmanager:update-status done 1.2.3 1.2.4 1.2.5
 ```
 
 **Set tasks to in-progress:**
 ```
-/mwguerra:taskmanager:update-status in-progress 2.1.1
+taskmanager:update-status in-progress 2.1.1
 ```
 
 **Mark tasks as blocked:**
 ```
-/mwguerra:taskmanager:update-status blocked 3.1 3.2
+taskmanager:update-status blocked 3.1 3.2
 ```
 
 ## Notes
@@ -124,5 +124,5 @@ Successfully updated 3 task(s) to status 'done':
 - This command modifies `.taskmanager/tasks.json` directly
 - Creates a backup before modification (`.taskmanager/tasks.json.bak`)
 - Does NOT trigger status propagation to parent tasks - use with care
-- For full status propagation, use `/mwguerra:taskmanager:execute-task` instead
+- For full status propagation, use `taskmanager:execute-task` instead
 - Requires `jq` to be installed

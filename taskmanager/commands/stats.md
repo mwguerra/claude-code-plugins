@@ -5,7 +5,7 @@ description: Get quick task statistics without loading entire tasks.json - saves
 
 # Task Statistics Command
 
-You are implementing `/mwguerra:taskmanager:stats`.
+You are implementing `taskmanager:stats`.
 
 ## Purpose
 
@@ -158,6 +158,6 @@ Estimate: 4 hours
 - The `--set-status` mode **modifies** `.taskmanager/tasks.json` (creates backup first).
 - Uses `jq` for efficient JSON parsing without loading entire file into context.
 - Ideal for quick status checks before starting work.
-- For full dashboard with critical path analysis, use `/mwguerra:taskmanager:dashboard`.
-- For getting a single task, use `/mwguerra:taskmanager:get-task <id> [key]`.
-- For updating status, use `/mwguerra:taskmanager:update-status <status> <id1> [id2...]`.
+- For full dashboard with critical path analysis, use `taskmanager:dashboard`.
+- For getting a single task, use `taskmanager:get-task <id> [key]`.
+- For updating status, use `taskmanager:update-status <status> <id1> [id2...]`.

@@ -6,7 +6,7 @@ argument-hint: "<id> [key] | Examples: 1.2.3 | 1.2.3 status | 1.2.3 complexity.s
 
 # Get Task Command
 
-You are implementing `/mwguerra:taskmanager:get-task`.
+You are implementing `taskmanager:get-task`.
 
 ## Purpose
 
@@ -23,7 +23,7 @@ This command provides a token-efficient way to retrieve task information by ID, 
 
 ```bash
 if [[ -z "$1" ]]; then
-    echo "Usage: /mwguerra:taskmanager:get-task <id> [key]"
+    echo "Usage: taskmanager:get-task <id> [key]"
     exit 1
 fi
 ```
@@ -69,7 +69,7 @@ Error: Task '1.2.3' not found
 
 **Get full task object:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3
+taskmanager:get-task 1.2.3
 ```
 
 Output:
@@ -89,7 +89,7 @@ Output:
 
 **Get task status:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3 status
+taskmanager:get-task 1.2.3 status
 ```
 
 Output:
@@ -99,7 +99,7 @@ planned
 
 **Get task title:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3 title
+taskmanager:get-task 1.2.3 title
 ```
 
 Output:
@@ -109,7 +109,7 @@ Implement user authentication
 
 **Get nested property:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3 complexity.scale
+taskmanager:get-task 1.2.3 complexity.scale
 ```
 
 Output:
@@ -119,7 +119,7 @@ M
 
 **Get task priority:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3 priority
+taskmanager:get-task 1.2.3 priority
 ```
 
 Output:
@@ -129,7 +129,7 @@ high
 
 **Get estimate in seconds:**
 ```
-/mwguerra:taskmanager:get-task 1.2.3 estimateSeconds
+taskmanager:get-task 1.2.3 estimateSeconds
 ```
 
 Output:

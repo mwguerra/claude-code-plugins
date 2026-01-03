@@ -1,7 +1,6 @@
 ---
-name: taskmanager
 description: Manage tasks, state, and memories - parse PRDs into hierarchical tasks with dependencies and complexity
-allowed-tools: [Read, Write, Edit, Glob, Grep]
+allowed-tools: Read, Write, Edit, Glob, Grep
 ---
 
 # Task Manager Skill
@@ -95,7 +94,7 @@ When planning or executing complex work, you SHOULD load relevant **active** mem
 
 #### Option 1: Use the stats command
 ```
-/mwguerra:taskmanager:stats --json
+taskmanager:stats --json
 ```
 
 This returns a compact JSON summary with:
@@ -143,24 +142,24 @@ sort_by(
 
 #### Option 3: Use the get-task command
 ```
-/mwguerra:taskmanager:get-task <id> [key]
+taskmanager:get-task <id> [key]
 ```
 
 This retrieves a specific task by ID without loading the full file:
-- Get full task object: `/mwguerra:taskmanager:get-task 1.2.3`
-- Get specific property: `/mwguerra:taskmanager:get-task 1.2.3 status`
-- Get nested property: `/mwguerra:taskmanager:get-task 1.2.3 complexity.scale`
+- Get full task object: `taskmanager:get-task 1.2.3`
+- Get specific property: `taskmanager:get-task 1.2.3 status`
+- Get nested property: `taskmanager:get-task 1.2.3 complexity.scale`
 
 Available properties: `id`, `title`, `status`, `priority`, `type`, `description`, `complexity`, `complexity.score`, `complexity.scale`, `estimateSeconds`, `startedAt`, `completedAt`, `durationSeconds`, `dependencies`, `parentId`
 
 #### Option 4: Use the update-status command
 ```
-/mwguerra:taskmanager:update-status <status> <id1> [id2...]
+taskmanager:update-status <status> <id1> [id2...]
 ```
 
 This updates task status efficiently without loading the full file:
-- Single task: `/mwguerra:taskmanager:update-status done 1.2.3`
-- Multiple tasks: `/mwguerra:taskmanager:update-status done 1.2.3 1.2.4 1.2.5`
+- Single task: `taskmanager:update-status done 1.2.3`
+- Multiple tasks: `taskmanager:update-status done 1.2.3 1.2.4 1.2.5`
 
 Valid statuses: `draft`, `planned`, `in-progress`, `blocked`, `paused`, `done`, `canceled`, `duplicate`, `needs-review`
 
@@ -168,7 +167,7 @@ Valid statuses: `draft`, `planned`, `in-progress`, `blocked`, `paused`, `done`, 
 - `startedAt` when status becomes `in-progress` (if not already set)
 - `completedAt` when status becomes terminal (`done`, `canceled`, `duplicate`)
 
-**Important:** This does NOT trigger status propagation to parent tasks. For full propagation, use `/mwguerra:taskmanager:execute-task` instead.
+**Important:** This does NOT trigger status propagation to parent tasks. For full propagation, use `taskmanager:execute-task` instead.
 
 #### When to use token-efficient methods:
 - Before any batch execution (`/run-tasks`)
@@ -218,7 +217,7 @@ Do not invent new top-level keys; follow the schema.
 
 ## Planning from file, folder, OR text input
 
-When the user invokes `/mwguerra:taskmanager:plan`, or directly asks you to plan:
+When the user invokes `taskmanager:plan`, or directly asks you to plan:
 
 ### Step 1 — Determine input type
 Input may be:
@@ -1091,7 +1090,7 @@ You interpret this as PRD content.
 
 User input:
 
-> `/mwguerra:taskmanager:plan docs/new-feature-prd.md`
+> `taskmanager:plan docs/new-feature-prd.md`
 
 You:
 

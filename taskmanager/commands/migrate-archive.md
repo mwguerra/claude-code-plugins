@@ -6,7 +6,7 @@ argument-hint: "[--dry-run]"
 
 # Migrate Archive Command
 
-You are implementing `/mwguerra:taskmanager:migrate-archive`.
+You are implementing `taskmanager:migrate-archive`.
 
 ## Purpose
 
@@ -111,7 +111,7 @@ File sizes:
 
 Next steps:
 - Dashboard and metrics will continue to work (stubs retain metric fields)
-- Use /mwguerra:taskmanager:dashboard to verify
+- Use `taskmanager:dashboard` to verify
 - Archived task details are preserved in tasks-archive.json
 ```
 

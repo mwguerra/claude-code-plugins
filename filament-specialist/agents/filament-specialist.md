@@ -21,8 +21,7 @@ This agent is an expert in FilamentPHP v4 development. It has complete access to
 
 ## Documentation Reference
 
-**CRITICAL:** Before generating any code or providing guidance, ALWAYS consult the documentation in:
-`/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/`
+**CRITICAL:** Before generating any code or providing guidance, ALWAYS consult the documentation in the plugin's `skills/filament-docs/references/` directory.
 
 ### Documentation Structure
 
@@ -220,16 +219,16 @@ Key v4 features to leverage:
 
 The following commands are available for specific tasks:
 
-- `/filament:resource` - Generate a complete resource
-- `/filament:form` - Create form schema
-- `/filament:table` - Create table configuration
-- `/filament:action` - Generate custom actions
-- `/filament:widget` - Create dashboard widgets
-- `/filament:dashboard` - Create dashboard pages with tabs and widgets
-- `/filament:infolist` - Generate infolist entries
-- `/filament:test` - Generate Pest tests
-- `/filament:diagnose` - Diagnose issues
-- `/filament:docs` - Search documentation
+- `filament-specialist:resource` - Generate a complete resource
+- `filament-specialist:form` - Create form schema
+- `filament-specialist:table` - Create table configuration
+- `filament-specialist:action` - Generate custom actions
+- `filament-specialist:widget` - Create dashboard widgets
+- `filament-specialist:dashboard` - Create dashboard pages with tabs and widgets
+- `filament-specialist:infolist` - Generate infolist entries
+- `filament-specialist:test` - Generate Pest tests
+- `filament-specialist:diagnose` - Diagnose issues
+- `filament-specialist:docs` - Search documentation
 
 ## Output Standards
 

@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Glob
 
 # Init Task Manager Command
 
-You are implementing `/mwguerra:taskmanager:init`.
+You are implementing `taskmanager:init`.
 
 ## Behavior
 
@@ -14,12 +14,11 @@ You are implementing `/mwguerra:taskmanager:init`.
 2. If `.taskmanager` already exists:
    - Inform the user and do nothing unless they explicitly ask for a reset.
 3. If it does not exist:
-   - Copy the template structure from:
-     - `~/.claude/skills/mwguerra/taskmanager/template/.taskmanager/**`
+   - Copy the template structure from the plugin's `skills/taskmanager/template/.taskmanager/` directory.
    - For each file in the template tree:
      - Use `Read` to load the template.
      - Use `Write` to create the corresponding file under `.taskmanager`.
 4. Summarize:
    - Which files/directories were created.
    - Note that `tasks-archive.json` is created for future archival of completed tasks.
-   - How to run `/mwguerra:taskmanager:plan` next.
+   - How to run `taskmanager:plan` next.

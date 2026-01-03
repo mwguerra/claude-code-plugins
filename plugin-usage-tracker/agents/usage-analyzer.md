@@ -1,5 +1,4 @@
 ---
-name: usage-analyzer
 description: Analyzes Claude Code usage patterns to help optimize your workflow, identify bottlenecks, and improve productivity. Use when you want insights about your coding habits or want to optimize your Claude Code usage.
 tools: Read, Bash, Grep, Glob
 model: sonnet

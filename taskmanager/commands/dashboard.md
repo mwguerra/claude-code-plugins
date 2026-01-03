@@ -5,7 +5,7 @@ description: Display task progress dashboard with status counts, completion perc
 
 # Tasks Dashboard Command
 
-You are implementing `/mwguerra:taskmanager:dashboard`.
+You are implementing `taskmanager:dashboard`.
 
 ## Behavior
 

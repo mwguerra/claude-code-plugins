@@ -1,7 +1,6 @@
 ---
-name: taskmanager-memory
 description: Manage project memories - constraints, decisions, conventions with conflict detection and resolution
-allowed-tools: [Read, Write, Edit, Glob, Grep, AskUserQuestion]
+allowed-tools: Read, Write, Edit, Glob, Grep, AskUserQuestion
 ---
 
 # TaskManager Memory Skill

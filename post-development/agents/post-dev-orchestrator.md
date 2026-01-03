@@ -206,7 +206,15 @@ Before marking a task complete, verify:
 ## Commands
 
 You can be invoked via:
-- `/post-dev init` - Initialize project
-- `/post-dev run` - Run all tasks
-- `/post-dev run --task <task>` - Run specific task
-- `/post-dev status` - Check progress
+- `post-development:post-dev init` - Initialize project
+- `post-development:post-dev run` - Run all tasks
+- `post-development:post-dev run --task <task>` - Run specific task
+- `post-development:post-dev status` - Check progress
+
+Related commands:
+- `post-development:pd-seo` - SEO analysis
+- `post-development:pd-screenshots` - Screenshot capture
+- `post-development:pd-personas` - Persona creation
+- `post-development:pd-ads` - Ad generation
+- `post-development:pd-articles` - Article writing
+- `post-development:pd-landing` - Landing page design

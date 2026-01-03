@@ -3,33 +3,70 @@ description: >
   Data and invariants spec for the MWGuerra Task Manager. Defines the structure
   and rules for .taskmanager/tasks.json, .taskmanager/state.json, and logs.
   All planning and execution behavior is defined in the taskmanager skill
-  and related commands under .claude/.
+  and related commands.
 version: 1.0.0
 ---
 
-# MWGuerra Task Manager – Agent Spec (Slim)
+# MWGuerra Task Manager – Agent Spec
 
 This document defines the **data contracts and invariants** for the
 `.taskmanager` runtime.
 
 It does **not** define behavior (planning, execution, PRD ingestion, auto-run,
-dashboard, or commands). All behavior lives in:
+dashboard, or commands). All behavior lives in the plugin's skills and commands.
 
-- `.claude/skills/mwguerra/taskmanager/SKILL.md`
-- `.claude/skills/mwguerra/taskmanager/PRD-INGEST-EXAMPLES.md`
-- `.claude/commands/*.md`
+---
 
-This document defines what the system **must** maintain, not how it performs any workflow.
+## Plugin Resources
+
+This agent has access to the following resources within the `taskmanager` plugin:
+
+### Commands (11 total)
+
+| Command | Description |
+|---------|-------------|
+| `taskmanager:init` | Initialize a `.taskmanager` directory in the project if it does not exist |
+| `taskmanager:plan` | Parse PRD content and generate a hierarchical task tree with dependencies and complexity |
+| `taskmanager:dashboard` | Display a text-based progress dashboard with status counts, completion metrics, and critical path |
+| `taskmanager:next-task` | Find and display the next available task based on dependencies and priority |
+| `taskmanager:execute-task` | Execute a single task by ID or find the next available task with memory support |
+| `taskmanager:run-tasks` | Autonomously execute tasks in batch with progress tracking and memory support |
+| `taskmanager:stats` | Get token-efficient statistics using the task-stats.sh script |
+| `taskmanager:get-task` | Get a specific task by ID without loading the full file (uses jq) |
+| `taskmanager:update-status` | Batch update task status for one or more tasks efficiently |
+| `taskmanager:memory` | Manage project memories - add, list, show, update, deprecate with conflict detection |
+| `taskmanager:migrate-archive` | Archive completed tasks to reduce tasks.json size |
+
+### Skills (2 total)
+
+| Skill | Description |
+|-------|-------------|
+| `taskmanager` | Core task management - parse PRDs, generate hierarchical tasks, manage status propagation, time estimation |
+| `taskmanager-memory` | Memory management - constraints, decisions, conventions with conflict detection and resolution |
+
+### Scripts
+
+| Script | Description |
+|--------|-------------|
+| `scripts/task-stats.sh` | Efficient bash/jq script for task statistics, queries, and status updates |
+
+### Template
+
+The initialization template is located at:
+```
+skills/taskmanager/template/.taskmanager/
+```
+
+This template contains the initial structure for new projects including schemas and starter files.
 
 ---
 
 ## 1. Folder Layout
 
-At the project root:
+At the project root after initialization:
 
 ```text
 .taskmanager/
-  AGENT-SPEC.md                 # This file – data contract & invariants
   tasks.json                    # Active tasks + stubs for archived tasks
   tasks-archive.json            # Full details of archived (completed) tasks
   state.json                    # Current agent state
@@ -49,12 +86,26 @@ At the project root:
 
 For large `tasks.json` files that exceed token limits, utility commands and scripts are available:
 
-**Location:** Plugin directory at `scripts/task-stats.sh`
-
-#### Read-Only Statistics
+#### Using Commands
 
 ```bash
-./task-stats.sh .taskmanager/tasks.json [mode]
+# Get statistics in JSON format
+taskmanager:stats --json
+
+# Get a specific task by ID
+taskmanager:get-task 1.2.3
+taskmanager:get-task 1.2.3 status
+taskmanager:get-task 1.2.3 complexity.scale
+
+# Update status for tasks
+taskmanager:update-status done 1.2.3
+taskmanager:update-status done 1.2.3 1.2.4 1.2.5
+```
+
+#### Using the Script Directly
+
+```bash
+./scripts/task-stats.sh .taskmanager/tasks.json [mode]
 ```
 
 **Available modes:**
@@ -68,46 +119,8 @@ For large `tasks.json` files that exceed token limits, utility commands and scri
 - `--remaining` - Count of remaining tasks
 - `--time` - Estimated time remaining
 - `--completion` - Completion statistics
-
-#### Get Task by ID
-
-```bash
-# Get full task object
-./task-stats.sh .taskmanager/tasks.json --get <id>
-
-# Get specific property
-./task-stats.sh .taskmanager/tasks.json --get <id> <key>
-```
-
-**Examples:**
-```bash
-./task-stats.sh .taskmanager/tasks.json --get 1.2.3
-./task-stats.sh .taskmanager/tasks.json --get 1.2.3 status
-./task-stats.sh .taskmanager/tasks.json --get 1.2.3 title
-./task-stats.sh .taskmanager/tasks.json --get 1.2.3 complexity.scale
-```
-
-#### Update Task Status
-
-```bash
-./task-stats.sh .taskmanager/tasks.json --set-status <status> <id1> [id2...]
-```
-
-**Valid statuses:** draft, planned, in-progress, blocked, paused, done, canceled, duplicate, needs-review
-
-**Examples:**
-```bash
-# Single task
-./task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3
-
-# Multiple tasks
-./task-stats.sh .taskmanager/tasks.json --set-status done 1.2.3 1.2.4 1.2.5
-```
-
-**Automatic behavior:**
-- Sets `startedAt` when status becomes `in-progress` (if not already set)
-- Sets `completedAt` when status becomes terminal (done, canceled, duplicate)
-- Creates backup at `.taskmanager/tasks.json.bak` before modification
+- `--get <id> [key]` - Get task by ID, optionally extract specific key
+- `--set-status <status> <id1> [id2...]` - Update status for one or more tasks
 
 #### When to use token-efficient operations:
 - When `tasks.json` exceeds ~25k tokens
@@ -115,22 +128,16 @@ For large `tasks.json` files that exceed token limits, utility commands and scri
 - To find next task without loading full file
 - To update status for multiple tasks efficiently
 
-**Related commands:**
-- `/mwguerra:taskmanager:stats` - Statistics and task queries
-- `/mwguerra:taskmanager:get-task <id> [key]` - Get task by ID
-- `/mwguerra:taskmanager:update-status <status> <id1> [id2...]` - Update task status
-
 Agents MUST:
 
 * Keep `tasks.json` and `state.json` **valid JSON**.
 * Keep them **schema-compliant** at all times.
 * Write decisions and errors to the appropriate log files.
 
-Initialization of `.taskmanager/` SHOULD be done using an explicit command (e.g. `/mwguerra:taskmanager:init`)
-which copies initial structure from:
+Initialization of `.taskmanager/` SHOULD be done using:
 
 ```
-.claude/skills/mwguerra/taskmanager/template/.taskmanager/
+taskmanager:init
 ```
 
 ---
@@ -191,7 +198,7 @@ Every task object MUST contain:
 * `parentId` MUST:
 
   * Be `null` for top-level tasks
-  * Match the actual parent’s ID for subtasks
+  * Match the actual parent's ID for subtasks
 
 The tree MUST match the ID structure exactly.
 
@@ -253,7 +260,7 @@ The tree MUST match the ID structure exactly.
     - Never negative; missing if `startedAt` was not set.
 
 #### Status and Estimates for parent tasks
-  - Status: macro view derived from children (see 8.5 in the skill).
+  - Status: macro view derived from children (see status propagation rules in the skill).
   - Estimates: macro sum of child `estimateSeconds`, not hand-authored.
 
 ### 2.7 Archived Tasks and Stubs
@@ -369,7 +376,7 @@ Capture long-lived project knowledge that should survive across sessions, tasks,
 There are two scopes of memory:
 
 1. **Global Memory** (persisted in `memories.json`):
-   - Added via `--memory` / `-gm` command argument or `/memory add` command.
+   - Added via `--memory` / `-gm` command argument or `taskmanager:memory add` command.
    - Persists across all tasks and sessions.
    - User-created memories require user approval for any changes.
 
@@ -404,7 +411,7 @@ There are two scopes of memory:
 
 It is a **checkpoint** describing what the system is doing now.
 
-### 3.1 Required fields
+### 5.1 Required fields
 
 * `version`
 * `currentTaskId` — string or null
@@ -434,10 +441,10 @@ Other optional fields:
 * `loop`
 * `contextSnapshot`
 * `lastDecision`
-* `taskMemory` — array of task-scoped memories (see 4.2)
+* `taskMemory` — array of task-scoped memories
 * `appliedMemories` — array of global memory IDs currently being applied
 
-### 4.2 Task Memory fields
+### 5.2 Task Memory fields
 
 `taskMemory` stores temporary, task-scoped memories:
 
@@ -461,7 +468,7 @@ Other optional fields:
 - `"*"` task memories are cleared at batch completion.
 - `appliedMemories[]` is cleared after each task's post-execution memory review.
 
-### 4.3 Minimal valid example
+### 5.3 Minimal valid example
 
 ```jsonc
 {
@@ -499,7 +506,7 @@ Logs live under:
 .taskmanager/logs/
 ```
 
-### 5.1 Log Files
+### 6.1 Log Files
 
 | File | Purpose | When to Write |
 |------|---------|---------------|
@@ -507,13 +514,13 @@ Logs live under:
 | `decisions.log` | High-level planning decisions, task status changes, memory operations | ALWAYS during execution |
 | `debug.log` | Verbose tracing, intermediate states, detailed conflict analysis | ONLY when `--debug` flag is enabled |
 
-### 5.2 Logging Rules
+### 6.2 Logging Rules
 
 * Logs are **append-only**. Never truncate or overwrite.
 * All log entries MUST include an ISO 8601 timestamp.
 * All log entries SHOULD include a session ID for correlation (from `state.json.logging.sessionId`).
 
-### 5.3 Log Entry Format
+### 6.3 Log Entry Format
 
 ```text
 <timestamp> [<level>] [<session-id>] <message>
@@ -534,7 +541,7 @@ Logs live under:
 2025-12-11T10:05:00Z [DECISION] [sess-abc123] Completed task 1.2.3 with status "done"
 ```
 
-### 5.4 What to Log
+### 6.4 What to Log
 
 **errors.log** — ALWAYS write:
 - JSON parse/validation failures
@@ -560,7 +567,7 @@ Logs live under:
 - Schema validation details
 - Performance timing information
 
-### 5.5 Debug Mode
+### 6.5 Debug Mode
 
 Debug logging is **disabled by default** to avoid excessive log growth.
 
@@ -575,7 +582,7 @@ Commands MUST:
 3. Generate a unique `sessionId` for log correlation
 4. Reset `debugEnabled = false` at command completion
 
-### 5.6 Logging Configuration in state.json
+### 6.6 Logging Configuration in state.json
 
 ```jsonc
 {
@@ -605,11 +612,11 @@ All planning, execution, dashboard, next-task, and other features must:
    * `memories.json`
    * Logging rules
 2. Conform strictly to the schemas in `.taskmanager/schemas/`
-3. Delegate all behavior to:
+3. Delegate all behavior to the plugin's skills and commands:
 
-   * `.claude/skills/mwguerra/taskmanager/SKILL.md` — task management behavior
-   * `.claude/skills/mwguerra/taskmanager-memory/SKILL.md` — memory management behavior
-   * `.claude/commands/mwguerra/taskmanager/*.md` — command implementations
+   * `taskmanager` skill — task management behavior
+   * `taskmanager-memory` skill — memory management behavior
+   * Plugin commands — command implementations
 
 4. For memory operations:
 
@@ -622,4 +629,75 @@ All planning, execution, dashboard, next-task, and other features must:
 This file is intentionally **behavior-light**.
 Its purpose is to define *what the data must look like*, not how tasks are planned or executed.
 
+---
+
+## 8. Command Reference
+
+### Initialization
+
+```bash
+taskmanager:init
 ```
+
+Creates `.taskmanager/` directory with all required files and schemas.
+
+### Planning
+
+```bash
+taskmanager:plan [source]
+```
+
+Parse PRD content from file, folder, or text input to generate tasks.
+
+Examples:
+- `taskmanager:plan docs/prd.md` - Plan from file
+- `taskmanager:plan docs/specs/` - Plan from folder (aggregates all .md files)
+- `taskmanager:plan "Build a counter app"` - Plan from text
+
+### Dashboard & Status
+
+```bash
+taskmanager:dashboard
+taskmanager:stats [--json]
+```
+
+View progress, completion metrics, and task overview.
+
+### Task Execution
+
+```bash
+taskmanager:next-task
+taskmanager:execute-task [task-id] [--memory "..."] [--task-memory "..."]
+taskmanager:run-tasks [count] [--memory "..."] [--task-memory "..."]
+```
+
+Find and execute tasks with optional memory context.
+
+### Efficient Operations
+
+```bash
+taskmanager:get-task <id> [key]
+taskmanager:update-status <status> <id1> [id2...]
+```
+
+Token-efficient task queries and updates without loading full file.
+
+### Memory Management
+
+```bash
+taskmanager:memory add "description"
+taskmanager:memory list [--status active]
+taskmanager:memory show <id>
+taskmanager:memory update <id>
+taskmanager:memory deprecate <id>
+```
+
+Manage project memories with conflict detection.
+
+### Archival
+
+```bash
+taskmanager:migrate-archive
+```
+
+Archive completed tasks to reduce `tasks.json` size.
