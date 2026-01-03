@@ -1,0 +1,283 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/mwguerra/claude-code-plugins/plugin-usage-tracker/schemas/usage-log-schema.json",
+  "title": "Plugin Usage Tracker Log Schema",
+  "description": "Schema for tracking Claude Code plugin usage, tool calls, and session activity",
+  "type": "object",
+  "required": ["version", "created_at", "updated_at", "sessions"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "const": "1.0.0"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the log file was created"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the log file was last updated"
+    },
+    "sessions": {
+      "type": "array",
+      "description": "Array of tracked sessions",
+      "items": {
+        "$ref": "#/$defs/session"
+      }
+    },
+    "aggregate_stats": {
+      "$ref": "#/$defs/aggregateStats"
+    }
+  },
+  "$defs": {
+    "session": {
+      "type": "object",
+      "required": ["session_id", "project_dir", "started_at", "events"],
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Unique session identifier from Claude Code"
+        },
+        "project_dir": {
+          "type": "string",
+          "description": "Project directory path when session started"
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Current working directory"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Session start timestamp"
+        },
+        "ended_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "Session end timestamp (null if still active)"
+        },
+        "total_duration_ms": {
+          "type": ["number", "null"],
+          "description": "Total session duration in milliseconds"
+        },
+        "permission_mode": {
+          "type": "string",
+          "description": "Permission mode: default, plan, acceptEdits, or bypassPermissions"
+        },
+        "events": {
+          "type": "array",
+          "description": "Array of events in this session",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "session_stats": {
+          "$ref": "#/$defs/sessionStats"
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": ["event_id", "event_type", "timestamp"],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "Unique event identifier (UUID)"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "PreToolUse",
+            "PostToolUse",
+            "PermissionRequest",
+            "UserPromptSubmit",
+            "SessionStart",
+            "SessionEnd",
+            "Stop",
+            "SubagentStop",
+            "PreCompact",
+            "Notification"
+          ],
+          "description": "Type of hook event"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the event occurred"
+        },
+        "tool_name": {
+          "type": ["string", "null"],
+          "description": "Name of the tool being used (if applicable)"
+        },
+        "tool_use_id": {
+          "type": ["string", "null"],
+          "description": "Unique ID for this tool use"
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Current working directory when event occurred"
+        },
+        "permission_mode": {
+          "type": "string",
+          "description": "Current permission mode"
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "Human-readable description of what happened"
+        },
+        "input_summary": {
+          "type": ["object", "null"],
+          "description": "Summary of tool input (sanitized, no sensitive data)",
+          "properties": {
+            "type": { "type": "string" },
+            "file_path": { "type": "string" },
+            "command": { "type": "string" },
+            "query": { "type": "string" },
+            "content_length": { "type": "number" }
+          }
+        },
+        "output_summary": {
+          "type": ["object", "null"],
+          "description": "Summary of tool output",
+          "properties": {
+            "success": { "type": "boolean" },
+            "result_type": { "type": "string" },
+            "result_length": { "type": "number" },
+            "error": { "type": "string" }
+          }
+        },
+        "duration_ms": {
+          "type": ["number", "null"],
+          "description": "Duration of the operation in milliseconds"
+        },
+        "matcher": {
+          "type": ["string", "null"],
+          "description": "Hook matcher pattern that triggered this event"
+        },
+        "is_mcp_tool": {
+          "type": "boolean",
+          "description": "Whether this is an MCP server tool"
+        },
+        "is_plugin_tool": {
+          "type": "boolean",
+          "description": "Whether this is from a plugin"
+        },
+        "related_event_id": {
+          "type": ["string", "null"],
+          "description": "ID of related event (e.g., PreToolUse linked to PostToolUse)"
+        }
+      }
+    },
+    "sessionStats": {
+      "type": "object",
+      "description": "Statistics for a single session",
+      "properties": {
+        "total_events": {
+          "type": "number",
+          "description": "Total number of events in session"
+        },
+        "total_tool_calls": {
+          "type": "number",
+          "description": "Total number of tool calls"
+        },
+        "total_processing_time_ms": {
+          "type": "number",
+          "description": "Total time spent in tool processing"
+        },
+        "tool_usage_counts": {
+          "type": "object",
+          "description": "Count of each tool's usage",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "tool_time_spent": {
+          "type": "object",
+          "description": "Time spent on each tool in milliseconds",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "most_used_tool": {
+          "type": ["string", "null"],
+          "description": "Tool name that was used most often"
+        },
+        "slowest_tool": {
+          "type": ["string", "null"],
+          "description": "Tool name that took the most time"
+        },
+        "user_prompts_count": {
+          "type": "number",
+          "description": "Number of user prompts submitted"
+        },
+        "errors_count": {
+          "type": "number",
+          "description": "Number of errors encountered"
+        }
+      }
+    },
+    "aggregateStats": {
+      "type": "object",
+      "description": "Aggregate statistics across all sessions",
+      "properties": {
+        "total_sessions": {
+          "type": "number",
+          "description": "Total number of sessions tracked"
+        },
+        "total_events": {
+          "type": "number",
+          "description": "Total events across all sessions"
+        },
+        "total_tool_calls": {
+          "type": "number",
+          "description": "Total tool calls across all sessions"
+        },
+        "total_time_tracked_ms": {
+          "type": "number",
+          "description": "Total time tracked in milliseconds"
+        },
+        "tool_usage_counts": {
+          "type": "object",
+          "description": "Aggregate count of each tool's usage",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "tool_time_spent": {
+          "type": "object",
+          "description": "Aggregate time spent on each tool",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "project_usage": {
+          "type": "object",
+          "description": "Usage statistics per project",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "sessions": { "type": "number" },
+              "total_time_ms": { "type": "number" },
+              "tool_calls": { "type": "number" }
+            }
+          }
+        },
+        "daily_activity": {
+          "type": "object",
+          "description": "Activity per day (YYYY-MM-DD keys)",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "sessions": { "type": "number" },
+              "events": { "type": "number" },
+              "time_ms": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
