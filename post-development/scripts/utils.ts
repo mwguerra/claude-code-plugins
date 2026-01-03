@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { PostDevelopmentPlan, ScreenshotPlan, ScreenshotEntry } from './types';
 
+// Project root - use CLAUDE_PROJECT_DIR when available, fall back to process.cwd()
+const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
 // ============================================
 // File System Utilities
 // ============================================
@@ -37,7 +40,7 @@ export function fileExists(filePath: string): boolean {
 // ============================================
 
 export function getPostDevDir(): string {
-  return path.join(process.cwd(), '.post-development');
+  return path.join(PROJECT_ROOT, '.post-development');
 }
 
 export function getPostDevPlanPath(): string {

@@ -16,7 +16,10 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(__dirname);
 
-const CONFIG_DIR = ".article_writer";
+// Project root - use CLAUDE_PROJECT_DIR when available, fall back to process.cwd()
+const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+const CONFIG_DIR = join(PROJECT_ROOT, ".article_writer");
 const FILES = {
   settings: join(CONFIG_DIR, "settings.json"),
   authors: join(CONFIG_DIR, "authors.json"),

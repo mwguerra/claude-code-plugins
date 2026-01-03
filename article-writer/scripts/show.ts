@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Show - View authors, settings, and configuration
- * 
+ *
  * Usage:
  *   bun run show.ts authors                    # List all authors
  *   bun run show.ts author <id>                # Show single author details
@@ -13,7 +13,10 @@
 import { readFile, stat } from "fs/promises";
 import { join } from "path";
 
-const CONFIG_DIR = ".article_writer";
+// Project root - use CLAUDE_PROJECT_DIR when available, fall back to process.cwd()
+const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+const CONFIG_DIR = join(PROJECT_ROOT, ".article_writer");
 const FILES = {
   authors: join(CONFIG_DIR, "authors.json"),
   settings: join(CONFIG_DIR, "settings.json"),
@@ -60,7 +63,7 @@ async function listAuthors(): Promise<void> {
   const authors = data.authors || [];
 
   printHeader("AUTHORS");
-  console.log(`  File: ${process.cwd()}/${FILES.authors}`);
+  console.log(`  File: ${FILES.authors}`);
   printDivider();
 
   if (authors.length === 0) {
@@ -115,7 +118,7 @@ async function showAuthor(authorId: string): Promise<void> {
   const isDefault = authors[0]?.id === authorId;
 
   printHeader(`AUTHOR: ${author.name}`);
-  console.log(`  File: ${process.cwd()}/${FILES.authors}`);
+  console.log(`  File: ${FILES.authors}`);
   printDivider();
 
   // Identity
@@ -295,7 +298,7 @@ async function showSettings(exampleType?: string): Promise<void> {
 
 async function showAllSettings(data: any): Promise<void> {
   printHeader("SETTINGS");
-  console.log(`  File: ${process.cwd()}/${FILES.settings}`);
+  console.log(`  File: ${FILES.settings}`);
   printDivider();
 
   // Metadata
@@ -349,7 +352,7 @@ async function showExampleDefaults(data: any, type: string): Promise<void> {
   }
 
   printHeader(`EXAMPLE DEFAULTS: ${type.toUpperCase()}`);
-  console.log(`  File: ${process.cwd()}/${FILES.settings}`);
+  console.log(`  File: ${FILES.settings}`);
   printDivider();
 
   console.log("");
@@ -443,7 +446,7 @@ async function showQueueSummary(): Promise<void> {
   const articles = data.articles || [];
 
   printHeader("ARTICLE QUEUE");
-  console.log(`  File: ${process.cwd()}/${FILES.tasks}`);
+  console.log(`  File: ${FILES.tasks}`);
   printDivider();
 
   if (articles.length === 0) {

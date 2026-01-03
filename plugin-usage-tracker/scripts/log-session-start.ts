@@ -8,18 +8,23 @@ import {
   readHookInput,
 } from "./utils";
 
+// Helper to get project directory with proper fallback chain
+const getProjectDir = (inputCwd?: string) =>
+  inputCwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
 async function main() {
   try {
     const input = await readHookInput();
-    
+    const projectDir = getProjectDir(input.cwd);
+
     const log = loadLog();
     const session = getOrCreateSession(
       log,
       input.session_id,
-      input.cwd || process.cwd(),
+      projectDir,
       input.permission_mode || "default"
     );
-    
+
     // Add session start event
     session.events.push({
       event_id: generateUUID(),
@@ -27,7 +32,7 @@ async function main() {
       timestamp: new Date().toISOString(),
       tool_name: null,
       tool_use_id: null,
-      cwd: input.cwd || process.cwd(),
+      cwd: projectDir,
       permission_mode: input.permission_mode || "default",
       description: `Session started (source: ${input.source || "unknown"})`,
       input_summary: null,
