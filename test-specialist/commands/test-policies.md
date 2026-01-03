@@ -1,6 +1,11 @@
-# guerra:test-policies
+---
+description: Generate comprehensive Pest 4 tests for Laravel authorization policies and gates
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Read, Write, Glob, Grep
+argument-hint: "[policy] [--model name] [--all] [--roles] [--gates] [--middleware]"
+---
 
-## Command Overview
+# Test Policies
+
 Generate comprehensive Pest 4 tests for Laravel authorization policies, ensuring all permission gates, role-based access controls, and authorization scenarios are thoroughly tested.
 
 ## Syntax

@@ -1,5 +1,7 @@
 ---
 description: Search terminal documentation for TTY/PTY, streams, signals, escape sequences, and shell configuration
+allowed-tools: Read, Glob, Grep
+argument-hint: "<search-query>"
 ---
 
 # Search Terminal Documentation

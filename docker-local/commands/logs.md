@@ -1,5 +1,7 @@
 ---
 description: View Docker and Laravel logs
+allowed-tools: Bash(docker-local:*), Bash(docker:*), Read
+argument-hint: "[service] [--follow] [--tail N]"
 ---
 
 # Docker-Local Logs

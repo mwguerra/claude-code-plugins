@@ -1,7 +1,6 @@
 ---
 description: Get the next pending article from the queue to work on
-usage: /article-writer:next
-arguments: []
+allowed-tools: Skill(article-queue), Bash(bun:*)
 ---
 
 # Next Article

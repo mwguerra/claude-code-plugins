@@ -1,5 +1,7 @@
 ---
 description: Final verification - run all Pest tests, validate Playwright UI flows, and check production checklist
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read, Glob, Grep
+argument-hint: "[--tests-only] [--playwright-only] [--checklist-only]"
 ---
 
 # Verify Command

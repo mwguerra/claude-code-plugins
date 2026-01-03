@@ -1,5 +1,7 @@
 ---
 description: Create a new Laravel project with docker-local (MySQL or PostgreSQL)
+allowed-tools: Bash(docker-local:*), Bash(composer:*), Read, Write, Glob
+argument-hint: "<project-name> [--db mysql|postgresql] [--php 8.2|8.3]"
 ---
 
 # Docker-Local Make Project

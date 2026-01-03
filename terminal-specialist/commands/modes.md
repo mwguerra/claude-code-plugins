@@ -1,5 +1,7 @@
 ---
 description: Guide to terminal modes - canonical, raw, and cbreak with termios configuration
+allowed-tools: Read
+argument-hint: "[canonical | raw | cbreak]"
 ---
 
 # Terminal Modes Guide

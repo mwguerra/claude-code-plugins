@@ -1,5 +1,7 @@
 ---
 description: Configure database containers (PostgreSQL, MySQL, MongoDB, Redis) with security, persistence, and health checks
+allowed-tools: Read, Write, Edit, Glob
+argument-hint: "<postgres|mysql|mongodb|redis> [--persist] [--with-healthcheck]"
 ---
 
 # Set Up Database Container

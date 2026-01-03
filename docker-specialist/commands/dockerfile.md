@@ -1,5 +1,7 @@
 ---
 description: Generate optimized multi-stage Dockerfile with caching, non-root user, and health checks
+allowed-tools: Read, Write, Glob, Grep
+argument-hint: "[--base image] [--multistage] [--output path]"
 ---
 
 # Generate Dockerfile

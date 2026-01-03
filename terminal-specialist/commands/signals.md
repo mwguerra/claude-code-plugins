@@ -1,5 +1,7 @@
 ---
 description: Unix signal handling - SIGINT, SIGTERM, SIGHUP with handler patterns and best practices
+allowed-tools: Read
+argument-hint: "[SIGINT | SIGTERM | SIGHUP | all]"
 ---
 
 # Signal Handling Guide

@@ -1,5 +1,7 @@
 ---
 description: Diagnose and fix docker-local issues - container failures, port conflicts, connectivity problems
+allowed-tools: Bash(docker-local:*), Bash(docker:*), Bash(lsof:*), Bash(netstat:*), Read, Glob, Grep
+argument-hint: "[issue-description] [--fix] [--verbose]"
 ---
 
 # Docker-Local Troubleshoot

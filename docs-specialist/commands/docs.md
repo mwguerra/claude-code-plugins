@@ -1,3 +1,9 @@
+---
+description: Core documentation management - validate, generate, update, and check status
+allowed-tools: Read, Write, Edit, Glob, Grep
+argument-hint: "<validate | generate | update | status> [target] [--fix] [--format md|html]"
+---
+
 # Documentation Operations
 
 Core documentation management: validate, generate, update, and check status.

@@ -1,3 +1,9 @@
+---
+description: Initialize documentation folder structure for a project
+allowed-tools: Read, Write, Glob
+argument-hint: "[--check] [--structure minimal|standard|full] [--force]"
+---
+
 # Initialize Documentation Structure
 
 Set up a recommended documentation folder structure for a project.

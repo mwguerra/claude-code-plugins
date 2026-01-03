@@ -1,6 +1,11 @@
-# guerra:generate-pest-test
+---
+description: Generate comprehensive Pest 4 test suites for PHP, Laravel, Livewire, and Filament applications
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Read, Write, Glob, Grep
+argument-hint: "[target] [--full] [--type unit|feature|integration] [--model name] [--dry-run]"
+---
 
-## Command Overview
+# Generate Pest Test
+
 Generate comprehensive Pest 4 test suites for PHP, Laravel, Livewire, and Filament applications with full coverage of processes, roles, policies, and page access.
 
 ## Syntax

@@ -1,6 +1,11 @@
-# guerra:test-filament
+---
+description: Generate comprehensive Pest 4 tests for Filament resources, pages, widgets, and actions
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Read, Write, Glob, Grep
+argument-hint: "[target] [--resource name] [--page name] [--widget name] [--all] [--actions] [--forms] [--tables]"
+---
 
-## Command Overview
+# Test Filament
+
 Generate comprehensive Pest 4 tests for Filament admin panels, resources, pages, widgets, and custom actions following Filament testing best practices.
 
 ## Syntax

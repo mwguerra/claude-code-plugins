@@ -1,5 +1,7 @@
 ---
 description: Set up SSL/TLS with automatic certificates using Traefik or Nginx reverse proxy
+allowed-tools: Read, Write, Edit, Glob
+argument-hint: "[--method traefik|nginx|self-signed] [--domain example.com]"
 ---
 
 # Configure SSL/TLS

@@ -1,5 +1,7 @@
 ---
 description: List all Laravel projects managed by docker-local
+allowed-tools: Bash(docker-local:*), Read, Glob
+argument-hint: "[--status] [--urls]"
 ---
 
 # Docker-Local List Projects

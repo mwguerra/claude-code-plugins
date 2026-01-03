@@ -1,5 +1,7 @@
 ---
 description: Run comprehensive health check on docker-local environment
+allowed-tools: Bash(docker-local:*), Bash(docker:*), Bash(which:*), Read, Glob
+argument-hint: "[--fix] [--verbose]"
 ---
 
 # Docker-Local Doctor

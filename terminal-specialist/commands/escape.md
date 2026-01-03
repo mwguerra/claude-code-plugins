@@ -1,5 +1,7 @@
 ---
 description: ANSI escape sequence reference - colors, cursor control, screen manipulation with examples
+allowed-tools: Read
+argument-hint: "[colors | cursor | screen | all]"
 ---
 
 # ANSI Escape Sequence Reference

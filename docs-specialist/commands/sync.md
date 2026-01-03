@@ -1,3 +1,9 @@
+---
+description: Detect and fix drift between documentation and source code
+allowed-tools: Read, Write, Edit, Glob, Grep
+argument-hint: "<check | fix> [--docs path] [--code path] [--report]"
+---
+
 # Code-Documentation Sync
 
 Detect and fix drift between documentation and source code.

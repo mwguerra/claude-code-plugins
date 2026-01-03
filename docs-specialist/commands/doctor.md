@@ -1,3 +1,9 @@
+---
+description: Diagnose and fix common documentation issues
+allowed-tools: Read, Write, Edit, Glob, Grep
+argument-hint: "[--check] [--fix] [--interactive]"
+---
+
 # Documentation Health Check
 
 Diagnose and fix common documentation issues.

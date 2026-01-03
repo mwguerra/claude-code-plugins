@@ -1,5 +1,7 @@
 ---
 description: Initialize complete Docker environment with Dockerfile, docker-compose.yaml, .dockerignore, and .env.example
+allowed-tools: Read, Write, Glob, Grep
+argument-hint: "[--type node|python|php|go] [--services web,db,redis] [--force]"
 ---
 
 # Initialize Docker Environment

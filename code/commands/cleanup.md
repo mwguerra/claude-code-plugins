@@ -1,5 +1,7 @@
 ---
 description: Remove debug logs, resolved TODOs, fix comments, and development artifacts to prepare code for clean commits
+allowed-tools: Read, Edit, Glob, Grep
+argument-hint: "[path/to/dir] [--dry-run]"
 ---
 
 # Code Cleanup Command

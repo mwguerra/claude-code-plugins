@@ -1,5 +1,7 @@
 ---
 description: Shell configuration guide - startup files, environment variables, and shell options for bash/zsh
+allowed-tools: Read
+argument-hint: "[bash | zsh | startup | variables | options]"
 ---
 
 # Shell Configuration Guide

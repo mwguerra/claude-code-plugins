@@ -1,6 +1,11 @@
-# guerra:analyze-coverage
+---
+description: Analyze test coverage for PHP, Laravel, Livewire, and Filament projects using Pest 4
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Read, Glob, Grep
+argument-hint: "[target] [--min threshold] [--report html|text|clover] [--missing] [--suggest]"
+---
 
-## Command Overview
+# Analyze Coverage
+
 Analyze test coverage for PHP, Laravel, Livewire, and Filament projects using Pest 4, identifying gaps and suggesting improvements.
 
 ## Syntax

@@ -1,5 +1,6 @@
 ---
 description: Show all docker-local commands and usage
+allowed-tools: Bash(docker-local:*), Read
 ---
 
 # Docker-Local Help

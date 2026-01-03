@@ -1,5 +1,7 @@
 ---
 description: Check docker-local environment status - services, containers, and project accessibility
+allowed-tools: Bash(docker-local:*), Bash(docker:*), Bash(curl:*), Read, Glob
+argument-hint: "[--services] [--containers] [--urls]"
 ---
 
 # Docker-Local Status

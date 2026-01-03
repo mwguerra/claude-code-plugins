@@ -1,5 +1,7 @@
 ---
 description: Full production audit - analyze features, run Pest and Playwright tests, fix issues, and verify deployment readiness
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read, Write, Edit, Glob, Grep
+argument-hint: "[--skip-playwright] [--skip-fixes] [--focus feature]"
 ---
 
 # Production Ready Command

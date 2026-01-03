@@ -1,5 +1,7 @@
 ---
 description: Standard I/O streams guide - stdin, stdout, stderr with buffering, piping, and redirection
+allowed-tools: Read
+argument-hint: "[stdin | stdout | stderr | piping | redirection]"
 ---
 
 # I/O Streams Reference

@@ -1,5 +1,7 @@
 ---
 description: Check and manage .env configuration - conflict detection, unique IDs
+allowed-tools: Bash(docker-local:*), Read, Edit, Glob
+argument-hint: "[check | fix | show] [--project path]"
 ---
 
 # Docker-Local Environment Check

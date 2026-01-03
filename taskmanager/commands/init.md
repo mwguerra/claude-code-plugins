@@ -1,6 +1,6 @@
 ---
-allowed-tools: [Read, Write, Glob]
-description: Initialize a .taskmanager directory in the project if it does not exist.
+description: Initialize a .taskmanager directory in the project if it does not exist
+allowed-tools: Read, Write, Glob
 ---
 
 # Init Task Manager Command

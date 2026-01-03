@@ -1,5 +1,7 @@
 ---
 description: Read-only analysis of codebase - discover features, check test coverage, identify issues, and generate report
+allowed-tools: Read, Glob, Grep
+argument-hint: "[--focus api|ui|tests] [--output path]"
 ---
 
 # Analyze Command

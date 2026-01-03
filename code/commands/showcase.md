@@ -1,5 +1,7 @@
 ---
 description: Open the project with Playwright, demonstrate all basic features with examples, take screenshots, and record the entire navigation session
+allowed-tools: mcp__playwright__*, Read, Write, Glob
+argument-hint: "[--dark] [--light] [--focus feature] [--output path]"
 ---
 
 # Showcase Command

@@ -1,6 +1,11 @@
-# guerra:test-livewire
+---
+description: Generate comprehensive Pest 4 tests for Livewire components with interactions, validation, and events
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Read, Write, Glob, Grep
+argument-hint: "[component] [--all] [--interactions] [--validation] [--events] [--authorization]"
+---
 
-## Command Overview
+# Test Livewire
+
 Generate comprehensive Pest 4 tests for Livewire components with full coverage of interactions, data binding, validation, events, and component lifecycle.
 
 ## Syntax

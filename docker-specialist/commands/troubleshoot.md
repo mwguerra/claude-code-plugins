@@ -1,5 +1,7 @@
 ---
 description: Diagnose Docker issues - container failures, networking problems, permission errors, and port conflicts
+allowed-tools: Bash(docker:*), Bash(docker-compose:*), Bash(lsof:*), Bash(netstat:*), Read, Glob, Grep
+argument-hint: "<issue-description> [--container name] [--fix]"
 ---
 
 # Troubleshoot Docker Issues

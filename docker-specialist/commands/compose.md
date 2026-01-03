@@ -1,5 +1,7 @@
 ---
 description: Generate Docker Compose config with services, networking, volumes, and health checks
+allowed-tools: Read, Write, Edit, Glob, Grep
+argument-hint: "<services-description> [--output path] [--with-healthchecks]"
 ---
 
 # Generate Docker Compose Configuration

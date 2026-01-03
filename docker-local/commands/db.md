@@ -1,5 +1,7 @@
 ---
 description: Database operations - create, connect, backup, restore databases
+allowed-tools: Bash(docker-local:*), Bash(docker:*), Read, Write
+argument-hint: "<create | connect | backup | restore> [--database name] [--file path]"
 ---
 
 # Docker-Local Database Operations

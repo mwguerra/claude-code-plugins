@@ -1,5 +1,7 @@
 ---
 description: Cross-platform terminal patterns for Windows, macOS, and Linux with portable code examples
+allowed-tools: Read
+argument-hint: "[windows | macos | linux | portable]"
 ---
 
 # Cross-Platform Compatibility Guide

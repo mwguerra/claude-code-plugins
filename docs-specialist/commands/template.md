@@ -1,3 +1,9 @@
+---
+description: List, view, and apply documentation templates
+allowed-tools: Read, Write, Glob
+argument-hint: "<list | show | use> [template-name] [--output path]"
+---
+
 # Documentation Templates
 
 List, view, and apply documentation templates.

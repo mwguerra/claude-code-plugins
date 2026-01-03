@@ -1,6 +1,11 @@
-# guerra:run-test-suite
+---
+description: Execute comprehensive Pest 4 test suites for PHP, Laravel, Livewire, and Filament applications
+allowed-tools: Bash(./vendor/bin/pest:*), Bash(php:*), Bash(composer:*), Read, Glob, Grep
+argument-hint: "[suite] [--filter pattern] [--parallel] [--coverage] [--bail]"
+---
 
-## Command Overview
+# Run Test Suite
+
 Execute comprehensive Pest 4 test suites for PHP, Laravel, Livewire, and Filament applications with various testing strategies and configurations.
 
 ## Syntax

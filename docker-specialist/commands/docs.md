@@ -1,5 +1,7 @@
 ---
 description: Search Docker documentation for configuration patterns, best practices, and troubleshooting
+allowed-tools: Read, Glob, Grep
+argument-hint: "<search-query>"
 ---
 
 # Search Docker Documentation

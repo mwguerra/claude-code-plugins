@@ -1,5 +1,6 @@
 ---
 description: Quick reference for essential Docker and Docker Compose CLI commands
+allowed-tools: Read
 ---
 
 # Docker Commands Reference
