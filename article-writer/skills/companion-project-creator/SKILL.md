@@ -1,29 +1,29 @@
 ---
-name: example-creator
-description: Create complete runnable examples for articles - scaffolded projects, not snippets
+name: companion-project-creator
+description: Create complete runnable companion projects for articles - scaffolded projects, not snippets
 ---
 
-# Example Creator
+# Companion Project Creator
 
-Create **complete, executable examples** that readers can clone and run immediately.
+Create **complete, executable companion projects** that readers can clone and run immediately.
 
 ## Core Principle
 
-> **Examples must be COMPLETE and RUNNABLE, not snippets or partial code.**
+> **Companion projects must be COMPLETE and RUNNABLE, not snippets or partial code.**
 
-A Laravel example is a full Laravel installation. A Node example is a full Node project. A document example is a complete, usable document.
+A Laravel companion project is a full Laravel installation. A Node companion project is a full Node project. A document companion project is a complete, usable document.
 
 ## ⚠️ CRITICAL: Mandatory Verification
 
-**Every code example MUST be verified by actually running it before the example is considered complete.**
+**Every code companion project MUST be verified by actually running it before it is considered complete.**
 
-This is NOT optional. An example that hasn't been executed and tested is NOT complete.
+This is NOT optional. A companion project that hasn't been executed and tested is NOT complete.
 
 ### Verification Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         EXAMPLE CREATION FLOW                                │
+│                    COMPANION PROJECT CREATION FLOW                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  1. SCAFFOLD          Create base project (composer/npm/etc)                │
@@ -36,7 +36,7 @@ This is NOT optional. An example that hasn't been executed and tested is NOT com
 │         ├── Run application         → Must start without errors             │
 │         └── Run tests               → All tests must pass                   │
 │         │                                                                   │
-│         ├── ✅ All pass → Example complete                                  │
+│         ├── ✅ All pass → Companion project complete                        │
 │         └── ❌ Any fail → Fix code, return to step 3                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -91,7 +91,7 @@ php artisan test
 
 ### Verification Checklist
 
-Before marking an example complete, confirm:
+Before marking a companion project complete, confirm:
 
 - [ ] `install_command` executed successfully (no errors)
 - [ ] All dependencies installed (vendor/, node_modules/, etc. exists)
@@ -105,9 +105,9 @@ Before marking an example complete, confirm:
 
 ---
 
-## Example Types
+## Companion Project Types
 
-### 1. Code Examples (`code`)
+### 1. Code Companion Projects (`code`)
 
 Complete application installations that can be:
 - Cloned/copied
@@ -175,7 +175,7 @@ code/
 ├── composer.lock
 ├── package.json
 ├── phpunit.xml
-└── README.md          # Custom: explains the example
+└── README.md          # Custom: explains the companion project
 ```
 
 **Article-Specific Additions:**
@@ -189,7 +189,7 @@ code/
 
 **README.md Template:**
 ```markdown
-# Example: [Article Topic]
+# Companion Project: [Article Topic]
 
 Complete Laravel application demonstrating [concept].
 
@@ -239,7 +239,7 @@ php artisan test
 
 ## Article Reference
 
-This example accompanies: "[Article Title]"
+This companion project accompanies: "[Article Title]"
 ```
 
 #### Node.js Application
@@ -305,7 +305,7 @@ code/
 └── README.md
 ```
 
-### 2. Document Examples (`document`)
+### 2. Document Companion Projects (`document`)
 
 Complete, usable documents that readers can adapt.
 
@@ -333,7 +333,7 @@ code/
 - Well-commented (explain each section)
 - Ready to use (just fill in the blanks)
 
-### 3. Diagram Examples (`diagram`)
+### 3. Diagram Companion Projects (`diagram`)
 
 Complete Mermaid diagrams that render correctly.
 
@@ -354,7 +354,7 @@ code/
 - Include comments explaining components
 - Render correctly in GitHub/VS Code
 
-### 4. Configuration Examples (`config`)
+### 4. Configuration Companion Projects (`config`)
 
 Complete, working configuration files.
 
@@ -375,7 +375,7 @@ code/
 - Runnable (`docker-compose up` works)
 - Well-commented
 
-### 5. Script Examples (`script`)
+### 5. Script Companion Projects (`script`)
 
 Complete, executable scripts.
 
@@ -397,7 +397,7 @@ code/
 - Handle errors properly
 - Include usage documentation
 
-### 6. Data Examples (`dataset`)
+### 6. Data Companion Projects (`dataset`)
 
 Complete datasets with schema.
 
@@ -413,7 +413,7 @@ code/
 └── README.md
 ```
 
-### 7. Template Examples (`template`)
+### 7. Template Companion Projects (`template`)
 
 Reusable file templates.
 
@@ -429,7 +429,7 @@ code/
 └── README.md
 ```
 
-### 8. Spreadsheet Examples (`spreadsheet`)
+### 8. Spreadsheet Companion Projects (`spreadsheet`)
 
 Complete spreadsheets with formulas.
 
@@ -446,11 +446,11 @@ code/
 
 ## Creation Workflow
 
-### Step 1: Determine Example Type
+### Step 1: Determine Companion Project Type
 
 Based on article content:
 
-| Article Topic | Example Type | What to Create |
+| Article Topic | Companion Project Type | What to Create |
 |---------------|--------------|----------------|
 | Laravel feature | `code` | Full Laravel app |
 | API design | `code` | Full API server |
@@ -462,7 +462,7 @@ Based on article content:
 
 ### Step 2: Create Base Project
 
-For code examples, ALWAYS start with proper project scaffolding:
+For code companion projects, ALWAYS start with proper project scaffolding:
 
 ```bash
 # Laravel
@@ -492,7 +492,7 @@ After base project exists:
 
 ### Step 4: Verify Completeness
 
-**Code Examples Checklist:**
+**Code Companion Projects Checklist:**
 - [ ] Can be cloned fresh
 - [ ] `composer install` / `npm install` works
 - [ ] Application starts without errors
@@ -500,15 +500,15 @@ After base project exists:
 - [ ] All tests pass
 - [ ] README explains setup and usage
 
-**Document Examples Checklist:**
+**Document Companion Projects Checklist:**
 - [ ] All sections are complete
 - [ ] Placeholders are clearly marked
 - [ ] At least one filled example exists
 - [ ] README explains how to use
 
-### Step 5: Document the Example
+### Step 5: Document the Companion Project
 
-Every example needs a README.md with:
+Every companion project needs a README.md with:
 1. What it demonstrates
 2. Requirements
 3. Installation steps
@@ -519,7 +519,7 @@ Every example needs a README.md with:
 
 ## Integration with Article
 
-### Referencing Example in Article
+### Referencing Companion Project in Article
 
 ```markdown
 ## Setting Up the Project
@@ -533,10 +533,10 @@ cp .env.example .env
 php artisan key:generate
 \`\`\`
 
-See the complete working example in the `code/` folder.
+See the complete working companion project in the `code/` folder.
 ```
 
-### Code Snippets from Example
+### Code Snippets from Companion Project
 
 When showing code in the article, reference actual files:
 
@@ -558,7 +558,7 @@ class Post extends Model
 
 ## Settings Integration
 
-**ALWAYS load settings.json before creating examples.**
+**ALWAYS load settings.json before creating companion projects.**
 
 ### Step 1: Load Settings
 
@@ -570,13 +570,13 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 **Or read directly:**
 ```javascript
 const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
-const defaults = settings.example_defaults.code;
+const defaults = settings.companion_project_defaults.code;
 ```
 
 ### Step 2: Get Values from Settings
 
 ```json
-// .article_writer/settings.json → example_defaults.code
+// .article_writer/settings.json → companion_project_defaults.code
 {
   "technologies": ["Laravel 12", "Pest 4", "SQLite"],
   "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
@@ -594,10 +594,10 @@ const defaults = settings.example_defaults.code;
 
 ### Step 3: Merge with Article Overrides
 
-If the article task has an `example` field, those values override settings:
+If the article task has a `companion_project` field, those values override settings:
 
 ```
-settings.json defaults    +    article.example    =    final config
+settings.json defaults    +    article.companion_project    =    final config
 ──────────────────────         ────────────────        ────────────
 scaffold_command: X            scaffold_command: Y      Y (article wins)
 technologies: [A, B]           (not set)                [A, B] (use default)
@@ -620,7 +620,7 @@ php artisan pest:install
 ### Step 5: Verify with test_command
 
 ```bash
-# From settings.example_defaults.code.test_command
+# From settings.companion_project_defaults.code.test_command
 php artisan test
 ```
 
@@ -630,7 +630,7 @@ Global defaults from `settings.json`:
 
 ```json
 {
-  "example_defaults": {
+  "companion_project_defaults": {
     "code": {
       "technologies": ["Laravel 12", "Pest 4", "SQLite"],
       "scaffold_command": "composer create-project laravel/laravel code",
@@ -647,7 +647,7 @@ Global defaults from `settings.json`:
 Article can override:
 ```json
 {
-  "example": {
+  "companion_project": {
     "type": "code",
     "technologies": ["Laravel 11", "PHPUnit", "MySQL"],
     "scaffold_command": "composer create-project laravel/laravel:^11.0 code"
@@ -710,13 +710,13 @@ class PostController extends Controller
 // tests/Feature/PostTest.php exists and passes
 ```
 
-## Example Task Recording
+## Companion Project Task Recording
 
-After creating example, update article_tasks.json:
+After creating companion project, update article_tasks.json:
 
 ```json
 {
-  "example": {
+  "companion_project": {
     "type": "code",
     "path": "code/",
     "description": "Complete Laravel app with rate limiting",

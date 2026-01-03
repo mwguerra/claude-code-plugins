@@ -103,27 +103,27 @@
         }
       }
     },
-    "example_info": {
+    "companion_project_info": {
       "type": "object",
-      "description": "Information about the practical example created for the article",
+      "description": "Information about the companion project created for the article",
       "properties": {
         "type": {
           "type": "string",
           "enum": ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"],
-          "description": "Type of example"
+          "description": "Type of companion project"
         },
         "path": {
           "type": "string",
-          "description": "Path to example folder from article root (usually 'code/')"
+          "description": "Path to companion project folder from article root (usually 'code/')"
         },
         "description": {
           "type": "string",
-          "description": "Brief description of what the example demonstrates"
+          "description": "Brief description of what the companion project demonstrates"
         },
         "technologies": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Technologies/tools used in the example"
+          "description": "Technologies/tools used in the companion project"
         },
         "scaffold_command": {
           "type": "string",
@@ -131,20 +131,20 @@
         },
         "has_tests": {
           "type": "boolean",
-          "description": "Whether the example includes tests"
+          "description": "Whether the companion project includes tests"
         },
         "files": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Key files in the example (article-specific additions)"
+          "description": "Key files in the companion project (article-specific additions)"
         },
         "run_command": {
           "type": "string",
-          "description": "Command to run/start the example"
+          "description": "Command to run/start the companion project"
         },
         "run_instructions": {
           "type": "string",
-          "description": "How to run/use the example"
+          "description": "How to run/use the companion project"
         },
         "test_command": {
           "type": "string",
@@ -152,20 +152,20 @@
         },
         "verified": {
           "type": "boolean",
-          "description": "Whether the example was verified to work"
+          "description": "Whether the companion project was verified to work"
         },
         "verified_at": {
           "type": "string",
           "format": "date-time",
-          "description": "When the example was verified"
+          "description": "When the companion project was verified"
         },
         "skipped": {
           "type": "boolean",
-          "description": "True if example was intentionally skipped"
+          "description": "True if companion project was intentionally skipped"
         },
         "skip_reason": {
           "type": "string",
-          "description": "Reason why example was skipped (if skipped)"
+          "description": "Reason why companion project was skipped (if skipped)"
         }
       }
     },
@@ -248,9 +248,9 @@
           "items": { "$ref": "#/$defs/source_reference" },
           "description": "Web sources researched and used in the article"
         },
-        "example": {
-          "$ref": "#/$defs/example_info",
-          "description": "Practical example created for the article"
+        "companion_project": {
+          "$ref": "#/$defs/companion_project_info",
+          "description": "Companion project created for the article"
         },
         "output_folder": {
           "type": "string",

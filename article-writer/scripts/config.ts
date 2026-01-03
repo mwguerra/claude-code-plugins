@@ -100,7 +100,7 @@ async function setSetting(path: string, valueStr: string): Promise<void> {
   }
 
   const data = await loadJson(FILES.settings);
-  const fullPath = path.startsWith("example_defaults.") ? path : `example_defaults.${path}`;
+  const fullPath = path.startsWith("companion_project_defaults.") ? path : `companion_project_defaults.${path}`;
   
   // Get current value
   const currentValue = getNestedValue(data, fullPath);
@@ -168,11 +168,11 @@ async function resetExampleType(type: string): Promise<void> {
   const defaultSettingsPath = join(PLUGIN_ROOT, "schemas", "settings.sample.json");
   const defaults = await loadJson(defaultSettingsPath);
   
-  if (defaults.example_defaults?.[type]) {
-    data.example_defaults[type] = defaults.example_defaults[type];
+  if (defaults.companion_project_defaults?.[type]) {
+    data.companion_project_defaults[type] = defaults.companion_project_defaults[type];
     data.metadata.last_updated = new Date().toISOString();
     await saveJson(FILES.settings, data);
-    console.log(`✅ Reset example_defaults.${type} to defaults`);
+    console.log(`✅ Reset companion_project_defaults.${type} to defaults`);
   } else {
     console.error(`❌ No default configuration for type: ${type}`);
   }
@@ -276,9 +276,9 @@ Commands:
   set-author <id> <path> <value>        Set an author value
   add-phrase <id> <signature|avoid> <phrase>  Add a phrase to author
   reset                                 Reset all settings to defaults
-  reset-type <type>                     Reset one example type to defaults
+  reset-type <type>                     Reset one companion project type to defaults
 
-Settings Paths (prefix with example_defaults. or use shorthand):
+Settings Paths (prefix with companion_project_defaults. or use shorthand):
   code.technologies                     e.g., '["Laravel 12", "Pest 4"]'
   code.has_tests                        e.g., true
   code.scaffold_command                 e.g., "composer create-project..."

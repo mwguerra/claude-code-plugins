@@ -18,7 +18,7 @@ Complete workflow guide for creating articles with the article-writer plugin.
 │       │                    /author analyze                │                 │
 │       ▼                         │                         ▼                 │
 │  Creates structure              │              Plan → Research → Draft      │
-│  + settings.json                │              → Example → Review           │
+│  + settings.json                │              → Companion Project → Review │
 │  + authors.json                 ▼              → Translate → Finalize       │
 │                           authors.json                    │                 │
 │                                                          ▼                 │
@@ -48,7 +48,7 @@ your-project/
 │   │   └── settings.schema.json         # Settings schema
 │   ├── article_tasks.json               # Empty article queue
 │   ├── authors.json                     # Empty (add authors next)
-│   └── settings.json                    # Example defaults configured
+│   └── settings.json                    # Companion project defaults configured
 ├── content/
 │   └── articles/                        # Output folder for articles
 └── docs/                                # Documentation folder
@@ -60,12 +60,12 @@ your-project/
 /article-writer:settings show
 ```
 
-This shows the default configuration for each example type (code, document, diagram, etc.).
+This shows the default configuration for each companion project type (code, document, diagram, etc.).
 
 **To customize defaults:**
 
 ```bash
-# View code example defaults
+# View code companion project defaults
 /article-writer:settings show code
 
 # Change Laravel version
@@ -199,12 +199,12 @@ content/articles/YYYY_MM_DD_slug/
 │   └── research_notes.md        # Key findings
 ├── 03_drafts/
 │   ├── draft_v1.{lang}.md       # Initial draft
-│   └── draft_v2.{lang}.md       # After example integration
+│   └── draft_v2.{lang}.md       # After companion project integration
 ├── 04_review/
 │   └── checklists/              # Review checklists
 ├── 05_assets/
 │   └── images/                  # Article images
-└── code/                        # Practical example
+└── code/                        # Practical companion project
 ```
 
 ### Phase 3.2: Plan
@@ -212,7 +212,7 @@ content/articles/YYYY_MM_DD_slug/
 - Classify article type (Tutorial, Deep-dive, Guide, etc.)
 - Identify target audience
 - Create section outline
-- Plan example type and scope
+- Plan companion project type and scope
 
 **CHECKPOINT:** Claude shows plan and asks for approval before continuing.
 
@@ -240,32 +240,32 @@ All sources are recorded in:
 - Mark example locations: `<!-- EXAMPLE: description -->`
 - Save as `03_drafts/draft_v1.{lang}.md`
 
-### Phase 3.5: Create Example
+### Phase 3.5: Create Companion Project
 
-> **CRITICAL: Examples must be COMPLETE and RUNNABLE**
+> **CRITICAL: Companion projects must be COMPLETE and RUNNABLE**
 
 #### Step 1: Load Settings
 
-**ALWAYS load settings before creating examples:**
+**ALWAYS load settings before creating companion projects:**
 
 ```bash
-# View settings for your example type
+# View settings for your companion project type
 /article-writer:settings show code
 ```
 
 This reads `.article_writer/settings.json` and shows:
 - `scaffold_command`: Command to create base project
-- `post_scaffold`: Commands to run after scaffolding  
+- `post_scaffold`: Commands to run after scaffolding
 - `technologies`: Default tech stack
-- `test_command`: Command to verify example
+- `test_command`: Command to verify companion project
 
 #### Step 2: Merge with Article Overrides
 
-If the article task has `example` settings, those override the defaults.
+If the article task has `companion_project` settings, those override the defaults.
 
 #### Step 3: Execute Scaffold
 
-**For Code Examples (e.g., Laravel):**
+**For Code Companion Projects (e.g., Laravel):**
 
 ```bash
 # Execute scaffold_command from settings
@@ -285,7 +285,7 @@ Then add article-specific code:
 - Models, Controllers, Routes
 - Migrations, Seeders
 - Tests
-- README explaining the example
+- README explaining the companion project
 
 #### Step 5: VERIFY (Mandatory) ⚠️
 
@@ -328,7 +328,7 @@ php artisan test
 | `document` | Manual: all sections complete, filled examples exist |
 | `diagram` | Manual: renders in Mermaid preview |
 
-### Phase 3.6: Integrate Example
+### Phase 3.6: Integrate Companion Project
 
 **Only proceed here after verification passes.**
 
@@ -341,12 +341,12 @@ php artisan test
 
 Check:
 - [ ] Explanation flows logically
-- [ ] Example code matches article snippets
+- [ ] Companion project code matches article snippets
 - [ ] Voice matches author profile
 - [ ] Technical accuracy
 - [ ] All outline points covered
 
-**CHECKPOINT:** Claude confirms article + example are ready.
+**CHECKPOINT:** Claude confirms article + companion project are ready.
 
 ### Phase 3.8: Translate
 
@@ -364,7 +364,7 @@ For each additional language in author's profile:
   - `output_folder`: folder path
   - `output_files`: per-language file paths
   - `sources_used`: all researched URLs
-  - `example`: example info
+  - `companion_project`: companion project info
   - `status`: "draft"
   - `written_at`: timestamp
 
@@ -472,7 +472,7 @@ Shows what's missing without creating anything.
 | File | Purpose | View Command |
 |------|---------|--------------|
 | `.article_writer/authors.json` | Author profiles | `/author list` |
-| `.article_writer/settings.json` | Example defaults | `/settings show` |
+| `.article_writer/settings.json` | Companion project defaults | `/settings show` |
 | `.article_writer/article_tasks.json` | Article queue | `/queue status` |
 | `.article_writer/schemas/` | JSON schemas | `/doctor` |
 
@@ -488,14 +488,14 @@ Shows what's missing without creating anything.
 
 ### Settings
 
-1. **Keep SQLite default** for code examples - no external dependencies needed
+1. **Keep SQLite default** for code companion projects - no external dependencies needed
 2. **Customize per-article** rather than changing global defaults
 3. **Run doctor** after manual edits to catch errors
 
 ### Articles
 
 1. **Approve the plan** before Claude starts writing
-2. **Check the example first** - if it doesn't run, the article is incomplete
+2. **Check the companion project first** - if it doesn't run, the article is incomplete
 3. **Review voice compliance** - does it sound like the author?
 
 ---
@@ -505,4 +505,4 @@ Shows what's missing without creating anything.
 - [COMMANDS.md](COMMANDS.md) - Complete command reference
 - [README.md](../README.md) - Plugin overview
 - [skills/article-writer/SKILL.md](../skills/article-writer/SKILL.md) - Detailed writing guidelines
-- [skills/example-creator/SKILL.md](../skills/example-creator/SKILL.md) - Example creation guidelines
+- [skills/companion-project-creator/SKILL.md](../skills/companion-project-creator/SKILL.md) - Companion project creation guidelines

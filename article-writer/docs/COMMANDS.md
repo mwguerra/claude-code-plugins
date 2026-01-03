@@ -22,7 +22,7 @@ Complete reference for all article-writer commands.
 | `/article-writer:author edit <id>` | Edit author |
 | `/article-writer:author remove <id>` | Remove author |
 | `/article-writer:settings show` | Show all settings |
-| `/article-writer:settings show <type>` | Show example type defaults |
+| `/article-writer:settings show <type>` | Show companion project type defaults |
 | `/article-writer:settings set <path> <value>` | Update a setting |
 | `/article-writer:settings reset` | Reset to defaults |
 | `/article-writer:article <topic>` | Create new article |
@@ -239,7 +239,7 @@ Asks for confirmation before removing.
 
 ## /article-writer:settings
 
-View and modify global settings, including **article word limits** and example defaults.
+View and modify global settings, including **article word limits** and companion project defaults.
 
 ### Article Limits
 
@@ -255,8 +255,8 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
 
 ```bash
 /article-writer:settings show              # Show all settings
-/article-writer:settings show code         # Show code example defaults
-/article-writer:settings show document     # Show document defaults
+/article-writer:settings show code         # Show code companion project defaults
+/article-writer:settings show document     # Show document companion project defaults
 ```
 
 **Example output for `/article-writer:settings show`:**
@@ -275,7 +275,7 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
     Version: 1.0.0
     Last updated: 2025-01-15T10:00:00Z
 
-  Example Defaults:
+  Companion Project Defaults:
   ┌────────────┬─────────────────────────────────┬───────────┐
   │ Type       │ Technologies                    │ Has Tests │
   ├────────────┼─────────────────────────────────┼───────────┤
@@ -293,7 +293,7 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
 
 ```
 ═══════════════════════════════════════════════════════════════
-  EXAMPLE DEFAULTS: CODE
+  COMPANION PROJECT DEFAULTS: CODE
 ═══════════════════════════════════════════════════════════════
   File: /your/project/.article_writer/settings.json
 ────────────────────────────────────────────────────────────────
@@ -358,7 +358,7 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
 # Change Laravel version
 /article-writer:settings set code.technologies '["Laravel 11", "Pest 3", "SQLite"]'
 
-# Disable tests for code examples
+# Disable tests for code companion projects
 /article-writer:settings set code.has_tests false
 
 # Change scaffold command
@@ -407,8 +407,8 @@ Create a new article.
 2. **Plan** - Classify article type, create outline
 3. **Research** - Web search for sources
 4. **Draft** - Write in primary language
-5. **Example** - Create complete runnable example
-6. **Integrate** - Merge example into article
+5. **Companion Project** - Create complete runnable companion project
+6. **Integrate** - Merge companion project into article
 7. **Review** - Check accuracy and voice compliance
 8. **Translate** - Create other language versions
 9. **Finalize** - Update task metadata
@@ -595,7 +595,7 @@ Validate and fix JSON configuration files.
 - Tone values 1-10
 
 **settings.json:**
-- Valid example types
+- Valid companion project types
 - Correct field types
 - Array fields are arrays
 
@@ -603,7 +603,7 @@ Validate and fix JSON configuration files.
 - Required fields
 - Valid enum values (status, difficulty, area, etc.)
 - Author references
-- Source and example structures
+- Source and companion project structures
 
 ### Example Output
 

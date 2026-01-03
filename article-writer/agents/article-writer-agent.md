@@ -81,7 +81,7 @@ This bash script efficiently processes JSON without loading entire files into me
 1. Run `article-stats.sh --summary` to get queue overview
 2. Run `article-stats.sh --stuck` to check for interrupted articles
 3. Load `authors.json`
-4. **Load `settings.json`** (example defaults AND `article_limits.max_words`)
+4. **Load `settings.json`** (companion project defaults AND `article_limits.max_words`)
 5. Create backup: `article_tasks.backup.json`
 
 **CRITICAL: Read and store `article_limits.max_words` from settings.json. This is a HARD LIMIT that applies to ALL articles regardless of content_type.**
@@ -137,14 +137,14 @@ d. Update status: "pending" → "in_progress"
 e. Process article using Skill(article-writer):
    - Research: Search web for docs, news, tutorials
    - Draft: Write initial draft in primary language
-   - Example: Create practical example (code/document)
-   - Integrate: Update draft with example code/content
+   - Companion Project: Create practical companion project (code/document)
+   - Integrate: Update draft with companion project code/content
    - Review: Check flow, voice compliance, accuracy
    - **Condense: Enforce max_words limit (MANDATORY)**
    - Translate: Create other language versions
 f. On success:
    - Use: article-stats.sh --set-status draft <id>
-   - Manually update output_folder, output_files, sources_used, example
+   - Manually update output_folder, output_files, sources_used, companion_project
    - Record final word count in task
 g. On failure:
    - Keep "in_progress" status
@@ -234,31 +234,31 @@ For each article, search the web for:
    - Note summary and how it was used
    - Save to task's sources_used array
 
-### 6. Example Creation Phase
+### 6. Companion Project Creation Phase
 
-**Use Skill(example-creator) for this phase.**
+**Use Skill(companion-project-creator) for this phase.**
 
-> **CRITICAL: Examples must be COMPLETE, RUNNABLE applications.**
+> **CRITICAL: Companion projects must be COMPLETE, RUNNABLE applications.**
 
 #### Step 1: Read Settings
 
-**Load example defaults from `.article_writer/settings.json`:**
+**Load companion project defaults from `.article_writer/settings.json`:**
 
 ```bash
-# View settings for the example type
+# View settings for the companion project type
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 ```
 
-Or read the JSON file directly and extract `example_defaults.code` (or relevant type).
+Or read the JSON file directly and extract `companion_project_defaults.code` (or relevant type).
 
 #### Step 2: Merge with Article Overrides
 
 ```
-settings.json defaults    +    article.example    =    final config
-──────────────────────         ────────────────        ────────────
-scaffold_command: X            scaffold_command: Y      scaffold_command: Y  (article wins)
-technologies: [A, B]           (not specified)          technologies: [A, B] (use default)
-has_tests: true                has_tests: false         has_tests: false     (article wins)
+settings.json defaults    +    article.companion_project    =    final config
+──────────────────────         ────────────────────────────      ────────────
+scaffold_command: X            scaffold_command: Y                scaffold_command: Y  (article wins)
+technologies: [A, B]           (not specified)                    technologies: [A, B] (use default)
+has_tests: true                has_tests: false                   has_tests: false     (article wins)
 ```
 
 #### Step 3: Execute Scaffold
@@ -318,13 +318,13 @@ php artisan test
 3. Re-run from step 1
 4. Repeat until ALL pass
 
-**DO NOT mark example as verified until all commands succeed.**
+**DO NOT mark companion project as verified until all commands succeed.**
 
 #### Step 6: Record in Task (only after verification passes)
 
 ```json
 {
-  "example": {
+  "companion_project": {
     "type": "code",
     "path": "code/",
     "technologies": ["Laravel 12", "Pest 4", "SQLite"],
@@ -409,7 +409,7 @@ Log to `.article_writer/.processing-log.json`:
       "author": "mwguerra",
       "languages_completed": ["pt_BR", "en_US"],
       "sources_found": 5,
-      "example_created": true,
+      "companion_project_created": true,
       "duration_seconds": 180
     }
   ],

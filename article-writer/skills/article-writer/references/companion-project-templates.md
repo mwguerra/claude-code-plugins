@@ -1,16 +1,16 @@
-# Example Templates
+# Companion Project Templates
 
-> **See `skills/example-creator/SKILL.md` for complete instructions on creating examples.**
+> **See `skills/companion-project-creator/SKILL.md` for complete instructions on creating companion projects.**
 
 ## Core Principle
 
-> **Examples must be COMPLETE and RUNNABLE, not snippets or partial code.**
+> **Companion projects must be COMPLETE and RUNNABLE, not snippets or partial code.**
 
-## Global Example Defaults
+## Global Companion Project Defaults
 
 Defaults are in `.article_writer/settings.json`. Article values override defaults.
 
-### Code Example Defaults
+### Code Companion Project Defaults
 
 ```json
 {
@@ -24,11 +24,11 @@ Defaults are in `.article_writer/settings.json`. Article values override default
 }
 ```
 
-### Article Override Example
+### Article Override
 
 ```json
 {
-  "example": {
+  "companion_project": {
     "type": "code",
     "technologies": ["Laravel 11", "MySQL"],
     "scaffold_command": "composer create-project laravel/laravel:^11.0 code"
@@ -36,7 +36,7 @@ Defaults are in `.article_writer/settings.json`. Article values override default
 }
 ```
 
-## Example Types Quick Reference
+## Companion Project Types Quick Reference
 
 | Type | Create With | Contains |
 |------|-------------|----------|
@@ -49,9 +49,9 @@ Defaults are in `.article_writer/settings.json`. Article values override default
 | `template` | Manual creation | Reusable file templates |
 | `spreadsheet` | Manual creation | Excel/CSV with formulas |
 
-## Laravel Project (Full Installation)
+## Laravel Companion Project (Full Installation)
 
-For Laravel-related articles, create a minimal project:
+For Laravel-related articles, create a minimal companion project:
 
 ```
 code/
@@ -153,7 +153,7 @@ describe('Example Feature', function () {
 });
 ```
 
-## Node.js Project (Minimal)
+## Node.js Companion Project (Minimal)
 
 ```
 code/
@@ -180,7 +180,7 @@ code/
 }
 ```
 
-## Docker/DevOps Example
+## Docker/DevOps Companion Project
 
 ```
 code/
@@ -212,7 +212,7 @@ services:
     # See article section: "[Section Name]"
 ```
 
-## Document/Template Example
+## Document/Template Companion Project
 
 For non-code articles:
 
@@ -262,10 +262,10 @@ code/
 | [Risk 1] | High | [Mitigation] |
 ```
 
-## README Template for Examples
+## README Template for Companion Projects
 
 ```markdown
-# Example: [Topic Name]
+# Companion Project: [Topic Name]
 
 > Demonstrates [concept] from the article "[Article Title]"
 
@@ -317,7 +317,7 @@ See `app/Services/ExampleService.php`:
 See `app/Http/Controllers/ExampleController.php`:
 - Lines 30-45: [What it shows]
 
-## Running the Example
+## Running the Companion Project
 
 \`\`\`bash
 # Start the server
@@ -329,7 +329,7 @@ curl http://localhost:8000/api/example
 
 ## Tests
 
-The example includes [N] tests:
+The companion project includes [N] tests:
 
 1. `tests/Feature/ExampleTest.php`
    - `it demonstrates the main concept` - [What it tests]
@@ -337,7 +337,7 @@ The example includes [N] tests:
 
 ## Article Reference
 
-This example accompanies:
+This companion project accompanies:
 - **Article**: [Title]
 - **Author**: [Author Name]
 - **Main Sections**: [List relevant sections]
@@ -401,15 +401,15 @@ setting:
   option: value  # Explained in "Configuration Options" section
 ```
 
-## Checklist for Examples
+## Checklist for Companion Projects
 
 Before finalizing:
 
-- [ ] Example is minimal (no unnecessary code)
-- [ ] Example is complete (runs without errors)
-- [ ] Example uses SQLite (for database examples)
-- [ ] Example includes tests (Pest for PHP)
+- [ ] Companion project is minimal (no unnecessary code)
+- [ ] Companion project is complete (runs without errors)
+- [ ] Companion project uses SQLite (for database projects)
+- [ ] Companion project includes tests (Pest for PHP)
 - [ ] Comments reference article sections
 - [ ] README explains how to run
 - [ ] Key files are documented
-- [ ] Example matches code snippets in article
+- [ ] Companion project matches code snippets in article

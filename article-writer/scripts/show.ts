@@ -6,7 +6,7 @@
  *   bun run show.ts authors                    # List all authors
  *   bun run show.ts author <id>                # Show single author details
  *   bun run show.ts settings                   # Show all settings
- *   bun run show.ts settings <type>            # Show defaults for example type
+ *   bun run show.ts settings <type>            # Show defaults for companion project type
  *   bun run show.ts queue                      # Show queue summary
  */
 
@@ -278,7 +278,7 @@ async function showAuthor(authorId: string): Promise<void> {
 // Settings
 // ============================================
 
-async function showSettings(exampleType?: string): Promise<void> {
+async function showSettings(companionProjectType?: string): Promise<void> {
   if (!(await exists(FILES.settings))) {
     console.error(`❌ File not found: ${FILES.settings}`);
     console.log(`   Run /article-writer:init first.`);
@@ -287,9 +287,9 @@ async function showSettings(exampleType?: string): Promise<void> {
 
   const data = await loadJson(FILES.settings);
 
-  if (exampleType) {
-    // Show specific example type
-    await showExampleDefaults(data, exampleType);
+  if (companionProjectType) {
+    // Show specific companion project type
+    await showCompanionProjectDefaults(data, companionProjectType);
   } else {
     // Show all settings
     await showAllSettings(data);
@@ -308,9 +308,9 @@ async function showAllSettings(data: any): Promise<void> {
     console.log(`    Last updated: ${data.metadata.last_updated || "unknown"}`);
   }
 
-  // Example defaults summary
-  if (data.example_defaults) {
-    console.log("\n  Example Defaults:");
+  // Companion project defaults summary
+  if (data.companion_project_defaults) {
+    console.log("\n  Companion Project Defaults:");
     console.log("  ┌────────────┬─────────────────────────────────┬───────────┐");
     console.log("  │ Type       │ Technologies                    │ Has Tests │");
     console.log("  ├────────────┼─────────────────────────────────┼───────────┤");
@@ -318,7 +318,7 @@ async function showAllSettings(data: any): Promise<void> {
     const types = ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
     
     for (const type of types) {
-      const defaults = data.example_defaults[type];
+      const defaults = data.companion_project_defaults[type];
       if (defaults) {
         const tech = defaults.technologies?.slice(0, 3).join(", ") || "-";
         const techDisplay = tech.length > 30 ? tech.substring(0, 27) + "..." : tech.padEnd(30);
@@ -335,23 +335,23 @@ async function showAllSettings(data: any): Promise<void> {
   printDivider();
 }
 
-async function showExampleDefaults(data: any, type: string): Promise<void> {
+async function showCompanionProjectDefaults(data: any, type: string): Promise<void> {
   const validTypes = ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
-  
+
   if (!validTypes.includes(type)) {
-    console.error(`❌ Unknown example type: ${type}`);
+    console.error(`❌ Unknown companion project type: ${type}`);
     console.log(`\n   Valid types: ${validTypes.join(", ")}`);
     process.exit(1);
   }
 
-  const defaults = data.example_defaults?.[type];
-  
+  const defaults = data.companion_project_defaults?.[type];
+
   if (!defaults) {
     console.error(`❌ No defaults configured for type: ${type}`);
     process.exit(1);
   }
 
-  printHeader(`EXAMPLE DEFAULTS: ${type.toUpperCase()}`);
+  printHeader(`COMPANION PROJECT DEFAULTS: ${type.toUpperCase()}`);
   console.log(`  File: ${FILES.settings}`);
   printDivider();
 
@@ -520,7 +520,7 @@ Commands:
   authors              List all authors
   author <id>          Show single author details
   settings             Show all settings
-  settings <type>      Show example defaults for type
+  settings <type>      Show companion project defaults for type
   queue                Show queue summary
 
 Examples:

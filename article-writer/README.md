@@ -66,7 +66,7 @@ Creates: `.article_writer/` folder with schemas, settings, and empty queue.
 | `/article-writer:author list` | List all authors | [docs/COMMANDS.md#author](docs/COMMANDS.md#article-writerauthor) |
 | `/article-writer:author show <id>` | Show author details | [docs/COMMANDS.md#author](docs/COMMANDS.md#article-writerauthor) |
 | `/article-writer:settings show` | Show all settings | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
-| `/article-writer:settings show <type>` | Show example type defaults | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
+| `/article-writer:settings show <type>` | Show companion project type defaults | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:settings set` | Modify a setting | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:article <topic>` | Create single article | [docs/COMMANDS.md#article](docs/COMMANDS.md#article-writerarticle) |
 | `/article-writer:next` | Get next pending article | [docs/COMMANDS.md#next](docs/COMMANDS.md#article-writernext) |
@@ -79,7 +79,7 @@ Creates: `.article_writer/` folder with schemas, settings, and empty queue.
 | File | Purpose | View Command |
 |------|---------|--------------|
 | `.article_writer/authors.json` | Author profiles | `/article-writer:author list` |
-| `.article_writer/settings.json` | Example defaults | `/article-writer:settings show` |
+| `.article_writer/settings.json` | Companion project defaults | `/article-writer:settings show` |
 | `.article_writer/article_tasks.json` | Article queue | `/article-writer:queue status` |
 | `.article_writer/schemas/` | JSON schemas | `/article-writer:doctor` |
 | `content/articles/` | Output folder | (check after creation) |
@@ -171,29 +171,29 @@ your-project/
 ├── content/
 │   └── articles/
 │       └── 2025_01_15_rate-limiting/
-│           ├── code/                     # Complete example
+│           ├── code/                     # Complete companion project
 │           ├── rate-limiting.pt_BR.md    # Primary
 │           └── rate-limiting.en_US.md    # Translation
 └── docs/
 ```
 
-## Practical Examples
+## Practical Companion Projects
 
-> **Examples must be COMPLETE and RUNNABLE, not snippets.**
+> **Companion projects must be COMPLETE and RUNNABLE, not snippets.**
 
-A Laravel example is a **full Laravel installation**:
+A Laravel companion project is a **full Laravel installation**:
 
 ```bash
 cd code && composer install && php artisan serve
 # Visit http://localhost:8000
 ```
 
-**Example types:**
+**Companion project types:**
 
 | Type | What Gets Created |
 |------|-------------------|
 | `code` | Full application (Laravel, Node, etc.) |
-| `document` | Templates + filled examples |
+| `document` | Templates + filled-in samples |
 | `diagram` | Valid Mermaid diagrams |
 | `config` | Working docker-compose setup |
 | `script` | Executable bash scripts |
@@ -237,7 +237,7 @@ Resets to plugin defaults.
 | `article-writer` | Full article creation workflow | `skills/article-writer/SKILL.md` |
 | `author-profile` | Author management | `skills/author-profile/SKILL.md` |
 | `voice-extractor` | Voice extraction from transcripts | `skills/voice-extractor/SKILL.md` |
-| `example-creator` | Create complete examples | `skills/example-creator/SKILL.md` |
+| `companion-project-creator` | Create complete companion projects | `skills/companion-project-creator/SKILL.md` |
 | `article-queue` | Queue operations | `skills/article-queue/SKILL.md` |
 
 ## Scripts Reference

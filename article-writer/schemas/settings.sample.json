@@ -3,7 +3,7 @@
   "article_limits": {
     "max_words": 3000
   },
-  "example_defaults": {
+  "companion_project_defaults": {
     "code": {
       "technologies": ["Laravel 12", "Pest 4", "SQLite"],
       "has_tests": true,

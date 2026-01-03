@@ -50,7 +50,7 @@ const ENUMS = {
   ],
   estimated_effort: ["Short", "Medium", "Long", "Long (Series)"],
   source_type: ["documentation", "tutorial", "news", "blog", "repository", "specification", "other"],
-  example_type: ["code", "document", "diagram", "template", "dataset", "config", "other"],
+  companion_project_type: ["code", "document", "diagram", "template", "dataset", "config", "other"],
 };
 
 // Required fields for articles
@@ -312,16 +312,16 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
     });
   }
 
-  // Check example structure
-  if (article.example && typeof article.example === "object") {
-    if (article.example.type && !ENUMS.example_type.includes(article.example.type)) {
+  // Check companion project structure
+  if (article.companion_project && typeof article.companion_project === "object") {
+    if (article.companion_project.type && !ENUMS.companion_project_type.includes(article.companion_project.type)) {
       issues.push({
         type: "invalid_enum",
         item: itemName,
-        field: "example.type",
-        message: `Invalid example type '${article.example.type}'`,
-        currentValue: article.example.type,
-        enumOptions: ENUMS.example_type,
+        field: "companion_project.type",
+        message: `Invalid companion project type '${article.companion_project.type}'`,
+        currentValue: article.companion_project.type,
+        enumOptions: ENUMS.companion_project_type,
         suggestedFix: "code",
       });
     }
@@ -419,30 +419,30 @@ function validateAuthor(author: any, index: number): Issue[] {
 function validateSettings(settings: any): Issue[] {
   const issues: Issue[] = [];
   const itemName = "Settings";
-  const validExampleTypes = ["code", "document", "diagram", "template", "dataset", "config", "other"];
+  const validCompanionProjectTypes = ["code", "document", "diagram", "template", "dataset", "config", "other"];
 
-  // Check example_defaults exists
-  if (!settings.example_defaults) {
+  // Check companion_project_defaults exists
+  if (!settings.companion_project_defaults) {
     issues.push({
       type: "missing",
       item: itemName,
-      field: "example_defaults",
-      message: `Missing 'example_defaults' object`,
+      field: "companion_project_defaults",
+      message: `Missing 'companion_project_defaults' object`,
       suggestedFix: {},
     });
     return issues;
   }
 
-  // Check each example type
-  for (const [type, defaults] of Object.entries(settings.example_defaults)) {
-    if (!validExampleTypes.includes(type)) {
+  // Check each companion project type
+  for (const [type, defaults] of Object.entries(settings.companion_project_defaults)) {
+    if (!validCompanionProjectTypes.includes(type)) {
       issues.push({
         type: "invalid_enum",
         item: itemName,
-        field: `example_defaults.${type}`,
-        message: `Unknown example type '${type}'`,
+        field: `companion_project_defaults.${type}`,
+        message: `Unknown companion project type '${type}'`,
         currentValue: type,
-        enumOptions: validExampleTypes,
+        enumOptions: validCompanionProjectTypes,
       });
       continue;
     }
@@ -454,11 +454,11 @@ function validateSettings(settings: any): Issue[] {
       issues.push({
         type: "invalid_type",
         item: itemName,
-        field: `example_defaults.${type}.technologies`,
+        field: `companion_project_defaults.${type}.technologies`,
         message: `'technologies' should be an array`,
         currentValue: typeDefaults.technologies,
-        suggestedFix: typeof typeDefaults.technologies === "string" 
-          ? [typeDefaults.technologies] 
+        suggestedFix: typeof typeDefaults.technologies === "string"
+          ? [typeDefaults.technologies]
           : [],
       });
     }
@@ -468,7 +468,7 @@ function validateSettings(settings: any): Issue[] {
       issues.push({
         type: "invalid_type",
         item: itemName,
-        field: `example_defaults.${type}.has_tests`,
+        field: `companion_project_defaults.${type}.has_tests`,
         message: `'has_tests' should be a boolean`,
         currentValue: typeDefaults.has_tests,
         suggestedFix: Boolean(typeDefaults.has_tests),
@@ -480,7 +480,7 @@ function validateSettings(settings: any): Issue[] {
       issues.push({
         type: "invalid_type",
         item: itemName,
-        field: `example_defaults.${type}.setup_commands`,
+        field: `companion_project_defaults.${type}.setup_commands`,
         message: `'setup_commands' should be an array`,
         currentValue: typeDefaults.setup_commands,
         suggestedFix: typeof typeDefaults.setup_commands === "string"
@@ -494,7 +494,7 @@ function validateSettings(settings: any): Issue[] {
       issues.push({
         type: "invalid_type",
         item: itemName,
-        field: `example_defaults.${type}.file_structure`,
+        field: `companion_project_defaults.${type}.file_structure`,
         message: `'file_structure' should be an array`,
         currentValue: typeDefaults.file_structure,
         suggestedFix: typeof typeDefaults.file_structure === "string"

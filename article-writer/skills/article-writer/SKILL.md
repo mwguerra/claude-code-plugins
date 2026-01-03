@@ -1,11 +1,11 @@
 ---
 name: article-writer
-description: Write technical articles with web research, runnable examples, and translations in author's voice
+description: Write technical articles with web research, runnable companion projects, and translations in author's voice
 ---
 
 # Article Writer
 
-Create technical articles with practical examples and multi-language support.
+Create technical articles with companion projects and multi-language support.
 
 ## Quick Start
 
@@ -13,12 +13,12 @@ Create technical articles with practical examples and multi-language support.
 2. Create folder structure (including `code/` folder)
 3. Load author profile
 4. **Load settings.json** (including `article_limits.max_words`)
-5. Follow phases: Initialize → Plan → Research → **Draft → Example → Integrate → Review → Condense** → Translate → Finalize
+5. Follow phases: Initialize → Plan → Research → **Draft → Companion Project → Integrate → Review → Condense** → Translate → Finalize
 
 ## Workflow Overview
 
 ```
-Plan → Research → Draft (initial) → Create Example → Update Draft → Review → Condense → Translate → Finalize
+Plan → Research → Draft (initial) → Create Companion Project → Update Draft → Review → Condense → Translate → Finalize
                          ↑                              ↓               ↓
                          └──────── Iterate ─────────────┘               │
                                                                         ↓
@@ -36,12 +36,12 @@ content/articles/YYYY_MM_DD_slug/
 │   └── research_notes.md
 ├── 03_drafts/
 │   ├── draft_v1.{lang}.md   # Initial draft
-│   └── draft_v2.{lang}.md   # After example integration
+│   └── draft_v2.{lang}.md   # After companion project integration
 ├── 04_review/               # checklists
 ├── 05_assets/images/
-├── code/                    # PRACTICAL EXAMPLE
-│   ├── README.md            # How to run the example
-│   ├── src/                 # Example source code/files
+├── code/                    # COMPANION PROJECT
+│   ├── README.md            # How to run the companion project
+│   ├── src/                 # Companion project source code/files
 │   └── tests/               # Tests (if applicable)
 ├── {slug}.{primary_lang}.md # Primary article
 └── {slug}.{other_lang}.md   # Translations
@@ -51,14 +51,14 @@ content/articles/YYYY_MM_DD_slug/
 
 ### Phase 0: Initialize
 - Get author, generate slug, create folder
-- Create `code/` directory for example
+- Create `code/` directory for companion project
 - Copy author profile to `00_context/`
 - **Load `article_limits.max_words` from settings.json**
 
 ### Phase 1: Plan
 - Classify article type
 - Create outline
-- **Plan example type and scope**
+- **Plan companion project type and scope**
 - **CHECKPOINT:** Get approval
 
 ### Phase 2: Research (Web Search)
@@ -113,28 +113,28 @@ Write with:
 - Occasional "na prática" and "o ponto é"
 - Some sentences starting with "Então" or "O interessante é"
 
-### Phase 4: Create Example ⭐
-**Use Skill(example-creator) for this phase**
+### Phase 4: Create Companion Project ⭐
+**Use Skill(companion-project-creator) for this phase**
 
-> **CRITICAL: Examples must be COMPLETE, RUNNABLE, and VERIFIED.**
+> **CRITICAL: Companion projects must be COMPLETE, RUNNABLE, and VERIFIED.**
 
-A Laravel example is a FULL Laravel installation. A Node example is a FULL Node project.
+A Laravel companion project is a FULL Laravel installation. A Node companion project is a FULL Node project.
 
-**The example is NOT complete until you have actually run and tested it.**
+**The companion project is NOT complete until you have actually run and tested it.**
 
-#### Step 1: Load Example Defaults from Settings
+#### Step 1: Load Companion Project Defaults from Settings
 
 **Read `.article_writer/settings.json` first:**
 
 ```bash
-# View defaults for the example type
+# View defaults for the companion project type
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 ```
 
 **Or read JSON and extract:**
 ```javascript
 const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
-const codeDefaults = settings.example_defaults.code;
+const codeDefaults = settings.companion_project_defaults.code;
 // codeDefaults.scaffold_command
 // codeDefaults.verification.install_command
 // codeDefaults.verification.run_command
@@ -143,12 +143,12 @@ const codeDefaults = settings.example_defaults.code;
 
 #### Step 2: Merge with Article Overrides
 
-If article task has `example` field, those values override settings defaults.
+If article task has `companion_project` field, those values override settings defaults.
 
 #### Step 3: Execute Scaffold Command
 
 ```bash
-# From settings.example_defaults.code.scaffold_command
+# From settings.companion_project_defaults.code.scaffold_command
 composer create-project laravel/laravel code --prefer-dist
 ```
 
@@ -197,9 +197,9 @@ php artisan test
 
 **DO NOT proceed to Phase 5 until verification passes.**
 
-#### Example Types
+#### Companion Project Types
 
-| Article Topic | Example Type | What to Create |
+| Article Topic | Project Type | What to Create |
 |---------------|--------------|----------------|
 | Laravel/PHP code | `code` | **Full Laravel project** via composer create-project |
 | JavaScript/Node | `node` | **Full Node project** via npm init |
@@ -218,7 +218,7 @@ Before proceeding to Phase 5:
 - [ ] `test_command` runs with 0 failures
 - [ ] README.md explains setup and usage
 
-#### For Code Examples (Laravel)
+#### For Code Companion Projects (Laravel)
 
 ```
 code/
@@ -234,7 +234,7 @@ code/
 └── .env.example           # SQLite by default
 ```
 
-**Standards for Laravel examples:**
+**Standards for Laravel companion projects:**
 - Use SQLite (no external DB needed)
 - Use Pest for tests
 - Include at least 2-3 tests for main features
@@ -242,7 +242,7 @@ code/
 - Keep dependencies minimal
 - Include setup script if complex
 
-#### For Document Examples
+#### For Document Companion Projects
 
 ```
 code/
@@ -253,7 +253,7 @@ code/
     └── ...                # Filled-in examples
 ```
 
-### Phase 5: Integrate Example into Draft
+### Phase 5: Integrate Companion Project into Draft
 - Replace `<!-- EXAMPLE: -->` markers with actual code snippets
 - Add file references: "See `code/app/Models/Post.php`"
 - Add run instructions in appropriate sections
@@ -265,10 +265,10 @@ code/
 1. **Explanation Flow**
    - Does the narrative flow logically?
    - Are concepts introduced before being used?
-   - Does the example appear at the right time?
+   - Does the companion project appear at the right time?
 
-2. **Example Integration**
-   - Do code snippets match the full example?
+2. **Companion Project Integration**
+   - Do code snippets match the full companion project?
    - Are file paths correct?
    - Can readers follow along?
 
@@ -284,15 +284,15 @@ code/
 
 4. **Technical Accuracy**
    - Code snippets are correct?
-   - Example actually runs?
+   - Companion project actually runs?
    - Tests pass?
 
 5. **Completeness**
    - All outline points covered?
    - Sources properly cited?
-   - Example fully demonstrates topic?
+   - Companion project fully demonstrates topic?
 
-**CHECKPOINT:** Confirm article + example are ready
+**CHECKPOINT:** Confirm article + companion project are ready
 
 ### Phase 6b: Condense (Word Limit Enforcement) ⚠️
 
@@ -348,7 +348,7 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
    - Critical technical explanations
    - Prerequisites or setup instructions
    - Safety warnings or important notes
-   - References to the practical example
+   - References to the companion project
 
 #### Step 4: Verify Condensed Version
 
@@ -384,12 +384,12 @@ After condensing:
 - Update article_tasks.json with:
   - output_files
   - sources_used
-  - example info
-- Verify example README is complete
+  - companion_project info
+- Verify companion project README is complete
 
-## When to Skip Examples
+## When to Skip Companion Projects
 
-Only skip if example makes **absolutely no sense**:
+Only skip if a companion project makes **absolutely no sense**:
 - Pure opinion pieces with no actionable content
 - News/announcement summaries
 - Historical retrospectives
@@ -398,19 +398,19 @@ Only skip if example makes **absolutely no sense**:
 If skipping, document in task:
 ```json
 {
-  "example": {
+  "companion_project": {
     "skipped": true,
     "skip_reason": "Opinion piece with no actionable code or templates"
   }
 }
 ```
 
-## Example README Template
+## Companion Project README Template
 
 ```markdown
-# Example: [Topic]
+# Companion Project: [Topic]
 
-Demonstrates [what this example shows] from the article "[Article Title]".
+Demonstrates [what this companion project shows] from the article "[Article Title]".
 
 ## Requirements
 
@@ -442,12 +442,12 @@ php artisan test
 
 ## Article Reference
 
-This example accompanies the article:
+This companion project accompanies the article:
 - **Title**: [Article Title]
 - **Section**: See "Implementing Eager Loading" section
 ```
 
-## Example Comments Style
+## Companion Project Comments Style
 
 ```php
 <?php
@@ -473,11 +473,11 @@ class AppServiceProvider extends ServiceProvider
 }
 ```
 
-## Recording Example in Task
+## Recording Companion Project in Task
 
 ```json
 {
-  "example": {
+  "companion_project": {
     "type": "code",
     "path": "code/",
     "description": "Minimal Laravel app demonstrating rate limiting",
@@ -496,7 +496,7 @@ class AppServiceProvider extends ServiceProvider
 ## References
 
 - [references/article-types.md](references/article-types.md)
-- [references/example-templates.md](references/example-templates.md)
+- [references/companion-project-templates.md](references/companion-project-templates.md)
 - [references/checklists.md](references/checklists.md)
 - [references/frontmatter.md](references/frontmatter.md)
 - [references/research-templates.md](references/research-templates.md)

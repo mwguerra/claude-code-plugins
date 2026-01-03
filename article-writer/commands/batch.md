@@ -1,6 +1,6 @@
 ---
 description: Process multiple articles from the queue autonomously with filtering by count, area, author, or difficulty
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <count | all | area:NAME | author:ID | difficulty:LEVEL>
 ---
 
@@ -47,19 +47,19 @@ Process multiple articles from the task queue autonomously.
 ## Process
 
 1. Load and validate task queue
-2. **Load `settings.json`** (example defaults + `article_limits.max_words`)
+2. **Load `settings.json`** (companion project defaults + `article_limits.max_words`)
 3. Filter articles matching criteria
 4. For each article:
    - Get author (from task or default)
    - Update status to `in_progress`
    - **Search web** for docs, news, tutorials
    - Write in author's primary language
-   - **Create example using settings** (scaffold_command, etc.)
+   - **Create companion project using settings** (scaffold_command, etc.)
    - Review article for flow and voice
    - **Condense if over max_words** (preserving quality and voice)
    - Translate to other languages
    - Update status to `draft`
-   - Record output_files, sources_used, example info
+   - Record output_files, sources_used, companion project info
    - Set written_at timestamp
 5. Report summary (including word count compliance)
 

@@ -1,6 +1,6 @@
 ---
-description: Create a new technical article with web research, practical examples, and multi-language output
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(example-creator), Skill(article-queue), Bash(bun:*)
+description: Create a new technical article with web research, practical companion projects, and multi-language output
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(article-queue), Bash(bun:*)
 argument-hint: <topic | from-queue ID> [--author ID]
 ---
 
@@ -41,17 +41,17 @@ Create a single technical article interactively with multi-language support.
 ## Process
 
 1. Select author and load profile from `.article_writer/authors.json`
-2. **Load settings from `.article_writer/settings.json`** (example defaults + `article_limits.max_words`)
+2. **Load settings from `.article_writer/settings.json`** (companion project defaults + `article_limits.max_words`)
 3. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
-4. Guide through: Planning → **Web Research** → Drafting → **Example Creation** → Review → **Condense**
+4. Guide through: Planning → **Web Research** → Drafting → **Companion Project Creation** → Review → **Condense**
 5. Search web for documentation, news, and related content
 6. Write initial draft in author's primary language
-7. Create practical example using settings defaults (scaffold_command, post_scaffold, etc.)
-8. Update draft with example code/content
+7. Create practical companion project using settings defaults (scaffold_command, post_scaffold, etc.)
+8. Update draft with companion project code/content
 9. Review article for flow and voice compliance
 10. **Condense if over max_words** (preserving quality and voice)
 11. Translate to other languages
-12. Update article_tasks.json with output paths, sources, and example info
+12. Update article_tasks.json with output paths, sources, and companion project info
 
 ## Web Research
 
@@ -63,16 +63,16 @@ During research phase, searches for:
 
 All sources are recorded in `sources_used` array.
 
-## Practical Examples
+## Practical Companion Projects
 
-Every article includes a practical example. Example defaults come from `.article_writer/settings.json`:
+Every article includes a practical companion project. Companion project defaults come from `.article_writer/settings.json`:
 
 ```bash
 # View defaults before creating
 /article-writer:settings show code
 ```
 
-Example workflow:
+Companion project workflow:
 1. **Load settings** - Get scaffold_command, verification commands
 2. Write initial draft with `<!-- EXAMPLE: ... -->` markers
 3. **Execute scaffold_command** from settings
@@ -83,10 +83,10 @@ Example workflow:
    - `run_command` - App must start without errors
    - `test_command` - All tests must pass
 7. **If verification fails → Fix code → Re-verify**
-8. Update draft with actual code from example
+8. Update draft with actual code from companion project
 9. Review integrated article as a whole
 
-**The example is NOT complete until verification passes.**
+**The companion project is NOT complete until verification passes.**
 
 ## Multi-Language Output
 

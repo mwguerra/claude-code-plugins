@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "settings.schema.json",
   "title": "Article Writer Settings",
-  "description": "Global settings for article writer plugin including example defaults and article limits",
+  "description": "Global settings for article writer plugin including companion project defaults and article limits",
   "type": "object",
   "properties": {
     "article_limits": {
@@ -17,42 +17,42 @@
         }
       }
     },
-    "example_defaults": {
+    "companion_project_defaults": {
       "type": "object",
-      "description": "Default settings for each example type. Article-specific values override these.",
+      "description": "Default settings for each companion project type. Article-specific values override these.",
       "properties": {
         "code": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "node": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "python": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "document": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "diagram": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "template": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "dataset": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "config": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "script": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "spreadsheet": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         },
         "other": {
-          "$ref": "#/$defs/example_defaults"
+          "$ref": "#/$defs/companion_project_defaults"
         }
       }
     },
@@ -70,22 +70,22 @@
     }
   },
   "$defs": {
-    "example_defaults": {
+    "companion_project_defaults": {
       "type": "object",
-      "description": "Default values for an example type",
+      "description": "Default values for a companion project type",
       "properties": {
         "technologies": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Default technologies/tools for this example type"
+          "description": "Default technologies/tools for this companion project type"
         },
         "has_tests": {
           "type": "boolean",
-          "description": "Whether examples of this type should include tests by default"
+          "description": "Whether companion projects of this type should include tests by default"
         },
         "path": {
           "type": "string",
-          "description": "Default folder path for the example"
+          "description": "Default folder path for the companion project"
         },
         "scaffold_command": {
           "type": "string",
@@ -98,7 +98,7 @@
         },
         "verification": {
           "type": "object",
-          "description": "Commands to verify the example is complete and working",
+          "description": "Commands to verify the companion project is complete and working",
           "properties": {
             "install_command": {
               "type": ["string", "null"],
@@ -124,7 +124,7 @@
             "manual_checks": {
               "type": "array",
               "items": { "type": "string" },
-              "description": "Manual verification steps for non-code examples"
+              "description": "Manual verification steps for non-code companion projects"
             }
           }
         },
@@ -139,7 +139,7 @@
         },
         "notes": {
           "type": "string",
-          "description": "Additional notes for this example type"
+          "description": "Additional notes for this companion project type"
         }
       }
     }

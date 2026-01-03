@@ -139,7 +139,7 @@
           "type": "repository"
         }
       ],
-      "example": {
+      "companion_project": {
         "type": "code",
         "path": "code/",
         "description": "Complete Laravel application demonstrating N+1 query detection and eager loading",

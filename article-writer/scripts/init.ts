@@ -154,7 +154,7 @@ async function createEmptyAuthors(): Promise<void> {
 async function createDefaultSettings(): Promise<void> {
   const defaultSettings = {
     $schema: "./schemas/settings.schema.json",
-    example_defaults: {
+    companion_project_defaults: {
       code: {
         technologies: ["Laravel 12", "Pest 4", "SQLite"],
         has_tests: true,

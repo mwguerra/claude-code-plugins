@@ -38,7 +38,7 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/doctor.ts [--check | --fix]`
 - Enum values are valid (status, difficulty, area, content_type, etc.)
 - Author reference structure is correct
 - Output files and sources_used arrays are properly formatted
-- Example info structure is valid
+- Companion project info structure is valid
 - Date fields are ISO format
 
 ### authors.json
@@ -49,8 +49,8 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/doctor.ts [--check | --fix]`
 - Optional fields have correct types
 
 ### settings.json
-- example_defaults object exists
-- Each example type is valid (code, document, diagram, etc.)
+- companion_project_defaults object exists
+- Each companion project type is valid (code, document, diagram, etc.)
 - technologies arrays are valid
 - has_tests is boolean
 - setup_commands and file_structure are arrays

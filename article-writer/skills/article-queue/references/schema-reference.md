@@ -84,11 +84,11 @@ Tracks web sources researched and used in the article.
 | `accessed_at` | datetime | | When accessed |
 | `type` | enum | | documentation/tutorial/news/blog/repository/specification/other |
 
-## Example Info
+## Companion Project Info
 
-Tracks the practical example created for the article.
+Tracks the practical companion project created for the article.
 
-> **Examples must be COMPLETE and RUNNABLE.**
+> **Companion projects must be COMPLETE and RUNNABLE.**
 
 ```json
 {
@@ -113,30 +113,30 @@ Tracks the practical example created for the article.
 | Field | Type | Description |
 |-------|------|-------------|
 | `type` | enum | code/document/diagram/template/dataset/config/script/spreadsheet/other |
-| `path` | string | Path to example folder (usually `code/`) |
-| `description` | string | What the example demonstrates |
+| `path` | string | Path to companion project folder (usually `code/`) |
+| `description` | string | What the companion project demonstrates |
 | `technologies` | array | Technologies used |
 | `scaffold_command` | string | Command to create base project |
 | `has_tests` | boolean | Whether tests are included |
 | `files` | array | Key files (article-specific additions) |
-| `run_command` | string | Command to run the example |
+| `run_command` | string | Command to run the companion project |
 | `run_instructions` | string | Full setup + run instructions |
 | `test_command` | string | Command to run tests |
-| `verified` | boolean | Whether example was verified working |
+| `verified` | boolean | Whether companion project was verified working |
 | `verified_at` | datetime | When verified |
-| `skipped` | boolean | True if example was skipped |
-| `skip_reason` | string | Why example was skipped |
+| `skipped` | boolean | True if companion project was skipped |
+| `skip_reason` | string | Why companion project was skipped |
 
 ## Settings (settings.json)
 
-Global settings including example defaults.
+Global settings including companion project defaults.
 
 ### Structure
 
 ```json
 {
   "$schema": "./schemas/settings.schema.json",
-  "example_defaults": {
+  "companion_project_defaults": {
     "code": { ... },
     "document": { ... },
     "diagram": { ... },
@@ -152,14 +152,14 @@ Global settings including example defaults.
 }
 ```
 
-### Example Defaults Fields
+### Companion Project Defaults Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `technologies` | array | Default tech stack for this type |
 | `has_tests` | boolean | Include tests by default |
-| `path` | string | Default example folder path |
-| `run_instructions` | string | How to run the example |
+| `path` | string | Default companion project folder path |
+| `run_instructions` | string | How to run the companion project |
 | `setup_commands` | array | List of setup commands |
 | `test_command` | string | Command to run tests |
 | `file_structure` | array | Expected files/folders |
@@ -180,13 +180,13 @@ Global settings including example defaults.
 }
 ```
 
-### Merging with Article Examples
+### Merging with Article Companion Projects
 
 Article-specific values **override** defaults:
 
 ```
-settings.json          article example           result
-─────────────          ───────────────           ──────
+settings.json          article companion_project    result
+─────────────          ────────────────────────     ──────
 technologies: [L12]    technologies: [L11] →     [L11]
 has_tests: true        (not set)           →     true
 path: "code/"          path: "example/"    →     "example/"
@@ -259,7 +259,7 @@ pending, in_progress, draft, review, published, archived
       "type": "documentation"
     }
   ],
-  "example": {
+  "companion_project": {
     "type": "code",
     "path": "code/",
     "description": "Minimal Laravel app demonstrating rate limiting",

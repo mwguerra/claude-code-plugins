@@ -1,9 +1,9 @@
-# Example README Templates
+# Companion Project README Templates
 
-## Code Example (Laravel)
+## Code Companion Project (Laravel)
 
 ```markdown
-# Example: [Article Topic]
+# Companion Project: [Article Topic]
 
 Complete Laravel application demonstrating [concept].
 
@@ -30,7 +30,7 @@ php artisan migrate --seed
 php artisan serve
 \`\`\`
 
-Visit **http://localhost:8000** to see the example in action.
+Visit **http://localhost:8000** to see the companion project in action.
 
 ## Run Tests
 
@@ -83,15 +83,15 @@ code/
 
 ## Article Reference
 
-This example accompanies the article: **"[Article Title]"**
+This companion project accompanies the article: **"[Article Title]"**
 
 Author: [Author Name]
 ```
 
-## Code Example (Node.js)
+## Code Companion Project (Node.js)
 
 ```markdown
-# Example: [Article Topic]
+# Companion Project: [Article Topic]
 
 Complete Node.js application demonstrating [concept].
 
@@ -110,7 +110,7 @@ npm install
 npm start
 \`\`\`
 
-Visit **http://localhost:3000** to see the example.
+Visit **http://localhost:3000** to see the companion project.
 
 ## Run Tests
 
@@ -136,10 +136,10 @@ code/
 
 ## Article Reference
 
-This example accompanies: **"[Article Title]"**
+This companion project accompanies: **"[Article Title]"**
 ```
 
-## Document Example
+## Document Companion Project
 
 ```markdown
 # Document Templates: [Topic]
@@ -177,7 +177,7 @@ Complete document templates for [purpose].
 These templates accompany: **"[Article Title]"**
 ```
 
-## Diagram Example
+## Diagram Companion Project
 
 ```markdown
 # Diagrams: [Topic]
@@ -217,7 +217,7 @@ flowchart TD
 These diagrams accompany: **"[Article Title]"**
 ```
 
-## Configuration Example
+## Configuration Companion Project
 
 ```markdown
 # Configuration: [Topic]
@@ -266,7 +266,7 @@ docker-compose ps
 This configuration accompanies: **"[Article Title]"**
 ```
 
-## Script Example
+## Script Companion Project
 
 ```markdown
 # Scripts: [Topic]
@@ -310,7 +310,7 @@ chmod +x scripts/*.sh
 These scripts accompany: **"[Article Title]"**
 ```
 
-## Dataset Example
+## Dataset Companion Project
 
 ```markdown
 # Dataset: [Topic]
