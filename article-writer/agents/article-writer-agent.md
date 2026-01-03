@@ -21,29 +21,101 @@ Before running, verify:
 2. Authors configured: `.article_writer/authors.json` has entries
 3. Valid task queue: `.article_writer/article_tasks.json`
 
+## CRITICAL: Using article-stats.sh for JSON Operations
+
+**ALWAYS use `article-stats.sh` as the primary way to interact with `article_tasks.json`.**
+
+This bash script efficiently processes JSON without loading entire files into memory, saving tokens and context. Located at: `${CLAUDE_PLUGIN_ROOT}/scripts/article-stats.sh`
+
+### Quick Reference
+
+```bash
+# Get queue summary (default)
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --summary
+
+# Get full JSON stats for programmatic use
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --json
+
+# Get next article to process
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next
+
+# Get next 5 articles
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next5
+
+# Get counts by status/area/difficulty/author
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --status
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --area
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --difficulty
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --author
+
+# Get specific article by ID
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5 title
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5 author.id
+
+# Update article status (valid: pending, in_progress, draft, review, published, archived)
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-status in_progress 5
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-status draft 5 6 7
+
+# Set/clear error notes
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-error 5 "Build failed"
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --clear-error 5
+
+# Check stuck articles (in_progress status)
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --stuck
+
+# List all/pending article IDs
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --ids
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --pending-ids
+
+# Show help
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh --help
+```
+
+**DO NOT** directly read or edit `article_tasks.json` unless absolutely necessary. Use the script for all operations.
+
 ## Workflow
 
 ### 1. Initialize Session
 
-1. Load and validate `article_tasks.json`
-2. Load `authors.json`
-3. **Load `settings.json`** (example defaults)
-4. Create backup: `article_tasks.backup.json`
-5. Report queue status
+1. Run `article-stats.sh --summary` to get queue overview
+2. Run `article-stats.sh --stuck` to check for interrupted articles
+3. Load `authors.json`
+4. **Load `settings.json`** (example defaults)
+5. Create backup: `article_tasks.backup.json`
 
 ```bash
+# View queue status
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --summary
+
 # To view settings before starting:
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 ```
 
 ### 2. Select Articles
 
-Filter by mode where `status: "pending"`:
-- **By count**: First N pending
-- **By ID**: Specific article
-- **By area**: All pending in category
-- **By author**: All pending for author ID
-- **By difficulty**: All at specified level
+Use `article-stats.sh` to select pending articles:
+
+```bash
+# Get next article
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next
+
+# Get next 5 articles
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next5
+
+# Get specific article by ID
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5
+
+# Get pending article IDs (for filtering by area/author, use --json and jq)
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --pending-ids
+```
+
+Filter modes:
+- **By count**: Use `--next5` then process first N
+- **By ID**: Use `--get <id>` for specific article
+- **By area**: Use `--json | jq '.by_area'` to see distribution
+- **By author**: Use `--author` for counts by author
+- **By difficulty**: Use `--difficulty` for counts by level
 
 ### 3. Process Each Article
 
@@ -51,30 +123,25 @@ For each selected article:
 
 ```
 a. Determine author:
-   - If task has author.id, use that
-   - Otherwise, use first author in authors.json
-b. Load author profile
+   - Use: article-stats.sh --get <id> author.id
+   - If null, use first author in authors.json
+b. Load author profile from authors.json
 c. Update status: "pending" → "in_progress"
-d. Save JSON immediately
-e. Use Skill(article-writer):
+   - Use: article-stats.sh --set-status in_progress <id>
+d. Process article using Skill(article-writer):
    - Research: Search web for docs, news, tutorials
    - Draft: Write initial draft in primary language
    - Example: Create practical example (code/document)
    - Integrate: Update draft with example code/content
    - Review: Check flow, voice compliance, accuracy
    - Translate: Create other language versions
-f. On success:
-   - status → "draft"
-   - output_folder → folder path
-   - output_files → per-language paths
-   - sources_used → array of researched URLs
-   - example → example info (type, path, files)
-   - written_at → now
-g. On failure:
-   - Keep "in_progress"
-   - Add error_note
+e. On success:
+   - Use: article-stats.sh --set-status draft <id>
+   - Manually update output_folder, output_files, sources_used, example
+f. On failure:
+   - Keep "in_progress" status
+   - Use: article-stats.sh --set-error <id> "Error message"
    - Continue to next
-h. Save JSON after each
 ```
 
 ### 4. Build Article Context
@@ -321,9 +388,18 @@ pending → in_progress → draft → review → published
 
 ## Error Recovery
 
-If interrupted:
-1. Find `status: "in_progress"` articles
-2. Check if output files exist
-3. If all languages exist → update to "draft"
-4. If partial → note which languages missing
-5. If none → reset to "pending"
+If interrupted, use `article-stats.sh` to recover:
+
+```bash
+# 1. Find stuck articles (in_progress status)
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --stuck
+
+# 2. Get full details of stuck article
+"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get <id>
+```
+
+Then decide:
+- If all languages exist → `article-stats.sh --set-status draft <id>`
+- If partial → Note which languages missing, continue processing
+- If none → `article-stats.sh --set-status pending <id>` to reset
+- If error → `article-stats.sh --clear-error <id>` after fixing
