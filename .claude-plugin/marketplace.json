@@ -33,19 +33,6 @@
         "research",
         "batch-processing",
         "author-profiles"
-      ],
-      "commands": [
-        "./commands/article.md",
-        "./commands/author.md",
-        "./commands/batch.md",
-        "./commands/doctor.md",
-        "./commands/init.md",
-        "./commands/next.md",
-        "./commands/queue.md",
-        "./commands/settings.md"
-      ],
-      "agents": [
-        "./agents/article-writer-agent.md"
       ]
     },
     {
@@ -71,16 +58,6 @@
         "pest",
         "playwright",
         "deployment"
-      ],
-      "commands": [
-        "./commands/analyze.md",
-        "./commands/cleanup.md",
-        "./commands/ready.md",
-        "./commands/showcase.md",
-        "./commands/verify.md"
-      ],
-      "agents": [
-        "./agents/production-ready-agent.md"
       ]
     },
     {
@@ -114,20 +91,6 @@
         "postgresql",
         "redis",
         "traefik"
-      ],
-      "commands": [
-        "./commands/db.md",
-        "./commands/doctor.md",
-        "./commands/env.md",
-        "./commands/help.md",
-        "./commands/list.md",
-        "./commands/logs.md",
-        "./commands/make.md",
-        "./commands/status.md",
-        "./commands/troubleshoot.md"
-      ],
-      "agents": [
-        "./agents/docker-local-agent.md"
       ]
     },
     {
@@ -153,16 +116,6 @@
         "sync",
         "markdown",
         "code-docs"
-      ],
-      "commands": [
-        "./commands/docs.md",
-        "./commands/doctor.md",
-        "./commands/init.md",
-        "./commands/sync.md",
-        "./commands/template.md"
-      ],
-      "agents": [
-        "./agents/docs-specialist.md"
       ]
     },
     {
@@ -190,19 +143,6 @@
         "nginx",
         "databases",
         "devops"
-      ],
-      "commands": [
-        "./commands/commands.md",
-        "./commands/compose.md",
-        "./commands/database.md",
-        "./commands/dockerfile.md",
-        "./commands/docs.md",
-        "./commands/init.md",
-        "./commands/ssl.md",
-        "./commands/troubleshoot.md"
-      ],
-      "agents": [
-        "./agents/docker-specialist-agent.md"
       ]
     },
     {
@@ -231,21 +171,6 @@
         "tables",
         "widgets",
         "infolists"
-      ],
-      "commands": [
-        "./commands/action.md",
-        "./commands/dashboard.md",
-        "./commands/diagnose.md",
-        "./commands/docs.md",
-        "./commands/form.md",
-        "./commands/infolist.md",
-        "./commands/resource.md",
-        "./commands/table.md",
-        "./commands/test.md",
-        "./commands/widget.md"
-      ],
-      "agents": [
-        "./agents/filament-specialist.md"
       ]
     },
     {
@@ -272,21 +197,7 @@
         "github-actions",
         "ci-cd",
         "scaffolding"
-      ],
-      "commands": [
-        "./commands/add-filament-resource.md",
-        "./commands/create-filament-plugin.md",
-        "./commands/create-laravel-package.md",
-        "./commands/package-status.md",
-        "./commands/run-package-tests.md",
-        "./commands/setup-pest-testing.md"
-      ],
-      "agents": [
-        "./agents/filament-plugin-developer.md",
-        "./agents/laravel-package-developer.md",
-        "./agents/package-test-writer.md"
-      ],
-      "hooks": "./hooks/hooks.json"
+      ]
     },
     {
       "name": "post-development",
@@ -312,26 +223,7 @@
         "landing-pages",
         "buyer-personas",
         "marketing-automation"
-      ],
-      "commands": [
-        "./commands/pd-ads.md",
-        "./commands/pd-articles.md",
-        "./commands/pd-landing.md",
-        "./commands/pd-personas.md",
-        "./commands/pd-screenshots.md",
-        "./commands/pd-seo.md",
-        "./commands/post-dev.md"
-      ],
-      "agents": [
-        "./agents/ad-creator.md",
-        "./agents/content-writer.md",
-        "./agents/landing-designer.md",
-        "./agents/persona-strategist.md",
-        "./agents/post-dev-orchestrator.md",
-        "./agents/screenshot-planner.md",
-        "./agents/seo-analyst.md"
-      ],
-      "hooks": "./hooks/hooks.json"
+      ]
     },
     {
       "name": "taskmanager",
@@ -356,18 +248,6 @@
         "project-memory",
         "dependencies",
         "workflow"
-      ],
-      "commands": [
-        "./commands/dashboard.md",
-        "./commands/execute-task.md",
-        "./commands/init.md",
-        "./commands/memory.md",
-        "./commands/next-task.md",
-        "./commands/plan.md",
-        "./commands/run-tasks.md"
-      ],
-      "agents": [
-        "./agents/taskmanager.md"
       ]
     },
     {
@@ -395,18 +275,6 @@
         "signals",
         "cross-platform",
         "streams"
-      ],
-      "commands": [
-        "./commands/cross-platform.md",
-        "./commands/docs.md",
-        "./commands/escape.md",
-        "./commands/modes.md",
-        "./commands/shell.md",
-        "./commands/signals.md",
-        "./commands/streams.md"
-      ],
-      "agents": [
-        "./agents/terminal-specialist-agent.md"
       ]
     },
     {
@@ -433,17 +301,6 @@
         "filament-testing",
         "code-coverage",
         "test-generation"
-      ],
-      "commands": [
-        "./commands/analyze-coverage.md",
-        "./commands/generate-pest-test.md",
-        "./commands/run-test-suite.md",
-        "./commands/test-filament.md",
-        "./commands/test-livewire.md",
-        "./commands/test-policies.md"
-      ],
-      "agents": [
-        "./agents/test-specialist-agent.md"
       ]
     },
     {
@@ -471,17 +328,6 @@
         "flow-testing",
         "page-testing",
         "automation"
-      ],
-      "commands": [
-        "./commands/test.md",
-        "./commands/plan.md",
-        "./commands/pages.md",
-        "./commands/roles.md",
-        "./commands/flows.md",
-        "./commands/screenshot.md"
-      ],
-      "agents": [
-        "./agents/e2e-test-agent.md"
       ]
     },
     {
@@ -508,18 +354,7 @@
         "tool-usage",
         "performance-insights",
         "statistics"
-      ],
-      "commands": [
-        "./commands/usage-init.md",
-        "./commands/usage-stats.md",
-        "./commands/usage-logs.md",
-        "./commands/usage-clear.md",
-        "./commands/usage-export.md"
-      ],
-      "agents": [
-        "./agents/usage-analyzer.md"
-      ],
-      "hooks": "./hooks/hooks.json"
+      ]
     }
   ]
 }
