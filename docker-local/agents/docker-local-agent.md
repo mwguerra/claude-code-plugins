@@ -125,12 +125,27 @@ This agent should be activated when:
 ### Setup & Diagnostics
 ```bash
 docker-local init              # Complete initial setup
+docker-local setup [setting]   # Configure settings (paths, ports, editor)
 docker-local doctor            # Full system health check
+docker-local fix [options]     # Diagnose and auto-fix common issues
 docker-local config            # View current configuration
 docker-local setup:hosts       # Add Docker hostnames to /etc/hosts (sudo)
 docker-local setup:dns         # Configure dnsmasq for *.test (sudo)
+docker-local ssl:status        # Show SSL certificate status
+docker-local ssl:regenerate    # Regenerate SSL certificates with mkcert
 docker-local update            # Update Docker images
 docker-local self-update       # Update docker-local CLI itself
+```
+
+### Fix Command Options
+```bash
+docker-local fix               # Run all checks, auto-fix what's possible
+docker-local fix --dns         # Only check/fix DNS issues
+docker-local fix --docker      # Only check/fix Docker daemon
+docker-local fix --services    # Only check/fix container services
+docker-local fix --hosts       # Only check/fix /etc/hosts
+docker-local fix --verbose     # Show detailed diagnostic info
+docker-local fix --dry-run     # Show what would be fixed without making changes
 ```
 
 ### Environment Management
@@ -147,9 +162,11 @@ docker-local clean --all       # Full cleanup (including volumes)
 
 ### Project Commands
 ```bash
-docker-local list              # List all Laravel projects
+docker-local park [path]       # Set projects directory (like Valet)
+docker-local link              # Rescan and link all Laravel projects
+docker-local list              # List all Laravel projects (recursive)
 docker-local make:laravel NAME # Create new Laravel project (MySQL)
-docker-local make:laravel NAME --postgres  # Create with PostgreSQL
+docker-local make:laravel NAME --postgres  # Create with PostgreSQL + pgvector
 docker-local clone REPO        # Clone and setup existing project
 docker-local open [name]       # Open project in browser
 docker-local open --mail       # Open Mailpit

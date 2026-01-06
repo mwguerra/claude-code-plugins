@@ -42,7 +42,33 @@ which docker-local > /dev/null 2>&1
 
 ## Diagnostic Process
 
-### 1. Gather Initial Information
+### 1. Quick Fix (Recommended First Step)
+
+Use the `fix` command for automatic diagnosis and resolution:
+
+```bash
+# Run all checks and auto-fix what's possible
+docker-local fix
+
+# Target specific areas
+docker-local fix --dns         # Only check/fix DNS issues
+docker-local fix --docker      # Only check/fix Docker daemon
+docker-local fix --services    # Only check/fix container services
+docker-local fix --hosts       # Only check/fix /etc/hosts
+
+# Additional options
+docker-local fix --verbose     # Show detailed diagnostic info
+docker-local fix --dry-run     # Show what would be fixed without making changes
+```
+
+The fix command automatically detects and resolves:
+- Docker daemon not running
+- Stopped containers
+- Missing systemd-resolved configuration for *.test DNS
+- Missing dnsmasq configuration
+- /etc/hosts not configured
+
+### 2. Gather Additional Information
 
 ```bash
 # Check docker-local status
@@ -56,7 +82,7 @@ docker info
 docker system df
 ```
 
-### 2. Common Issue Patterns
+### 3. Common Issue Patterns
 
 #### Docker Not Running
 ```
@@ -239,6 +265,9 @@ SSL certificate problem: unable to get local issuer certificate
 
 **Diagnosis:**
 ```bash
+# Check SSL certificate status
+docker-local ssl:status
+
 # Check certificates exist
 ls -la ~/.config/docker-local/certs/
 
@@ -251,7 +280,10 @@ curl -vk https://localhost 2>&1 | head -20
 
 **Fix:**
 ```bash
-# Regenerate certificates
+# Regenerate SSL certificates with mkcert
+docker-local ssl:regenerate
+
+# Or regenerate during init
 docker-local init --certs
 
 # Trust the certificate (browser)
@@ -288,7 +320,7 @@ mv /path/to/myapp ~/projects/
 # Change projects_path
 ```
 
-### 3. Full Reset Procedure
+### 4. Full Reset Procedure
 
 If all else fails, perform a complete reset:
 
@@ -314,7 +346,7 @@ docker-local up
 docker-local list
 ```
 
-### 4. Useful Debugging Commands
+### 5. Useful Debugging Commands
 
 ```bash
 # Shell into PHP container

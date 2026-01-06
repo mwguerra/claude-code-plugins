@@ -23,7 +23,33 @@ export PATH="$HOME/.composer/vendor/bin:$PATH"
 docker-local init
 ```
 
-## 1. Gather Information
+## 1. Quick Fix (Recommended First Step)
+
+The `fix` command auto-diagnoses and fixes common issues:
+
+```bash
+# Run all checks and auto-fix what's possible
+docker-local fix
+
+# Target specific areas
+docker-local fix --dns         # Only check/fix DNS issues
+docker-local fix --docker      # Only check/fix Docker daemon
+docker-local fix --services    # Only check/fix container services
+docker-local fix --hosts       # Only check/fix /etc/hosts
+
+# Additional options
+docker-local fix --verbose     # Show detailed diagnostic info
+docker-local fix --dry-run     # Show what would be fixed without making changes
+```
+
+The fix command automatically detects and resolves:
+- Docker daemon not running
+- Stopped containers
+- Missing systemd-resolved configuration for *.test DNS
+- Missing dnsmasq configuration
+- /etc/hosts not configured
+
+## 2. Gather Information
 
 ```bash
 # Check status
@@ -36,7 +62,7 @@ docker-local logs --tail=50
 docker system df
 ```
 
-## 2. Common Issues
+## 3. Common Issues
 
 ### Docker Not Running
 
@@ -100,7 +126,20 @@ sudo docker-local setup:hosts
 docker-local init --certs
 ```
 
-## 3. Full Reset
+## 4. SSL Certificate Issues
+
+```bash
+# Check SSL certificate status
+docker-local ssl:status
+
+# Regenerate SSL certificates with mkcert
+docker-local ssl:regenerate
+
+# Or regenerate during init
+docker-local init --certs
+```
+
+## 5. Full Reset
 
 If all else fails:
 
@@ -117,11 +156,14 @@ docker-local init
 docker-local up
 ```
 
-## 4. Get More Help
+## 6. Get More Help
 
 ```bash
 # Full diagnostic
 docker-local doctor
+
+# Auto-fix issues
+docker-local fix
 
 # View configuration
 docker-local config
