@@ -38,7 +38,22 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
    - Extract test credentials from the plan
    - Use role list for testing (unless `--roles` flag overrides)
 
-### Step 0: URL/Port Verification (CRITICAL FIRST)
+### Step 0: Docker-Local Detection (For Laravel Projects)
+
+**IMPORTANT**: For Laravel projects, check if docker-local is running.
+
+1. **Check for docker-local**
+   - Look for docker-local configuration
+   - Check if `.env` contains docker-local settings (APP_URL with .test domain)
+   - Check if docker containers are running
+
+2. **Use .test Domains**
+   If docker-local is detected and running:
+   - Use the `.test` domain from APP_URL
+   - DO NOT use `php artisan serve`
+   - docker-local already has the server configured
+
+### Step 0.5: URL/Port Verification (CRITICAL FIRST)
 
 **Before testing any roles, verify the application is accessible at the correct URL.**
 
@@ -57,6 +72,20 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 4. **Proceed or Stop**
    - If correct URL found: Update base URL and continue
    - If no working URL found: **STOP** and report error
+
+### Step 0.7: CSS/Tailwind Rendering Verification
+
+**ALWAYS verify CSS and styling before testing roles.**
+
+1. **Visual Check**
+   - Take screenshot of login page
+   - Verify page is styled (not raw HTML)
+   - Check icons are displaying correctly
+
+2. **Framework-Specific Checks**
+   - **Laravel**: Check vite.config.js, tailwind.config.js
+   - **Filament**: Check custom panel themes
+   - Run `npm run build` if needed
 
 ### Step 1: Role Discovery
 
@@ -116,6 +145,44 @@ For EACH role:
    - Try admin actions as regular user
    - Verify blocked
 
+### Step 4.5: Error Detection and Resolution
+
+**When errors are found, fix them and retest.**
+
+1. **Error Detection**
+   For each role test:
+   - Check for error pages (500, 404, 403 - except expected 403s)
+   - Check for error messages in UI
+   - Check browser console
+   - Check network requests
+
+2. **Error Resolution**
+   When error found:
+   - Take screenshot of error
+   - Identify root cause
+   - Fix the error
+   - Retest the role access
+   - Document the solution
+
+3. **Remember Solutions**
+   - Track errors and solutions during session
+   - Apply known solutions to recurring errors
+
+### Step 4.7: Screenshot Capture (ALWAYS)
+
+**Take screenshots at every step.**
+
+1. **When to Screenshot**
+   - Login page for each role
+   - After successful login
+   - Each page access (allowed and blocked)
+   - Error pages
+   - Logout confirmation
+
+2. **Storage**
+   - Save to `tests/screenshots/roles/`
+   - Use naming: `role_[rolename]_[page]_[status].png`
+
 ### Step 5: Report Generation
 
 Generate report with:
@@ -123,6 +190,8 @@ Generate report with:
 - Pages accessible per role
 - Pages correctly blocked
 - Security test results
+- Errors found AND solutions applied
+- Screenshots taken (with paths)
 
 ## Parameters
 

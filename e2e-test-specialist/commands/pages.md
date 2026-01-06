@@ -37,7 +37,22 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
    - Extract the "Pages to Test" section from the plan
    - Use page list for testing (unless `--pages` flag overrides)
 
-### Step 0: URL/Port Verification (CRITICAL FIRST)
+### Step 0: Docker-Local Detection (For Laravel Projects)
+
+**IMPORTANT**: For Laravel projects, check if docker-local is running.
+
+1. **Check for docker-local**
+   - Look for docker-local configuration
+   - Check if `.env` contains docker-local settings (APP_URL with .test domain)
+   - Check if docker containers are running
+
+2. **Use .test Domains**
+   If docker-local is detected and running:
+   - Use the `.test` domain from APP_URL
+   - DO NOT use `php artisan serve`
+   - docker-local already has the server configured
+
+### Step 0.5: URL/Port Verification (CRITICAL FIRST)
 
 **Before testing any pages, verify the application is accessible at the correct URL.**
 
@@ -56,6 +71,34 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 4. **Proceed or Stop**
    - If correct URL found: Update base URL and continue
    - If no working URL found: **STOP** and report error
+
+### Step 0.7: CSS/Tailwind Rendering Verification
+
+**ALWAYS verify CSS and styling before testing pages.**
+
+1. **Visual Check**
+   - Take screenshot of first page
+   - Verify page is styled (not raw HTML)
+   - Check icons are displaying correctly
+   - Verify Tailwind classes are applied
+
+2. **CSS Issues Detection**
+   Look for:
+   - Unstyled content
+   - Missing icons or icon placeholders
+   - Broken layouts
+   - Missing background colors
+
+3. **Framework-Specific Checks**
+   - **Laravel**: Check vite.config.js, tailwind.config.js, run `npm run build`
+   - **Filament**: Check custom theme, run `php artisan filament:assets`
+   - **Other**: Verify CSS build configuration
+
+4. **Fix and Retest**
+   If CSS issues found:
+   - Fix the configuration
+   - Rebuild assets
+   - Retest before proceeding
 
 ### Step 1: Page Discovery
 
@@ -104,13 +147,50 @@ If viewport specified:
 2. Test each page at that size
 3. Verify layout adapts correctly
 
+### Step 3.5: Error Detection and Resolution
+
+**When errors are found, fix them and retest.**
+
+1. **Error Detection**
+   For each page:
+   - Check for error pages (500, 404, 403)
+   - Check for error messages in UI
+   - Check browser console
+   - Check network requests
+
+2. **Error Resolution**
+   When error found:
+   - Take screenshot of error
+   - Identify root cause
+   - Fix the error
+   - Retest the page
+   - Document the solution
+
+3. **Remember Solutions**
+   - Track errors and solutions during session
+   - Apply known solutions to recurring errors
+
+### Step 3.7: Screenshot Capture (ALWAYS)
+
+**Take screenshots at every step.**
+
+1. **When to Screenshot**
+   - Every page initial load
+   - After interactions
+   - When errors found
+   - At different viewports
+
+2. **Storage**
+   - Save to `tests/screenshots/`
+   - Use descriptive names
+
 ### Step 4: Report Generation
 
 Generate report with:
 - Pages tested
 - Pass/fail status
-- Errors found
-- Screenshots if needed
+- Errors found AND solutions applied
+- Screenshots taken (with paths)
 
 ## Parameters
 

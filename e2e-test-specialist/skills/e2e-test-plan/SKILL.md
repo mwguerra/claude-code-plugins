@@ -7,7 +7,7 @@ description: Create comprehensive E2E test plans with all major flows, pages, ro
 
 ## Overview
 
-This skill creates detailed E2E test plans that document all pages, user roles, critical flows, and test scenarios for comprehensive Playwright-based testing.
+This skill creates detailed E2E test plans that document all pages, user roles, critical flows, and test scenarios for comprehensive Playwright-based testing. When an existing plan exists, it operates in **review and update mode** to validate and enhance the plan with new discoveries.
 
 ## Standard Plan Location
 
@@ -18,7 +18,8 @@ This skill ALWAYS saves the test plan to `tests/e2e-test-plan.md` unless a custo
 **Important**:
 - Create the `tests/` directory if it doesn't exist
 - Use the Write tool to save the plan to the standard location
-- Overwrite any existing plan at that location
+- In update mode: Merge new discoveries with existing plan content
+- Use `--force` flag to completely overwrite existing plan
 
 ## Purpose
 
@@ -29,6 +30,94 @@ Generate structured test plans that ensure:
 - Test scenarios cover positive and negative cases
 - Priority levels guide test execution order
 - Plan is saved to standard location for other commands to use
+
+## Review and Update Mode
+
+When `tests/e2e-test-plan.md` already exists (and no `--force` flag), operate in **review and update mode**:
+
+### Step 0a: Read Existing Plan
+
+1. **Parse Existing Plan Content**
+   - Read `tests/e2e-test-plan.md`
+   - Extract existing pages from "Pages to Test" section
+   - Extract existing roles from "User Roles" section
+   - Extract existing flows from "Critical Flows" section
+   - Extract test credentials
+   - Note the previous "Generated" date
+
+### Step 0b: Validate Existing Content
+
+1. **Validate Pages**
+   For each page in the existing plan:
+   - Check if the route still exists in the codebase
+   - For Laravel: Check routes/web.php, routes/api.php
+   - For React/Vue: Check router configuration
+   - Mark pages as "deprecated" if route no longer exists
+   - Keep pages that still exist
+
+2. **Validate Roles**
+   - Check if role definitions still exist
+   - For Laravel: Check app/Models/Role.php, database/seeders
+   - Check permission assignments
+   - Mark roles that no longer exist
+
+3. **Validate Flows**
+   - Check if flow entry points still exist
+   - Verify flow steps are still valid
+   - Mark outdated flows for review
+
+4. **Validate Credentials**
+   - Keep credentials that reference valid roles
+   - Flag credentials for removed roles
+
+### Step 0c: Discover New Content
+
+1. **Discover New Pages**
+   - Scan route definitions for routes not in existing plan
+   - Check for new controller actions
+   - Look for new views/components
+   - Compare current routes vs documented routes
+
+2. **Discover New Roles**
+   - Check for new role definitions
+   - Look for new permissions
+   - Check for role hierarchy changes
+
+3. **Discover New Flows**
+   - Identify new features that imply new flows
+   - Check for new form submissions
+   - Look for new multi-step processes
+
+### Step 0d: Merge and Update
+
+1. **Merge Pages**
+   - Keep valid existing pages
+   - Add newly discovered pages
+   - Mark deprecated pages (don't remove immediately)
+   - Update page actions if changed
+
+2. **Merge Roles**
+   - Keep valid existing roles
+   - Add new roles
+   - Update role permissions if changed
+   - Preserve working test credentials
+
+3. **Merge Flows**
+   - Keep valid existing flows
+   - Add new flows
+   - Update flow steps if changed
+
+4. **Generate Update Report**
+   Add a section at the top of the plan:
+   ```markdown
+   ## Last Update Summary
+   - Updated: [current date]
+   - Previous: [previous date]
+   - Pages Added: [count]
+   - Pages Deprecated: [count]
+   - New Flows: [count]
+   - Roles Changed: [yes/no]
+   ```
 
 ## Workflow
 
@@ -276,3 +365,6 @@ The skill produces:
 4. **Prioritize** - Mark critical tests as high priority
 5. **Consider Edge Cases** - Include error scenarios
 6. **Viewport Testing** - Include responsive tests
+7. **Review Mode** - When updating, preserve working content and merge carefully
+8. **Track Changes** - Always include update summary when modifying existing plans
+9. **Validate Before Remove** - Mark deprecated items before removing them completely

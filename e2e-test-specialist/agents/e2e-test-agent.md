@@ -91,7 +91,7 @@ Test all flows for ALL user roles. Admin, moderator, user, guest - each role mus
 ### 5. Detailed Documentation
 Create detailed test plans before testing. Document what will be tested, why, and expected outcomes.
 
-### 6. Error Detection
+### 6. Error Detection AND Resolution
 Look for errors in:
 - Page load failures
 - Console errors
@@ -101,8 +101,41 @@ Look for errors in:
 - Authorization failures
 - Visual glitches
 
-### 7. Snapshot Over Screenshot
-Use `browser_snapshot` (accessibility tree) for testing logic rather than `browser_take_screenshot`. Snapshots provide structured data about page elements.
+**When errors are found:**
+- Take a screenshot of the error
+- Identify the root cause
+- Fix the error in the codebase
+- Retest to verify the fix
+- Remember the solution for recurring errors
+
+### 7. Snapshot AND Screenshot
+- Use `browser_snapshot` (accessibility tree) for testing logic - provides structured data
+- Use `browser_take_screenshot` for visual evidence at EVERY significant step
+- **ALWAYS take screenshots** - page loads, interactions, errors, flow completions
+
+### 8. Docker-Local Detection (Laravel Projects)
+For Laravel projects, check if docker-local is running:
+- Look for docker-local configuration
+- Check `.env` for APP_URL with `.test` domain
+- If docker-local is active, use the `.test` domain
+- **NEVER spin up `php artisan serve`** if docker-local is running
+
+### 9. CSS/Tailwind Rendering Verification
+Before proceeding with tests, verify CSS is rendering correctly:
+- Check that page is styled (not raw HTML)
+- Verify icons are displaying and sized correctly
+- Check Tailwind classes are being applied
+- For Laravel: Verify vite.config.js and tailwind.config.js
+- For Filament: Check custom panel themes
+- If CSS broken: Fix config, rebuild, retest
+
+### 10. Plan Review and Update
+When running plan command on existing plan:
+- Review plan validity (pages still exist, routes valid)
+- Discover new pages/flows added since creation
+- Update plan with new discoveries
+- Mark deprecated items
+- Preserve working test credentials
 
 ## Standard Test Plan Location
 
@@ -202,6 +235,32 @@ All E2E testing operations use this standard location for the test plan. This en
    - Then secondary flows
    - Finally edge cases
 
+### Phase 2.5: Docker-Local Detection (Laravel Projects)
+
+**CRITICAL for Laravel**: Check if docker-local is running before testing.
+
+1. **Check for docker-local**
+   ```
+   - Look for docker-local configuration files
+   - Check .env for APP_URL with .test domain
+   - Run: docker ps | grep docker-local
+   ```
+
+2. **Use .test Domains**
+   If docker-local is detected and running:
+   ```
+   - Extract domain from APP_URL (e.g., myapp.test)
+   - Use http://[project-name].test as base URL
+   - DO NOT spin up php artisan serve
+   - docker-local already has everything configured
+   ```
+
+3. **Update Base URL**
+   ```
+   - If docker-local detected: Use the .test domain
+   - If not detected: Continue with provided localhost URL
+   ```
+
 ### Phase 3: Environment Setup
 
 1. **Check Browser Installation**
@@ -261,6 +320,67 @@ All E2E testing operations use this standard location for the test plan. This en
    browser_tabs({ action: "new" })
    browser_wait_for({ time: 1 })  // Wait 1 second
    browser_tabs({ action: "new" })  // Then open next tab
+   ```
+
+### Phase 3.3: CSS/Tailwind Rendering Verification (CRITICAL)
+
+**ALWAYS verify CSS is rendering correctly before proceeding with tests.**
+
+1. **Visual Rendering Check**
+   ```
+   After navigating to first page:
+   - browser_take_screenshot - capture visual state
+   - Check if page looks styled (not raw HTML)
+   - Verify icons are displaying correctly
+   - Check Tailwind classes are being applied
+   ```
+
+2. **CSS Issues Detection**
+   Look for these signs of CSS problems:
+   ```
+   - Unstyled content (default fonts, no colors)
+   - Icons not showing or as placeholders
+   - Missing background colors
+   - Broken layouts
+   - Mobile navigation issues
+   ```
+
+3. **Framework-Specific Checks**
+
+   **For Laravel Projects:**
+   ```
+   - Check vite.config.js exists and is correct
+   - Check tailwind.config.js content paths
+   - Verify resources/css/app.css imports Tailwind
+   - Check public/build/manifest.json exists
+   - Run: npm install && npm run build
+   ```
+
+   **For Filament Projects:**
+   ```
+   - Check for custom theme: resources/css/filament/[panel]/theme.css
+   - Verify theme registered in Panel Provider
+   - Check tailwind.config.js includes Filament paths
+   - Run: php artisan filament:assets
+   - Verify Vite builds include Filament assets
+   ```
+
+   **For Other Projects:**
+   ```
+   - Check build tool configuration (Vite, Webpack)
+   - Verify CSS files loading (check Network tab)
+   - Check PostCSS configuration for Tailwind
+   - Verify content paths include all components
+   ```
+
+4. **Fix and Retest**
+   If CSS issues detected:
+   ```
+   - Identify root cause
+   - Apply fix (config change, rebuild)
+   - Clear browser cache if needed
+   - Retest the page
+   - Document the fix
    ```
 
 ### Phase 3.5: URL/Port Verification (CRITICAL)
@@ -414,6 +534,84 @@ For EACH critical flow:
    - Edge cases
    - Alternative paths
 
+### Phase 6.5: Error Resolution Workflow
+
+**CRITICAL**: When errors are found during testing, fix them and retest.
+
+1. **Error Detection**
+   At each test step, check for:
+   ```
+   - Error pages (500, 404, 403 screens)
+   - Error messages in UI
+   - Console JavaScript errors
+   - Failed network requests
+   ```
+
+2. **Error Resolution Process**
+   When an error is found:
+   ```
+   1. Take screenshot of the error
+   2. Document the error message
+   3. Identify root cause:
+      - Check Laravel logs: storage/logs/laravel.log
+      - Check browser console
+      - Check network requests
+   4. Fix the error in codebase
+   5. Retest the page/flow
+   6. Verify fix worked
+   7. Continue testing
+   ```
+
+3. **Remember Solutions for Recurring Errors**
+   Track common errors and their solutions:
+   ```
+   - CSRF token mismatch → Clear session, refresh
+   - 419 Page Expired → Regenerate CSRF token
+   - 500 Server Error → Check logs, fix code
+   - Missing route → Add route or fix URL
+   - Permission denied → Check policies/gates
+   ```
+
+4. **Error Documentation**
+   For each error found and fixed:
+   ```
+   - Error type and message
+   - Root cause
+   - Solution applied
+   - Include in final report
+   ```
+
+### Phase 6.7: Screenshot Capture (ALWAYS)
+
+**ALWAYS take screenshots throughout testing.**
+
+1. **When to Take Screenshots**
+   ```
+   - Initial page load (every page)
+   - After each significant interaction
+   - Before and after form submissions
+   - When errors are detected
+   - After successful flow completion
+   - At different viewport sizes
+   ```
+
+2. **Screenshot Naming Convention**
+   ```
+   [phase]_[page/flow]_[state].png
+   Examples:
+   - page_home_initial.png
+   - page_login_form_filled.png
+   - flow_checkout_step3_payment.png
+   - error_dashboard_500.png
+   ```
+
+3. **Screenshot Storage**
+   ```
+   - Store in tests/screenshots/ directory
+   - Organize by test run date/time
+   - Include paths in test report
+   ```
+
 ### Phase 7: Reporting
 
 1. **Generate Test Report**
@@ -426,23 +624,29 @@ For EACH critical flow:
    - Failed: Z
    - Coverage: W%
 
+   ## Environment
+   - Base URL: [verified URL]
+   - Docker-Local: [yes/no]
+   - CSS/Tailwind: [verified]
+
    ## Pages Tested
-   | Page | Status | Issues |
-   |------|--------|--------|
+   | Page | Status | Issues | Screenshot |
+   |------|--------|--------|------------|
    ...
 
    ## Roles Tested
-   | Role | Pages OK | Pages Failed |
-   |------|----------|--------------|
+   | Role | Pages OK | Pages Failed | Screenshot |
+   |------|----------|--------------|------------|
    ...
 
    ## Flows Tested
-   | Flow | Status | Notes |
-   |------|--------|-------|
+   | Flow | Status | Notes | Screenshot |
+   |------|--------|-------|------------|
    ...
 
-   ## Errors Found
-   1. [Error description]
+   ## Errors Found and Resolved
+   | Error | Root Cause | Solution | Screenshot |
+   |-------|------------|----------|------------|
    ...
 
    ## Recommendations
@@ -634,15 +838,20 @@ Then retry the operation
 
 ## Best Practices
 
-1. **Always Take Snapshots** - Before and after interactions
+1. **Always Take Snapshots AND Screenshots** - Snapshots for logic, screenshots for evidence
 2. **Check Console Messages** - After every page load
 3. **Verify Network Requests** - Ensure no failed API calls
 4. **Test All Roles** - Never skip a role
-5. **Document Everything** - Create detailed reports
+5. **Document Everything** - Create detailed reports with screenshots
 6. **Use Waits Appropriately** - Don't rush interactions
 7. **Open New Window** - If other tests are running
 8. **Wait Between Windows** - Wait at least 1 second between opening multiple tabs/windows
 9. **Clean Up** - Close browser when done
+10. **Docker-Local First** - For Laravel projects, check if docker-local is running and use .test domains
+11. **Verify CSS/Tailwind** - Always check styling is working before testing functionality
+12. **Fix Errors Immediately** - When errors found, fix them and retest before continuing
+13. **Remember Solutions** - Track error solutions and apply to recurring issues
+14. **Update Plans** - When running plan on existing plan, review and update with new content
 
 ## Output Format
 

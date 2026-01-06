@@ -37,7 +37,22 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
    - Extract the "Critical Flows" section from the plan
    - Use flow list for testing (unless `--flows` flag overrides)
 
-### Step 0: URL/Port Verification (CRITICAL FIRST)
+### Step 0: Docker-Local Detection (For Laravel Projects)
+
+**IMPORTANT**: For Laravel projects, check if docker-local is running.
+
+1. **Check for docker-local**
+   - Look for docker-local configuration
+   - Check if `.env` contains docker-local settings (APP_URL with .test domain)
+   - Check if docker containers are running
+
+2. **Use .test Domains**
+   If docker-local is detected and running:
+   - Use the `.test` domain from APP_URL
+   - DO NOT use `php artisan serve`
+   - docker-local already has the server configured
+
+### Step 0.5: URL/Port Verification (CRITICAL FIRST)
 
 **Before testing any flows, verify the application is accessible at the correct URL.**
 
@@ -56,6 +71,20 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 4. **Proceed or Stop**
    - If correct URL found: Update base URL and continue
    - If no working URL found: **STOP** and report error
+
+### Step 0.7: CSS/Tailwind Rendering Verification
+
+**ALWAYS verify CSS and styling before testing flows.**
+
+1. **Visual Check**
+   - Take screenshot of entry point page
+   - Verify page is styled (not raw HTML)
+   - Check icons are displaying correctly
+
+2. **Framework-Specific Checks**
+   - **Laravel**: Check vite.config.js, tailwind.config.js
+   - **Filament**: Check custom panel themes
+   - Run `npm run build` if needed
 
 ### Step 1: Flow Discovery
 
@@ -97,13 +126,53 @@ For EACH flow:
    - Missing data
    - Error recovery
 
+### Step 2.5: Error Detection and Resolution
+
+**When errors are found, fix them and retest.**
+
+1. **Error Detection**
+   At each flow step:
+   - Check for error pages (500, 404, 403)
+   - Check for error messages in UI
+   - Check browser console
+   - Check network requests
+
+2. **Error Resolution**
+   When error found:
+   - Take screenshot of error
+   - Identify root cause
+   - Fix the error
+   - Retest the flow step
+   - Document the solution
+
+3. **Remember Solutions**
+   - Track errors and solutions during session
+   - Apply known solutions to recurring errors
+   - If same error occurs in different flow, use known fix
+
+### Step 2.7: Screenshot Capture (ALWAYS)
+
+**Take screenshots at every flow step.**
+
+1. **When to Screenshot**
+   - Flow entry point
+   - After each step completion
+   - Form fill states
+   - Confirmation pages
+   - Error states
+   - Flow completion
+
+2. **Storage**
+   - Save to `tests/screenshots/flows/`
+   - Use naming: `flow_[flowname]_step[N]_[status].png`
+
 ### Step 3: Report Generation
 
 Generate report with:
 - Flows tested
 - Steps completed
-- Errors found
-- Screenshots at each step
+- Errors found AND solutions applied
+- Screenshots at each step (with paths)
 
 ## Common Flows
 
