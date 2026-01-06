@@ -98,6 +98,46 @@ This agent should be activated when:
 8. User asks about Xdebug, Mailpit, MinIO, or Traefik
 9. Any task involving the docker-local CLI
 
+## Service Troubleshooting: Use docker-local First
+
+**IMPORTANT:** When ANY of the following services are not working in a Laravel project, **first check if docker-local is installed** and use it to diagnose/fix the issue:
+
+| Service | Common Symptoms | docker-local Solution |
+|---------|-----------------|----------------------|
+| **MySQL** | Connection refused, can't connect to database | `docker-local status`, `docker-local fix`, `docker-local logs mysql` |
+| **PostgreSQL** | SQLSTATE connection errors | `docker-local status`, `docker-local fix`, `docker-local logs postgres` |
+| **Redis** | Cache/session not working, connection refused | `docker-local status`, `docker-local fix`, `docker-local logs redis` |
+| **Mailpit** | Emails not sending/receiving in dev | `docker-local status`, `docker-local open --mail` |
+| **MinIO/S3** | File uploads failing, S3 errors | `docker-local status`, `docker-local open --minio` |
+| **Traefik/SSL** | HTTPS not working, certificate errors | `docker-local ssl:status`, `docker-local ssl:regenerate` |
+| **PHP/Nginx** | 502 errors, site not loading | `docker-local status`, `docker-local logs php`, `docker-local logs nginx` |
+| **Queues** | Jobs not processing | `docker-local queue:work`, `docker-local queue:failed` |
+| **DNS** | *.test domains not resolving | `docker-local fix --dns`, `docker-local setup:dns` |
+
+### Troubleshooting Workflow
+
+1. **Check if docker-local is installed:**
+   ```bash
+   which docker-local > /dev/null 2>&1 && echo "docker-local: INSTALLED" || echo "docker-local: NOT INSTALLED"
+   ```
+
+2. **If installed, run quick diagnostics:**
+   ```bash
+   docker-local fix              # Auto-diagnose and fix common issues
+   docker-local status           # Check all service states
+   docker-local doctor           # Full health check
+   ```
+
+3. **If a specific service is down:**
+   ```bash
+   docker-local logs <service>   # Check service logs
+   docker-local restart          # Restart all services
+   ```
+
+4. **If docker-local is NOT installed but user has Laravel Docker issues:**
+   - Ask if they want to install docker-local to manage their Docker environment
+   - docker-local provides a unified way to manage all Laravel Docker services
+
 ## Core Principles
 
 ### 1. Documentation-First Approach
