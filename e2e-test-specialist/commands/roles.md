@@ -10,9 +10,9 @@ Test all pages and flows for each user role using Playwright MCP. Verifies prope
 
 ## Standard Test Plan Location
 
-**Plan file**: `tests/e2e-test-plan.md`
+**Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `tests/e2e-test-plan.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -29,12 +29,12 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 **CRITICAL**: Before testing any roles, check if the test plan exists.
 
 1. **Check for Test Plan**
-   - Look for `tests/e2e-test-plan.md`
+   - Look for `docs/detailed-test-list.md`
    - If the file exists, read the role definitions and credentials from it
    - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
 
 2. **Read Role Information from Plan**
-   - Extract the "User Roles" section from the plan
+   - Extract the "Test User Accounts" table from the plan
    - Extract test credentials from the plan
    - Use role list for testing (unless `--roles` flag overrides)
 

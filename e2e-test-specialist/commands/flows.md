@@ -10,9 +10,9 @@ Test complete user flows end-to-end using Playwright MCP. Executes multi-step jo
 
 ## Standard Test Plan Location
 
-**Plan file**: `tests/e2e-test-plan.md`
+**Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `tests/e2e-test-plan.md` to determine which flows to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md` to determine which flows to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -29,12 +29,12 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 **CRITICAL**: Before testing any flows, check if the test plan exists.
 
 1. **Check for Test Plan**
-   - Look for `tests/e2e-test-plan.md`
+   - Look for `docs/detailed-test-list.md`
    - If the file exists, read the flow definitions from it
    - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
 
 2. **Read Flow Definitions from Plan**
-   - Extract the "Critical Flows" section from the plan
+   - Extract flow tests from sections (Authentication, Multi-User Interaction, etc.)
    - Use flow list for testing (unless `--flows` flag overrides)
 
 ### Step 0: Docker-Local Detection (For Laravel Projects)

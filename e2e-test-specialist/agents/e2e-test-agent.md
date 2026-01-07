@@ -139,11 +139,13 @@ When running plan command on existing plan:
 
 ## Standard Test Plan Location
 
-**Plan file**: `tests/e2e-test-plan.md`
+**Plan file**: `docs/detailed-test-list.md`
 
 All E2E testing operations use this standard location for the test plan. This ensures:
 - Consistent location across all commands and skills
 - Automatic plan generation when missing
+- 100% navigation coverage audit
+- Browser-testable scenarios executable by any QA tester
 - Easy integration with CI/CD pipelines
 - Simple version control of test plans
 
@@ -154,27 +156,30 @@ All E2E testing operations use this standard location for the test plan. This en
 **CRITICAL**: Before any testing, check if the test plan exists.
 
 1. **Check for Test Plan**
-   - Look for `tests/e2e-test-plan.md` in the project root
+   - Look for `docs/detailed-test-list.md` in the project root
    - If the file exists, read and use it for test execution
    - If the file does NOT exist, generate it first using the `e2e-test-plan` skill
 
 2. **Generate Plan if Missing**
    - Invoke the `e2e-test-plan` skill
-   - The plan will be saved to `tests/e2e-test-plan.md`
-   - Create the `tests/` directory if it doesn't exist
+   - The plan will be saved to `docs/detailed-test-list.md`
+   - Create the `docs/` directory if it doesn't exist
+   - Plan includes comprehensive navigation coverage audit
    - Then proceed with Phase 1
 
 ### Phase 1: Discovery (Read from Plan)
 
 1. **Read the Test Plan**
-   - Read `tests/e2e-test-plan.md`
+   - Read `docs/detailed-test-list.md`
    - Extract project information
+   - Extract navigation registry (Section 0)
    - Extract pages to test
    - Extract user roles and credentials
    - Extract critical flows
 
 2. **Verify Plan Content**
    - Confirm all sections are present
+   - Validate navigation registry is complete
    - Validate page routes exist
    - Verify role credentials are provided
    - Check flow definitions are complete
@@ -193,47 +198,58 @@ All E2E testing operations use this standard location for the test plan. This en
    - Map which roles can access which pages
    - Document expected behaviors
 
-3. **Identify User Flows**
+3. **Navigation Audit (CRITICAL)**
+   - Map ALL sidebar menu items
+   - Map ALL resource action buttons
+   - Map ALL internal cross-reference links
+   - Map ALL header/toolbar elements
+   - Ensure 100% navigation coverage
+
+4. **Identify User Flows**
    - Map key user journeys (login, signup, checkout, etc.)
    - Identify critical business flows
    - Document expected state changes
    - Note dependencies between flows
 
-4. **Update the Test Plan**
-   - Add newly discovered information to `tests/e2e-test-plan.md`
+5. **Update the Test Plan**
+   - Add newly discovered information to `docs/detailed-test-list.md`
    - Save the updated plan
 
 ### Phase 2: Use Test Plan
 
 1. **Read Test Plan from Standard Location**
-   The test plan at `tests/e2e-test-plan.md` contains:
+   The test plan at `docs/detailed-test-list.md` contains:
    ```markdown
-   # E2E Test Plan
+   # [Application Name] - Detailed Test List
 
-   ## Overview
-   - Application: [name]
-   - Base URL: [url]
-   - Test Date: [date]
-   - Roles to Test: [list]
-
-   ## Pages to Test
-   | Page | Route | Roles | Actions to Test |
-   |------|-------|-------|-----------------|
-   | Home | / | all | load, links |
-   | Login | /login | guest | form, submit |
+   ## Test Environment Setup
+   ### Test User Accounts
+   | User ID | Email | Password | Role(s) | Plan | Notes |
+   |---------|-------|----------|---------|------|-------|
+   | U1 | admin@test.com | TestPass123! | Super Admin | - | Full access |
    ...
 
-   ## Flows to Test
-   | Flow | Steps | Roles | Priority |
-   |------|-------|-------|----------|
-   | User Registration | signup → verify → profile | guest | high |
+   ## Section 0: Navigation & Link Coverage Audit
+   ### 0.1 Complete Navigation Registry
+   | Menu Item | URL Path | Visible To | Tested In | Test Actor |
+   |-----------|----------|------------|-----------|------------|
+   ...
+
+   ## Section 1: Authentication & Access Control
+   ...
+
+   ## Section 2: [Primary User Role] - Core Functionality
+   ...
+
+   ## Section 3: Multi-User Interaction Flows
    ...
    ```
 
-2. **Follow Plan Priorities**
-   - Critical paths first (login, core features)
-   - Then secondary flows
-   - Finally edge cases
+2. **Follow Plan Sections**
+   - Start with Section 0: Navigation Coverage Audit
+   - Then Section 1: Authentication
+   - Then role-specific sections
+   - Finally edge cases and error handling
 
 ### Phase 2.5: Docker-Local Detection (Laravel Projects)
 

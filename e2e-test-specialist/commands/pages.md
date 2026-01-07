@@ -10,9 +10,9 @@ Systematically test all pages in the application for errors, missing elements, a
 
 ## Standard Test Plan Location
 
-**Plan file**: `tests/e2e-test-plan.md`
+**Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `tests/e2e-test-plan.md` to determine which pages to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md` to determine which pages to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 
@@ -29,12 +29,13 @@ This command reads the test plan from `tests/e2e-test-plan.md` to determine whic
 **CRITICAL**: Before testing any pages, check if the test plan exists.
 
 1. **Check for Test Plan**
-   - Look for `tests/e2e-test-plan.md`
+   - Look for `docs/detailed-test-list.md`
    - If the file exists, read the page inventory from it
    - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
 
 2. **Read Page List from Plan**
-   - Extract the "Pages to Test" section from the plan
+   - Extract the navigation registry from Section 0
+   - Extract pages from test sections
    - Use page list for testing (unless `--pages` flag overrides)
 
 ### Step 0: Docker-Local Detection (For Laravel Projects)

@@ -10,9 +10,9 @@ Run comprehensive end-to-end tests using Playwright MCP. This command tests all 
 
 ## Standard Test Plan Location
 
-**Plan file**: `tests/e2e-test-plan.md`
+**Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `tests/e2e-test-plan.md`. If the plan file doesn't exist, this command will automatically invoke the `/e2e-test-specialist:plan` command first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md`. If the plan file doesn't exist, this command will automatically invoke the `/e2e-test-specialist:plan` command first to generate the plan before running tests.
 
 ## Usage
 
@@ -29,24 +29,26 @@ This command reads the test plan from `tests/e2e-test-plan.md`. If the plan file
 **CRITICAL**: Before any testing, check if the test plan exists.
 
 1. **Check for Test Plan**
-   - Look for `tests/e2e-test-plan.md`
+   - Look for `docs/detailed-test-list.md`
    - If the file exists, read and use it for test execution
    - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
 
 2. **Plan Generation (if missing)**
    - Invoke the e2e-test-plan skill
-   - Wait for plan to be saved to `tests/e2e-test-plan.md`
+   - Wait for plan to be saved to `docs/detailed-test-list.md`
    - Then proceed with Phase 1
 
 ### Phase 1: Discovery & Planning
 
 1. **Read the Test Plan**
-   - Read `tests/e2e-test-plan.md`
+   - Read `docs/detailed-test-list.md`
+   - Extract navigation registry from Section 0
    - Extract pages to test from the plan
    - Extract user roles from the plan
    - Extract critical flows from the plan
 
 2. **Verify Plan Content**
+   - Confirm navigation registry is complete
    - Confirm pages are listed
    - Confirm roles are defined with credentials
    - Confirm flows are documented
