@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash
-description: Get task details or specific property by ID without loading full tasks.json
-argument-hint: "<id> [key] | Examples: 1.2.3 | 1.2.3 status | 1.2.3 complexity.scale"
+description: Get task details or specific property by ID without loading full database
+argument-hint: "<id> [key] | Examples: 1.2.3 | 1.2.3 status | 1.2.3 complexity_scale"
 ---
 
 # Get Task Command
@@ -10,12 +10,12 @@ You are implementing `taskmanager:get-task`.
 
 ## Purpose
 
-This command provides a token-efficient way to retrieve task information by ID, without needing to load and parse the entire `tasks.json` file. You can get the full task object or extract a specific property.
+Retrieve task information by ID efficiently via SQL.
 
 ## Arguments
 
 - `$1` (required): The task ID to retrieve
-- `$2` (optional): A specific key/property to extract (supports nested keys with dot notation)
+- `$2` (optional): A specific column to extract
 
 ## Behavior
 
@@ -23,146 +23,81 @@ This command provides a token-efficient way to retrieve task information by ID, 
 
 ```bash
 if [[ -z "$1" ]]; then
-    echo "Usage: taskmanager:get-task <id> [key]"
+    echo "Usage: taskmanager:get-task <id> [column]"
+    echo "Examples:"
+    echo "  taskmanager:get-task 1.2.3"
+    echo "  taskmanager:get-task 1.2.3 status"
+    echo "  taskmanager:get-task 1.2.3 title"
     exit 1
 fi
 ```
 
-### 2. Query the task using jq
+### 2. Query the task
 
-**Get full task object:**
+**Get full task (no column specified):**
+
 ```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-.[] | select(.id == "1.2.3")
-' .taskmanager/tasks.json
+sqlite3 -json .taskmanager/taskmanager.db "
+SELECT * FROM tasks WHERE id = '$1';
+" | jq '.[0] // empty'
 ```
 
-**Get specific property:**
+If no result, output:
+```
+Error: Task '$1' not found
+```
+
+**Get specific column:**
+
 ```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-.[] | select(.id == "1.2.3") | .status
-' .taskmanager/tasks.json
+sqlite3 .taskmanager/taskmanager.db "
+SELECT $2 FROM tasks WHERE id = '$1';
+"
 ```
 
-**Get nested property (e.g., complexity.scale):**
-```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-.[] | select(.id == "1.2.3") | .complexity.scale
-' .taskmanager/tasks.json
-```
+## Available Columns
 
-### 3. Handle not found
-
-If the task ID doesn't exist, output an error:
-
-```
-Error: Task '1.2.3' not found
-```
-
-## Examples
-
-**Get full task object:**
-```
-taskmanager:get-task 1.2.3
-```
-
-Output:
-```json
-{
-  "id": "1.2.3",
-  "title": "Implement user authentication",
-  "status": "planned",
-  "priority": "high",
-  "complexity": {
-    "score": 3,
-    "scale": "M"
-  },
-  ...
-}
-```
-
-**Get task status:**
-```
-taskmanager:get-task 1.2.3 status
-```
-
-Output:
-```
-planned
-```
-
-**Get task title:**
-```
-taskmanager:get-task 1.2.3 title
-```
-
-Output:
-```
-Implement user authentication
-```
-
-**Get nested property:**
-```
-taskmanager:get-task 1.2.3 complexity.scale
-```
-
-Output:
-```
-M
-```
-
-**Get task priority:**
-```
-taskmanager:get-task 1.2.3 priority
-```
-
-Output:
-```
-high
-```
-
-**Get estimate in seconds:**
-```
-taskmanager:get-task 1.2.3 estimateSeconds
-```
-
-Output:
-```
-7200
-```
-
-## Available Properties
-
-Common properties you can query:
-
-| Property | Description |
-|----------|-------------|
+| Column | Description |
+|--------|-------------|
 | `id` | Task ID |
 | `title` | Task title |
 | `status` | Current status |
-| `priority` | Task priority (low, medium, high, critical) |
-| `type` | Task type (feature, bug, chore, analysis, spike) |
+| `priority` | Task priority |
+| `type` | Task type |
 | `description` | Task description |
-| `complexity` | Full complexity object |
-| `complexity.score` | Complexity score (0-5) |
-| `complexity.scale` | Complexity scale (XS, S, M, L, XL) |
-| `estimateSeconds` | Estimated time in seconds |
-| `startedAt` | When task was started |
-| `completedAt` | When task was completed |
-| `durationSeconds` | Actual duration |
-| `dependencies` | Array of dependency task IDs |
-| `parentId` | Parent task ID |
+| `details` | Implementation details |
+| `complexity_score` | Complexity score (0-5) |
+| `complexity_scale` | Complexity scale (XS-XL) |
+| `estimate_seconds` | Estimated time |
+| `started_at` | Start timestamp |
+| `completed_at` | Completion timestamp |
+| `duration_seconds` | Actual duration |
+| `dependencies` | JSON array of dependency IDs |
+| `parent_id` | Parent task ID |
+| `tags` | JSON array of tags |
+
+## Examples
+
+**Get full task:**
+```bash
+sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM tasks WHERE id = '1.2.3';"
+```
+
+**Get task status:**
+```bash
+sqlite3 .taskmanager/taskmanager.db "SELECT status FROM tasks WHERE id = '1.2.3';"
+```
+
+**Get task with subtask count:**
+```bash
+sqlite3 -json .taskmanager/taskmanager.db "
+SELECT t.*, (SELECT COUNT(*) FROM tasks c WHERE c.parent_id = t.id) as subtask_count
+FROM tasks t WHERE t.id = '1.2.3';
+"
+```
 
 ## Notes
 
-- This command is **read-only** - it does not modify any files
-- Uses `jq` for efficient JSON parsing without loading full file
-- Supports nested property access using dot notation
-- Returns `null` if the property doesn't exist on the task
-- Requires `jq` to be installed
+- This command is **read-only**
+- Uses direct SQL queries, very efficient
+- Returns JSON for full task, plain text for single column
