@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash
-description: Update task status by ID or list of IDs without loading the full tasks.json
-argument-hint: "<status> <id1> [id2...] | Example: done 1.2.3 1.2.4"
+description: Update task status by ID or list of IDs without loading the full database
+argument-hint: "<status> <id1> [id2...] | Examples: done 1.2.3 | in-progress 1.2.3 1.2.4"
 ---
 
 # Update Status Command
@@ -10,119 +10,94 @@ You are implementing `taskmanager:update-status`.
 
 ## Purpose
 
-This command provides a token-efficient way to update task status for one or more tasks by their IDs, without needing to load and parse the entire `tasks.json` file.
+Batch update task status via SQL. This command does NOT propagate status to parent tasks - use `execute-task` for that.
 
 ## Arguments
 
-- `$1` (required): The new status to set
-- `$2...` (required): One or more task IDs to update
+- `$1` (required): New status value
+- `$2+` (required): One or more task IDs
 
-### Valid Statuses
+## Valid Statuses
 
-- `draft` - Task is in draft state
-- `planned` - Task is planned but not started
-- `in-progress` - Task is currently being worked on
-- `blocked` - Task is blocked by dependencies or issues
-- `paused` - Task is temporarily paused
-- `done` - Task is completed
-- `canceled` - Task has been canceled
-- `duplicate` - Task is a duplicate of another
-- `needs-review` - Task needs review before proceeding
+- `draft`, `planned`, `in-progress`, `blocked`, `paused`, `done`, `canceled`, `duplicate`, `needs-review`
 
 ## Behavior
 
 ### 1. Validate arguments
 
 ```bash
-# Check status and IDs are provided
-if [[ -z "$1" ]] || [[ -z "$2" ]]; then
+VALID_STATUSES="draft planned in-progress blocked paused done canceled duplicate needs-review"
+NEW_STATUS="$1"
+shift
+TASK_IDS=("$@")
+
+if [[ -z "$NEW_STATUS" ]] || [[ ${#TASK_IDS[@]} -eq 0 ]]; then
     echo "Usage: taskmanager:update-status <status> <id1> [id2...]"
+    exit 1
+fi
+
+if ! echo "$VALID_STATUSES" | grep -qw "$NEW_STATUS"; then
+    echo "Error: Invalid status '$NEW_STATUS'"
+    echo "Valid: $VALID_STATUSES"
     exit 1
 fi
 ```
 
-### 2. Run the update using jq
-
-Use jq to efficiently update the status without loading the full file into context:
+### 2. Build and execute UPDATE query
 
 ```bash
-# Single task
-jq --arg status "done" --arg id "1.2.3" '
-def update_status:
-  if .id == $id then
-    .status = $status |
-    if $status == "done" or $status == "canceled" or $status == "duplicate" then
-      .completedAt = (now | todate)
-    else . end |
-    if $status == "in-progress" and .startedAt == null then
-      .startedAt = (now | todate)
-    else . end
-  else . end |
-  if .subtasks then .subtasks = [.subtasks[] | update_status] else . end;
-.tasks = [.tasks[] | update_status]
-' .taskmanager/tasks.json > .taskmanager/tasks.json.tmp && mv .taskmanager/tasks.json.tmp .taskmanager/tasks.json
+# Build ID list for SQL IN clause
+ID_LIST=$(printf "'%s'," "${TASK_IDS[@]}" | sed 's/,$//')
 
-# Multiple tasks
-jq --arg status "done" --argjson ids '["1.2.3", "1.2.4", "1.2.5"]' '
-def update_status:
-  if .id as $tid | $ids | index($tid) != null then
-    .status = $status |
-    if $status == "done" or $status == "canceled" or $status == "duplicate" then
-      .completedAt = (now | todate)
-    else . end |
-    if $status == "in-progress" and .startedAt == null then
-      .startedAt = (now | todate)
-    else . end
-  else . end |
-  if .subtasks then .subtasks = [.subtasks[] | update_status] else . end;
-.tasks = [.tasks[] | update_status]
-' .taskmanager/tasks.json > .taskmanager/tasks.json.tmp && mv .taskmanager/tasks.json.tmp .taskmanager/tasks.json
+# Update with appropriate timestamps
+sqlite3 .taskmanager/taskmanager.db "
+UPDATE tasks SET
+    status = '$NEW_STATUS',
+    updated_at = datetime('now'),
+    started_at = CASE
+        WHEN '$NEW_STATUS' = 'in-progress' AND started_at IS NULL
+        THEN datetime('now')
+        ELSE started_at
+    END,
+    completed_at = CASE
+        WHEN '$NEW_STATUS' IN ('done', 'canceled', 'duplicate') AND completed_at IS NULL
+        THEN datetime('now')
+        ELSE completed_at
+    END,
+    duration_seconds = CASE
+        WHEN '$NEW_STATUS' IN ('done', 'canceled', 'duplicate') AND started_at IS NOT NULL
+        THEN CAST((julianday(datetime('now')) - julianday(started_at)) * 86400 AS INTEGER)
+        ELSE duration_seconds
+    END
+WHERE id IN ($ID_LIST);
+"
+
+# Report results
+UPDATED=$(sqlite3 .taskmanager/taskmanager.db "SELECT COUNT(*) FROM tasks WHERE id IN ($ID_LIST) AND status = '$NEW_STATUS';")
+echo "Updated $UPDATED task(s) to status '$NEW_STATUS'"
 ```
 
-### 3. Automatic timestamp handling
+### 3. Log the change
 
-When updating status, the script automatically:
-
-- Sets `completedAt` to current timestamp when status becomes terminal (`done`, `canceled`, `duplicate`)
-- Sets `startedAt` to current timestamp when status becomes `in-progress` (only if not already set)
-
-### 4. Output confirmation
-
-After updating, display confirmation:
-
-```
-Successfully updated 3 task(s) to status 'done':
-  - 1.2.3
-  - 1.2.4
-  - 1.2.5
+```bash
+echo "$(date -Iseconds) [DECISION] [update-status] Set status=$NEW_STATUS for tasks: ${TASK_IDS[*]}" >> .taskmanager/logs/decisions.log
 ```
 
 ## Examples
 
-**Mark single task as done:**
-```
-taskmanager:update-status done 1.2.3
-```
-
-**Mark multiple tasks as done:**
-```
-taskmanager:update-status done 1.2.3 1.2.4 1.2.5
+**Mark single task done:**
+```bash
+sqlite3 .taskmanager/taskmanager.db "UPDATE tasks SET status = 'done', completed_at = datetime('now'), updated_at = datetime('now') WHERE id = '1.2.3';"
 ```
 
-**Set tasks to in-progress:**
-```
-taskmanager:update-status in-progress 2.1.1
-```
-
-**Mark tasks as blocked:**
-```
-taskmanager:update-status blocked 3.1 3.2
+**Mark multiple tasks in-progress:**
+```bash
+sqlite3 .taskmanager/taskmanager.db "UPDATE tasks SET status = 'in-progress', started_at = COALESCE(started_at, datetime('now')), updated_at = datetime('now') WHERE id IN ('1.2.3', '1.2.4');"
 ```
 
 ## Notes
 
-- This command modifies `.taskmanager/tasks.json` directly
-- Creates a backup before modification (`.taskmanager/tasks.json.bak`)
-- Does NOT trigger status propagation to parent tasks - use with care
-- For full status propagation, use `taskmanager:execute-task` instead
-- Requires `jq` to be installed
+- This command does **NOT** propagate status to parent tasks
+- Use `taskmanager:execute-task` for proper status propagation
+- Timestamps are set automatically based on status transitions
+- Changes are logged to decisions.log
