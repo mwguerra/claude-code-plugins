@@ -98,6 +98,27 @@ Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-gen
 /plugin install test-specialist@mwguerra-marketplace
 ```
 
+### obsidian-vault
+Manage an Obsidian vault as your development knowledge base and automatic work journal. Auto-captures commits, tasks, and Claude Code components with structured frontmatter.
+
+```bash
+/plugin install obsidian-vault@mwguerra-marketplace
+```
+
+### error-memory
+Intelligent error tracking and solution recall system. Learns from every error you solve, providing instant access to past solutions with multi-level matching and confidence scores.
+
+```bash
+/plugin install error-memory@mwguerra-marketplace
+```
+
+### prd-builder
+Interactive PRD (Product Requirements Document) builder with comprehensive interview-driven discovery, gap analysis, and taskmanager integration.
+
+```bash
+/plugin install prd-builder@mwguerra-marketplace
+```
+
 ## Reinstall Script
 
 If you need to completely reinstall all marketplace plugins (useful after updates or to fix issues), add this script to `~/.claude/reinstall_marketplace.sh`:

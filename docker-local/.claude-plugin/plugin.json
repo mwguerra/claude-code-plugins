@@ -1,7 +1,7 @@
 {
   "name": "docker-local",
   "description": "Troubleshooting assistant for docker-local Laravel development environments. Diagnoses and fixes access issues (404, SSL, DNS, linking), performs health checks, and sets up new projects. Follows a strict diagnostic hierarchy and never modifies application code.",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"

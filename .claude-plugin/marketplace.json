@@ -329,6 +329,77 @@
         "page-testing",
         "automation"
       ]
+    },
+    {
+      "name": "obsidian-vault",
+      "source": "./obsidian-vault",
+      "version": "1.0.0",
+      "description": "Manage an Obsidian vault as your development knowledge base and automatic work journal. Auto-captures commits, tasks, and Claude Code components with structured frontmatter.",
+      "keywords": [
+        "obsidian",
+        "notes",
+        "knowledge-base",
+        "documentation",
+        "journal",
+        "memory",
+        "commits",
+        "automation"
+      ],
+      "category": "productivity",
+      "tags": [
+        "obsidian",
+        "knowledge-base",
+        "work-journal",
+        "note-taking",
+        "documentation",
+        "automation"
+      ]
+    },
+    {
+      "name": "error-memory",
+      "source": "./error-memory",
+      "version": "1.0.0",
+      "description": "Intelligent error tracking and solution recall system. Learns from every error you solve, providing instant access to past solutions with multi-level matching and confidence scores.",
+      "keywords": [
+        "errors",
+        "debugging",
+        "solutions",
+        "memory",
+        "learning",
+        "troubleshooting",
+        "exceptions",
+        "stack-traces"
+      ],
+      "category": "development-tools",
+      "tags": [
+        "error-tracking",
+        "debugging",
+        "solution-recall",
+        "knowledge-base",
+        "troubleshooting"
+      ]
+    },
+    {
+      "name": "prd-builder",
+      "source": "./prd-builder",
+      "version": "1.0.0",
+      "description": "Interactive PRD (Product Requirements Document) builder with comprehensive interview-driven discovery, gap analysis, and taskmanager integration.",
+      "keywords": [
+        "prd",
+        "planning",
+        "requirements",
+        "product",
+        "features",
+        "documentation"
+      ],
+      "category": "productivity",
+      "tags": [
+        "prd",
+        "product-requirements",
+        "planning",
+        "documentation",
+        "discovery"
+      ]
     }
   ]
 }
