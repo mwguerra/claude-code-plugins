@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Error Memory Database",
+  "type": "object",
+  "required": ["version", "errors"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/error"
+      }
+    }
+  },
+  "$defs": {
+    "error": {
+      "type": "object",
+      "required": ["id", "createdAt", "error", "context", "analysis", "tags"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^err_[a-zA-Z0-9]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error": {
+          "type": "object",
+          "required": ["message", "normalized", "hash"],
+          "properties": {
+            "message": {
+              "type": "string",
+              "description": "Original error message"
+            },
+            "normalized": {
+              "type": "string",
+              "description": "Normalized error with paths/IDs stripped"
+            },
+            "hash": {
+              "type": "string",
+              "description": "SHA256 hash of normalized message"
+            },
+            "type": {
+              "type": "string",
+              "description": "Error type (SQLSTATE, TypeError, Exception, etc.)"
+            },
+            "keywords": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "project": { "type": "string" },
+            "projectPath": { "type": "string" },
+            "source": {
+              "type": "string",
+              "enum": ["bash", "playwright", "read", "user", "build", "api", "other"]
+            },
+            "whatHappened": { "type": "string" }
+          }
+        },
+        "analysis": {
+          "type": "object",
+          "required": ["cause", "solution"],
+          "properties": {
+            "cause": { "type": "string" },
+            "solution": { "type": "string" },
+            "rationale": { "type": "string" }
+          }
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "fileChanged": { "type": "string" },
+            "before": { "type": "string" },
+            "after": { "type": "string" }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "usageCount": { "type": "integer", "minimum": 0 },
+            "lastUsedAt": { "type": "string", "format": "date-time" },
+            "successRate": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    }
+  }
+}
