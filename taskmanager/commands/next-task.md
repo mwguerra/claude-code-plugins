@@ -1,5 +1,5 @@
 ---
-allowed-tools: Skill(taskmanager)
+allowed-tools: Bash
 description: Find and display the next task ready for execution based on dependencies and priority
 argument-hint: "[--debug]"
 ---
@@ -8,84 +8,101 @@ argument-hint: "[--debug]"
 
 You are implementing `taskmanager:next-task`.
 
-## Arguments
+## Purpose
 
-- `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
+Find the next available task based on:
+1. Not already completed (done/canceled/duplicate)
+2. Is a leaf task (no subtasks)
+3. All dependencies satisfied
+4. Sorted by priority (critical > high > medium > low)
+5. Then by complexity (lower first)
 
 ## Behavior
 
-### 0. Initialize logging (if --debug provided)
+### 1. Query next available task
 
-If `--debug` / `-d` flag is present:
-1. Generate a unique session ID.
-2. Set `state.json.logging.debugEnabled = true` and `logging.sessionId`.
-
-### 1. Find next available task (Token-Efficient)
-
-**IMPORTANT:** When the `tasks.json` file is large (exceeds ~25k tokens), you MUST use token-efficient methods:
-
-**Option A: Use stats command**
-```
-taskmanager:stats --next
-```
-This returns the next recommended task without loading the full file.
-
-**Option B: Use jq directly**
 ```bash
-jq -r '
-def flatten_all: . as $t | [$t] + (($t.subtasks // []) | map(flatten_all) | add // []);
-[.tasks[] | flatten_all] | add // [] |
-[.[] | select(.status == "done" or .status == "canceled" or .status == "duplicate") | .id] as $done_ids |
-[.[] | select(
-  (.status != "done" and .status != "canceled" and .status != "duplicate" and .status != "blocked") and
-  ((.subtasks | length) == 0 or .subtasks == null)
-) | select(
-  (.dependencies == null) or (.dependencies | length == 0) or
-  (.dependencies | all(. as $dep | $done_ids | index($dep) != null))
-)] |
-sort_by(
-  (if .priority == "critical" then 0 elif .priority == "high" then 1 elif .priority == "medium" then 2 else 3 end),
-  (.complexity.score // 3)
-) | .[0] | {id, title, status, priority, complexity: .complexity.scale, estimate_hours: ((.estimateSeconds // 0) / 3600)}
-' .taskmanager/tasks.json
+sqlite3 -column -header .taskmanager/taskmanager.db "
+WITH done_ids AS (
+    SELECT id FROM tasks
+    WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT
+    t.id,
+    t.title,
+    t.status,
+    t.priority,
+    t.complexity_scale,
+    t.complexity_score,
+    ROUND(COALESCE(t.estimate_seconds, 0) / 3600.0, 1) as estimate_hours,
+    t.description
+FROM tasks t
+WHERE t.archived_at IS NULL
+  AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+  AND (
+      t.dependencies = '[]'
+      OR NOT EXISTS (
+          SELECT 1 FROM json_each(t.dependencies) d
+          WHERE d.value NOT IN (SELECT id FROM done_ids)
+      )
+  )
+ORDER BY
+    CASE t.priority
+        WHEN 'critical' THEN 0
+        WHEN 'high' THEN 1
+        WHEN 'medium' THEN 2
+        ELSE 3
+    END,
+    COALESCE(t.complexity_score, 3),
+    t.id
+LIMIT 1;
+"
 ```
 
-**When to read full file:** Only use the standard approach below if:
-- The file is small enough (< 25k tokens)
-- You need additional task details
+### 2. Handle no available tasks
 
-Standard approach (for small files):
-Ask the `taskmanager` skill to:
-- Read `.taskmanager/tasks.json`.
-- Compute the **next available task** using the selection rules:
-  - Status is not `"done"`, `"canceled"`, or `"duplicate"`.
-  - All dependencies (if any) are in one of those finished states.
-  - Task is a leaf or all its subtasks are completed.
+If query returns no results:
 
-### 2. Display result
+```
+No available tasks found.
 
-If a candidate is found:
-- Display:
-  - `id`
-  - `title`
-  - `status`
-  - `priority`
-  - `complexity` (score + scale)
-  - Any `dependencies`
-- Do **not** modify `tasks.json` or `state.json`.
+Possible reasons:
+- All tasks are completed
+- Remaining tasks are blocked by dependencies
+- Remaining tasks have subtasks (not leaf tasks)
 
-If no candidate is found:
-- Inform the user that there are no available tasks with satisfied dependencies.
+Run taskmanager:dashboard for full status overview.
+```
 
-### 3. Cleanup
+### 3. Format output
 
-If `--debug` was enabled:
-- Reset `state.json.logging.debugEnabled = false`
-- Reset `state.json.logging.sessionId = null`
+```
+=== Next Recommended Task ===
 
-## Logging Requirements
+ID: 1.2.3
+Title: Implement user authentication
+Status: planned
+Priority: high
+Complexity: M (3)
+Estimate: 4 hours
 
-**To debug.log** (ONLY when `--debug` enabled):
-- Task tree loading details
-- Task selection algorithm steps
-- Why specific tasks were skipped
+Description:
+Add JWT-based authentication with login/logout endpoints...
+
+To start working on this task:
+  taskmanager:execute-task 1.2.3
+```
+
+## Debug Mode
+
+With `--debug` flag, also show:
+- Total tasks checked
+- Tasks filtered by each criterion
+- Dependency resolution details
+
+## Notes
+
+- Uses SQL subqueries for efficient dependency checking
+- json_each() parses the dependencies JSON array
+- Results are deterministic (ORDER BY includes id as tiebreaker)

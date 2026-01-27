@@ -1,6 +1,8 @@
 # PRD Ingestion Examples for MWGuerra Task Manager
 
-These examples show how to convert `.taskmanager/docs/prd.md` into a hierarchical, level-by-level expanded set of tasks inside `.taskmanager/tasks.json`, fully compliant with the MWGuerra Task Manager schema and the Task Manager Skill instructions. (See SKILL.md for mandatory step-by-step expansion logic.)
+These examples show how to convert `.taskmanager/docs/prd.md` into a hierarchical, level-by-level expanded set of tasks in the SQLite database (`.taskmanager/taskmanager.db`), fully compliant with the MWGuerra Task Manager schema and the Task Manager Skill instructions. (See SKILL.md for mandatory step-by-step expansion logic.)
+
+> **Note:** While data is stored in SQLite, the examples below show JSON format for readability. The conceptual task structure remains the same - tasks are inserted into the `tasks` table with `parent_id` relationships.
 
 ---
 
@@ -34,9 +36,9 @@ can monitor current traffic and recent history.
 
 ---
 
-# Expected `tasks.json` Structure (Schema-Compliant)
+# Expected Task Structure (Schema-Compliant)
 
-When ingesting this PRD, `.taskmanager/tasks.json` should be updated with a **level-by-level expansion**:
+When ingesting this PRD, the `tasks` table in `.taskmanager/taskmanager.db` should be updated with a **level-by-level expansion**:
 
 1. **Level 1 = Epics (top-level tasks)**
 2. **Level 2 = Subtasks of each epic**
@@ -542,7 +544,7 @@ A modern e-commerce platform with user authentication, product catalog, and shop
 
 ---
 
-## Expected `tasks.json` from Folder Input
+## Expected Task Structure from Folder Input
 
 ```jsonc
 {
