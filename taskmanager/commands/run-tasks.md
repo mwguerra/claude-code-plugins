@@ -11,9 +11,13 @@ You are implementing `taskmanager:run-tasks`.
 ## Arguments
 
 - `$1` (optional): Maximum number of tasks to execute in this run (default: 3-5)
-- `--memory "description"` or `-gm "description"`: Add a global memory (persists to memories.json, applies to all tasks)
+- `--memory "description"` or `-gm "description"`: Add a global memory (persists to memories table)
 - `--task-memory "description"` or `-tm "description"`: Add a batch task memory (applies to all tasks in this run, reviewed at batch end)
-- `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
+- `--debug` or `-d`: Enable verbose debug logging
+
+## Database Location
+
+All operations use the SQLite database at `.taskmanager/taskmanager.db`.
 
 ## Behavior
 
@@ -21,9 +25,16 @@ You are implementing `taskmanager:run-tasks`.
 
 1. Generate a unique session ID using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`).
 2. Check for `--debug` / `-d` flag.
-3. Update `.taskmanager/state.json`:
-   - Set `logging.sessionId` to the generated ID.
-   - Set `logging.debugEnabled = true` if `--debug` flag present, else `false`.
+3. Update state table:
+   ```sql
+   UPDATE state SET
+       session_id = '<session-id>',
+       debug_enabled = CASE WHEN '<debug-flag>' = 'true' THEN 1 ELSE 0 END,
+       mode = 'autonomous',
+       started_at = datetime('now'),
+       last_update = datetime('now')
+   WHERE id = 1;
+   ```
 4. Log to `decisions.log`:
    ```
    <timestamp> [DECISION] [<session-id>] Started run-tasks batch (max: $1 tasks)
@@ -39,21 +50,28 @@ You are implementing `taskmanager:run-tasks`.
 
 2. **Process memory arguments at batch start**:
    - If `--memory` is provided:
-     - Use the `taskmanager-memory` skill to create a new global memory in `.taskmanager/memories.json`.
-     - Set `source.type = "user"`, `source.via = "run-tasks"`.
-     - Set reasonable defaults: `importance = 3`, `confidence = 0.9`, `status = "active"`.
+     - Use the `taskmanager-memory` skill to create a new global memory in the `memories` table.
+     - Set `source_type = 'user'`, `source_via = 'run-tasks'`.
+     - Set reasonable defaults: `importance = 3`, `confidence = 0.9`, `status = 'active'`.
    - If `--task-memory` is provided:
-     - Add to `.taskmanager/state.json` → `taskMemory[]` with `taskId = "*"` (applies to all tasks in batch):
-       ```json
-       {
-         "content": "<the description>",
-         "addedAt": "<current ISO timestamp>",
-         "taskId": "*",
-         "source": "user"
-       }
+     - Update state table to add to task_memory JSON array with `taskId = "*"` (applies to all tasks in batch):
+       ```sql
+       UPDATE state SET
+           task_memory = json_insert(
+               task_memory,
+               '$[#]',
+               json_object(
+                   'content', '<the description>',
+                   'addedAt', datetime('now'),
+                   'taskId', '*',
+                   'source', 'user'
+               )
+           ),
+           last_update = datetime('now')
+       WHERE id = 1;
        ```
 
-3. **Initialize deferred data**:
+3. **Initialize deferred data** (track in memory during execution):
    - `deferredConflicts = []` (conflicts to present at batch end).
    - `executedTasks = []` (track what was executed).
 
@@ -61,45 +79,75 @@ You are implementing `taskmanager:run-tasks`.
 
 For each iteration up to the limit:
 
-#### 2.1 Find next task (Token-Efficient)
+#### 2.1 Find next task (SQL Query)
 
-**IMPORTANT:** When the `tasks.json` file is large (exceeds ~25k tokens), you MUST use the token-efficient commands:
+Query the next available task using the same logic as `next-task`:
 
-**Use stats command to get next tasks:**
+```bash
+TASK=$(sqlite3 -json .taskmanager/taskmanager.db "
+WITH done_ids AS (
+    SELECT id FROM tasks
+    WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT
+    t.id,
+    t.parent_id,
+    t.title,
+    t.description,
+    t.details,
+    t.test_strategy,
+    t.status,
+    t.type,
+    t.priority,
+    t.complexity_score,
+    t.complexity_scale,
+    t.tags,
+    t.dependencies,
+    t.owner
+FROM tasks t
+WHERE t.archived_at IS NULL
+  AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+  AND (
+      t.dependencies = '[]'
+      OR NOT EXISTS (
+          SELECT 1 FROM json_each(t.dependencies) d
+          WHERE d.value NOT IN (SELECT id FROM done_ids)
+      )
+  )
+ORDER BY
+    CASE t.priority
+        WHEN 'critical' THEN 0
+        WHEN 'high' THEN 1
+        WHEN 'medium' THEN 2
+        ELSE 3
+    END,
+    COALESCE(t.complexity_score, 3),
+    t.id
+LIMIT 1;
+" | jq '.[0]')
 ```
-taskmanager:stats --next5
-```
-This returns the next 5 recommended tasks without loading the full file.
 
-**Use get-task command for specific task details:**
-```
-taskmanager:get-task <id> [key]
-```
-Use this when you need to read specific task properties without loading the full file:
-- Get task title: `taskmanager:get-task 1.2.3 title`
-- Get task status: `taskmanager:get-task 1.2.3 status`
-- Get task complexity: `taskmanager:get-task 1.2.3 complexity.scale`
-
-**When to read full file:** Only read `.taskmanager/tasks.json` with the Read tool if:
-- The file is small enough (< 25k tokens)
-- You need the full task details (description, notes, dependencies) to execute
-
-Standard approach (for small files):
-- Ask the `taskmanager` skill to read `.taskmanager/tasks.json` and `.taskmanager/state.json`.
-- Find the **next available task** according to its selection logic:
-  - Not done/canceled/duplicate
-  - All dependencies satisfied
-  - Leaf task or all subtasks completed
-- If no such task exists:
-  - Stop and proceed to batch summary.
+- If `TASK` is empty or null:
+  - No more tasks available, proceed to batch summary.
 
 #### 2.2 Load and apply memories (PRE-EXECUTION)
+
 - Use the `taskmanager-memory` skill to query relevant memories for this task.
-- Load global memories from `.taskmanager/memories.json`:
-  - Filter for `status = "active"`.
-  - Match by `scope.tasks`, `scope.domains`, `scope.files`, `importance >= 3`.
-- Load task-scoped memories from `state.json.taskMemory[]`:
-  - Filter for `taskId == <current task id>` or `taskId == "*"`.
+- Load global memories from `memories` table:
+  ```sql
+  SELECT * FROM memories
+  WHERE status = 'active'
+    AND importance >= 3
+  ORDER BY importance DESC, last_used_at DESC;
+  ```
+- Load task-scoped memories from state table:
+  ```sql
+  SELECT json_each.value FROM state, json_each(state.task_memory)
+  WHERE state.id = 1
+    AND (json_extract(json_each.value, '$.taskId') = '<task-id>'
+         OR json_extract(json_each.value, '$.taskId') = '*');
+  ```
 - **Run conflict detection** on all loaded memories:
   - **Critical conflicts** (importance >= 4):
     - Pause execution.
@@ -109,82 +157,244 @@ Standard approach (for small files):
     - Add to `deferredConflicts[]`.
     - Continue execution.
 - Display summary of applicable memories.
-- Store applied memory IDs in `state.json.appliedMemories[]`.
-- Increment `useCount` and update `lastUsedAt` for each applied memory.
+- Store applied memory IDs in state:
+  ```sql
+  UPDATE state SET
+      applied_memories = json('<array-of-memory-ids>'),
+      last_update = datetime('now')
+  WHERE id = 1;
+  ```
+- Increment `use_count` and update `last_used_at` for each applied memory:
+  ```sql
+  UPDATE memories SET
+      use_count = use_count + 1,
+      last_used_at = datetime('now')
+  WHERE id IN (<applied-memory-ids>);
+  ```
 
 #### 2.3 Start execution
-- Update the task `status` to `"in-progress"` if appropriate.
-- Update `.taskmanager/state.json`:
-  - `currentStep = "execution"`
-  - `mode = "autonomous"`
-  - `currentTaskId = <task id>`
-  - `currentSubtaskPath = <task id>`
-  - `lastUpdate` / `lastDecision`
+
+- Update the task status to `"in-progress"`:
+  ```sql
+  UPDATE tasks SET
+      status = 'in-progress',
+      started_at = COALESCE(started_at, datetime('now')),
+      updated_at = datetime('now')
+  WHERE id = '<task-id>';
+  ```
+- Update state table:
+  ```sql
+  UPDATE state SET
+      current_task_id = '<task-id>',
+      current_subtask_path = '<task-id>',
+      current_step = 'execution',
+      mode = 'autonomous',
+      last_update = datetime('now')
+  WHERE id = 1;
+  ```
+- **Propagate in-progress status to ancestors** using recursive CTE:
+  ```sql
+  WITH RECURSIVE ancestors AS (
+      SELECT parent_id as id
+      FROM tasks
+      WHERE id = '<task-id>' AND parent_id IS NOT NULL
+      UNION ALL
+      SELECT t.parent_id
+      FROM tasks t
+      JOIN ancestors a ON t.id = a.id
+      WHERE t.parent_id IS NOT NULL
+  )
+  UPDATE tasks SET
+      status = 'in-progress',
+      updated_at = datetime('now')
+  WHERE id IN (SELECT id FROM ancestors);
+  ```
 
 #### 2.4 Execute the task
+
 - Perform the necessary edits, file operations, or code changes as implied by the task description.
 - Apply loaded memories as constraints during implementation.
 
 #### 2.5 Post-execution memory review
+
 - **Run conflict detection again** on all applied memories.
 - **Critical conflicts**: Pause and resolve.
 - **Warning/Info conflicts**: Add to `deferredConflicts[]`.
 - **Review task-specific memories** (NOT `"*"` memories):
-  - If any task memories exist for this specific task (`taskId == <task id>`):
+  - Query task memories for this specific task:
+    ```sql
+    SELECT json_each.value as memory FROM state, json_each(state.task_memory)
+    WHERE state.id = 1
+      AND json_extract(json_each.value, '$.taskId') = '<task-id>';
+    ```
+  - If any task memories exist:
     - Ask the user: "Should any task memories be promoted to global memory?"
-    - Create global memories for promoted items.
-    - Clear those specific task memories from `taskMemory[]`.
-- Clear `state.json.appliedMemories[]`.
+    - Create global memories for promoted items (insert into `memories` table).
+    - Clear those specific task memories:
+      ```sql
+      UPDATE state SET
+          task_memory = (
+              SELECT json_group_array(json_each.value)
+              FROM state s, json_each(s.task_memory)
+              WHERE s.id = 1
+                AND json_extract(json_each.value, '$.taskId') != '<task-id>'
+          ),
+          last_update = datetime('now')
+      WHERE id = 1;
+      ```
+- Clear applied memories from state:
+  ```sql
+  UPDATE state SET
+      applied_memories = '[]',
+      last_update = datetime('now')
+  WHERE id = 1;
+  ```
 
-#### 2.6 Complete task
-- Update the leaf task `status` based on outcome:
-  - `"done"`, `"blocked"`, or `"canceled"` as appropriate.
-  - **Token-efficient option**: Use `taskmanager:update-status <status> <id>` for quick status updates without loading the full file. Example: `taskmanager:update-status done 1.2.3`
-  - **Note**: The update-status command does NOT trigger status propagation. You must still run propagation manually.
-- **Recompute the macro status for all ancestor tasks** using the _Status propagation helper_ rules below.
+#### 2.6 Complete task with status propagation
+
+- Update the leaf task status based on outcome and propagate to all ancestors.
+- Use this single transaction for atomic status propagation:
+
+  ```sql
+  -- Update the leaf task
+  UPDATE tasks SET
+      status = '<final-status>',  -- 'done', 'blocked', 'paused', or 'needs-review'
+      completed_at = CASE WHEN '<final-status>' = 'done' THEN datetime('now') ELSE completed_at END,
+      updated_at = datetime('now')
+  WHERE id = '<task-id>';
+
+  -- Propagate status to all ancestors using recursive CTE
+  WITH RECURSIVE ancestors AS (
+      SELECT parent_id as id
+      FROM tasks
+      WHERE id = '<task-id>' AND parent_id IS NOT NULL
+      UNION ALL
+      SELECT t.parent_id
+      FROM tasks t
+      JOIN ancestors a ON t.id = a.id
+      WHERE t.parent_id IS NOT NULL
+  )
+  UPDATE tasks SET
+      status = (
+          SELECT CASE
+              WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'in-progress')
+                  THEN 'in-progress'
+              WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'blocked')
+                  THEN 'blocked'
+              WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'needs-review')
+                  THEN 'needs-review'
+              WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status IN ('planned', 'draft', 'paused'))
+                  THEN 'planned'
+              WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'done')
+                  THEN 'done'
+              ELSE 'canceled'
+          END
+      ),
+      completed_at = CASE
+          WHEN NOT EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status NOT IN ('done', 'canceled', 'duplicate'))
+          THEN datetime('now')
+          ELSE completed_at
+      END,
+      updated_at = datetime('now')
+  WHERE id IN (SELECT id FROM ancestors);
+  ```
+
 - **Archive if terminal status**: If the final status is `"done"`, `"canceled"`, or `"duplicate"`:
-  - Follow the archival procedure from SKILL.md section 8.7.
-  - Archive the task to `.taskmanager/tasks-archive.json`.
-  - Replace with stub in `tasks.json`.
-  - Check and archive parent if all its children are now archived.
-- Write the updated files back to disk.
-- Update `.taskmanager/state.json`:
-  - `currentTaskId = null` if not immediately chaining to another task.
-  - `currentSubtaskPath = null`
-  - `currentStep = "idle"` or continue to next iteration.
-  - `lastUpdate` / `lastDecision`.
-- Add task to `executedTasks[]`.
+  ```sql
+  -- Archive the completed task
+  UPDATE tasks SET
+      archived_at = datetime('now'),
+      updated_at = datetime('now')
+  WHERE id = '<task-id>';
+
+  -- Archive parent if all children are now archived
+  UPDATE tasks SET
+      archived_at = datetime('now'),
+      updated_at = datetime('now')
+  WHERE id = (SELECT parent_id FROM tasks WHERE id = '<task-id>')
+    AND NOT EXISTS (
+        SELECT 1 FROM tasks c
+        WHERE c.parent_id = (SELECT parent_id FROM tasks WHERE id = '<task-id>')
+          AND c.archived_at IS NULL
+    );
+  ```
+
+- Update state table to clear current task:
+  ```sql
+  UPDATE state SET
+      current_task_id = NULL,
+      current_subtask_path = NULL,
+      current_step = 'idle',
+      last_update = datetime('now')
+  WHERE id = 1;
+  ```
+
+- Add task to `executedTasks[]` (in-memory tracking).
 
 ### 3. Batch completion
 
 After finishing or reaching the limit:
 
 1. **Review batch task memories** (where `taskId == "*"`):
+   - Query batch memories:
+     ```sql
+     SELECT json_each.value as memory FROM state, json_each(state.task_memory)
+     WHERE state.id = 1
+       AND json_extract(json_each.value, '$.taskId') = '*';
+     ```
    - If any `"*"` task memories exist:
      - Ask the user: "These memories were applied to all tasks in this batch. Should any be promoted to global memory?"
      - For each: "Promote to global memory" or "Discard".
-     - Create global memories for promoted items.
-   - Clear all `"*"` task memories from `taskMemory[]`.
+     - Create global memories for promoted items (insert into `memories` table).
+   - Clear all `"*"` task memories from state:
+     ```sql
+     UPDATE state SET
+         task_memory = (
+             SELECT COALESCE(json_group_array(json_each.value), '[]')
+             FROM state s, json_each(s.task_memory)
+             WHERE s.id = 1
+               AND json_extract(json_each.value, '$.taskId') != '*'
+         ),
+         last_update = datetime('now')
+     WHERE id = 1;
+     ```
 
 2. **Present deferred conflicts** (if any):
    - Show summary of all warning/info conflicts encountered during the batch.
    - For each conflict, ask user how to resolve.
 
-3. **Summarize**:
-   - Which tasks were executed (IDs + titles).
-   - Memories that were applied.
-   - Any tasks that were skipped due to dependencies.
-   - Any conflicts that were resolved or deferred.
-   - The new high-level state (e.g. number of tasks done vs remaining).
+3. **Summarize with SQL aggregates**:
+   - Query task statistics:
+     ```sql
+     SELECT
+         COUNT(*) FILTER (WHERE status = 'done') as completed,
+         COUNT(*) FILTER (WHERE status NOT IN ('done', 'canceled', 'duplicate') AND archived_at IS NULL) as remaining,
+         COUNT(*) FILTER (WHERE status = 'blocked') as blocked,
+         COUNT(*) FILTER (WHERE status = 'in-progress') as in_progress
+     FROM tasks;
+     ```
+   - Display:
+     - Which tasks were executed (IDs + titles from `executedTasks[]`).
+     - Memories that were applied.
+     - Any tasks that were skipped due to dependencies.
+     - Any conflicts that were resolved or deferred.
+     - The new high-level state (e.g. number of tasks done vs remaining).
 
 4. **Cleanup logging session**:
    - Log to `decisions.log`:
      ```
      <timestamp> [DECISION] [<session-id>] Completed run-tasks batch: N tasks executed, M remaining
      ```
-   - Reset `.taskmanager/state.json`:
-     - Set `logging.debugEnabled = false`
-     - Set `logging.sessionId = null`
+   - Reset state table:
+     ```sql
+     UPDATE state SET
+         mode = 'interactive',
+         debug_enabled = 0,
+         session_id = NULL,
+         started_at = NULL,
+         last_update = datetime('now')
+     WHERE id = 1;
+     ```
 
 ---
 
@@ -209,40 +419,73 @@ Throughout batch execution, this command MUST log:
 - Memory matching per task
 - Conflict detection steps
 - Full batch state at start/end
+- SQL queries being executed
 
 ---
 
-## Status propagation helper (macro parent status)
+## Status Propagation Helper (Recursive CTE)
 
-Whenever this command changes the status of any **leaf** task, it MUST also update the status of all its **ancestor** tasks so that parents reflect the aggregate state of their subtasks.
+Whenever this command changes the status of any **leaf** task, it MUST also update the status of all its **ancestor** tasks using a single recursive CTE query.
 
-Conceptual algorithm (per parent, based on its **direct** children):
+### Propagation Rules (applied per parent, based on direct children):
 
-1. For the parent, collect the `status` of all its direct `subtasks`.
+1. If **any** child is `"in-progress"` -> parent `status = "in-progress"`
+2. Else if **any** child is `"blocked"` -> parent `status = "blocked"`
+3. Else if **any** child is `"needs-review"` -> parent `status = "needs-review"`
+4. Else if **any** child is in `"planned"`, `"draft"`, `"paused"` -> parent `status = "planned"`
+5. Else if **all** children are in `{"done", "canceled", "duplicate"}`:
+   - If at least one child is `"done"` -> parent `status = "done"`
+   - Else -> parent `status = "canceled"`
 
-2. Apply these precedence rules in order:
+### Complete Propagation Query
 
-   1. If **any** child is `"in-progress"`  
-      → parent `status = "in-progress"`.
+```sql
+-- First, get all ancestors
+WITH RECURSIVE ancestors AS (
+    SELECT parent_id as id
+    FROM tasks
+    WHERE id = '<task-id>' AND parent_id IS NOT NULL
+    UNION ALL
+    SELECT t.parent_id
+    FROM tasks t
+    JOIN ancestors a ON t.id = a.id
+    WHERE t.parent_id IS NOT NULL
+)
+-- Then update each ancestor based on its children's statuses
+UPDATE tasks SET
+    status = (
+        SELECT CASE
+            WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'in-progress')
+                THEN 'in-progress'
+            WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'blocked')
+                THEN 'blocked'
+            WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'needs-review')
+                THEN 'needs-review'
+            WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status IN ('planned', 'draft', 'paused'))
+                THEN 'planned'
+            WHEN EXISTS(SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id AND c.status = 'done')
+                THEN 'done'
+            ELSE 'canceled'
+        END
+    ),
+    updated_at = datetime('now')
+WHERE id IN (SELECT id FROM ancestors);
+```
 
-   2. Else if no child is `"in-progress"` and **any** child is `"blocked"`  
-      → parent `status = "blocked"`.
+**Key advantages of SQL propagation:**
+- **Atomic**: All updates happen in a single transaction
+- **Efficient**: Single query instead of iterative JSON manipulation
+- **Consistent**: Database ensures integrity via foreign keys
 
-   3. Else if no child is `"in-progress"` or `"blocked"` and **any** child is `"needs-review"`  
-      → parent `status = "needs-review"`.
+---
 
-   4. Else if no child is `"in-progress"`, `"blocked"`, or `"needs-review"` and **any** child is in:  
-      `"planned"`, `"draft"`, `"todo"`, `"paused"`  
-      → parent `status = "planned"` (macro “not-started / planned” state).
+## Related Commands
 
-   5. Else if **all** children are in `{"done", "canceled", "duplicate"}`:
-      - If at least one child is `"done"` → parent `status = "done"`.
-      - Else (all `"canceled"` or `"duplicate"`) → parent `status = "canceled"`.
+- `taskmanager:next-task` - Find the next available task (uses same selection query)
+- `taskmanager:execute-task <id>` - Execute a single task with full workflow
+- `taskmanager:get-task <id> [key]` - Token-efficient way to retrieve task properties
+- `taskmanager:update-status <status> <id1> [id2...]` - Batch status updates without propagation
+- `taskmanager:stats` - Token-efficient statistics via SQL aggregates
+- `taskmanager:dashboard` - Full progress overview
 
-3. After computing the parent’s new status, repeat this algorithm for its parent, and so on, up to the root.
-
-Implementation notes:
-
-- This helper should walk **bottom-up**: start from the leaf whose status changed, then its parent, then that parent’s parent, etc.
-- You MUST NOT set a parent’s status independently of its children; it is always derived using the rules above.
-- Always write back `.taskmanager/tasks.json` after propagation so other commands see consistent macro statuses.
+**Note:** This command uses the same task selection logic as `next-task` and the same status propagation as `execute-task`, ensuring consistency across the taskmanager plugin.
