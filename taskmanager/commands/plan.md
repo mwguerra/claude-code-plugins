@@ -1,5 +1,5 @@
 ---
-allowed-tools: Skill(taskmanager)
+allowed-tools: Skill(taskmanager), Bash
 argument-hint: "[file-path-or-folder-or-prompt] [--debug]"
 description: Parse a PRD file, folder, or prompt and generate hierarchical tasks with dependencies and complexity analysis
 ---
@@ -13,16 +13,60 @@ You are implementing the `taskmanager:plan` command.
 - `$1` (optional): path to a PRD file, a folder containing documentation files, or a prompt describing what to plan. If omitted, use `.taskmanager/docs/prd.md`.
 - `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
 
+## Database
+
+This command uses SQLite database at `.taskmanager/taskmanager.db`.
+
+**Schema reference for tasks table:**
+```sql
+CREATE TABLE tasks (
+    id TEXT PRIMARY KEY,
+    parent_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    details TEXT,
+    test_strategy TEXT,
+    status TEXT NOT NULL DEFAULT 'planned',
+    type TEXT NOT NULL DEFAULT 'feature',
+    priority TEXT NOT NULL DEFAULT 'medium',
+    complexity_score INTEGER,
+    complexity_scale TEXT,
+    complexity_reasoning TEXT,
+    complexity_expansion_prompt TEXT,
+    estimate_seconds INTEGER,
+    tags TEXT DEFAULT '[]',
+    dependencies TEXT DEFAULT '[]',
+    dependency_analysis TEXT,
+    meta TEXT DEFAULT '{}',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+```
+
 ## Behavior
 
 ### 0. Initialize logging session
 
 1. Generate a unique session ID using timestamp: `sess-$(date +%Y%m%d%H%M%S)` (e.g., `sess-20251212103045`).
 2. Check for `--debug` / `-d` flag.
-3. Update `.taskmanager/state.json`:
-   - Set `logging.sessionId` to the generated ID.
-   - Set `logging.debugEnabled = true` if `--debug` flag present, else `false`.
-4. Log to `decisions.log`:
+3. **Verify database exists** - Check if `.taskmanager/taskmanager.db` exists:
+   ```bash
+   if [ ! -f .taskmanager/taskmanager.db ]; then
+       echo "Error: Database not initialized. Run 'taskmanager:init' first."
+       exit 1
+   fi
+   ```
+4. Update session state in database:
+   ```bash
+   sqlite3 .taskmanager/taskmanager.db "
+   UPDATE state SET
+       session_id = '<session-id>',
+       debug_enabled = <1|0>,
+       last_update = datetime('now')
+   WHERE id = 1;
+   "
+   ```
+5. Log to `decisions.log`:
    ```
    <timestamp> [DECISION] [<session-id>] Started plan command
    ```
@@ -61,16 +105,98 @@ When `$1` is a folder (directory):
 - The folder structure is preserved in section headers for context.
 - If no markdown files are found in the folder, inform the user and gracefully exit.
 
-2. Call the `taskmanager` skill with instructions to:
+### 2. Generate and insert tasks
+
+1. Call the `taskmanager` skill with instructions to:
    - Read the chosen file or use the prompt if provided.
-   - Update `.taskmanager/tasks.json` with a realistic, hierarchical plan
-     as described in the skill and its examples.
-   - Optionally update `.taskmanager/state.json` and `.taskmanager/logs/decisions.log`
-     to reflect what changed.
+   - Generate a realistic, hierarchical plan as described in the skill and its examples.
+   - Return the task data structure for insertion.
+
+2. **Insert tasks via SQL transaction** - Use a transaction for atomicity:
+   ```bash
+   sqlite3 .taskmanager/taskmanager.db "
+   BEGIN TRANSACTION;
+
+   -- Insert parent task
+   INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+   VALUES (
+       '1',
+       NULL,
+       'Task title here',
+       'Task description',
+       'Implementation details',
+       'Test strategy',
+       'planned',
+       'feature',
+       'high',
+       3,
+       'M',
+       'Reasoning for complexity',
+       7200,
+       '[\"tag1\", \"tag2\"]',
+       '[]'
+   );
+
+   -- Insert subtasks with parent references
+   INSERT INTO tasks (id, parent_id, title, description, status, type, priority, complexity_score, complexity_scale, estimate_seconds, tags, dependencies)
+   VALUES (
+       '1.1',
+       '1',
+       'Subtask title',
+       'Subtask description',
+       'planned',
+       'feature',
+       'medium',
+       2,
+       'S',
+       3600,
+       '[]',
+       '[]'
+   );
+
+   INSERT INTO tasks (id, parent_id, title, description, status, type, priority, complexity_score, complexity_scale, estimate_seconds, tags, dependencies)
+   VALUES (
+       '1.2',
+       '1',
+       'Another subtask',
+       'Description',
+       'planned',
+       'feature',
+       'medium',
+       2,
+       'S',
+       3600,
+       '[]',
+       '[\"1.1\"]'
+   );
+
+   COMMIT;
+   "
+   ```
+
+**Important SQL notes:**
+- Use single quotes for string values, escape internal quotes by doubling them (`''`).
+- JSON fields (`tags`, `dependencies`, `meta`) must be valid JSON strings.
+- `parent_id` must reference an existing task ID or be NULL for top-level tasks.
+- Insert parent tasks before their children to satisfy foreign key constraints.
+- Always wrap multiple inserts in a transaction for atomicity.
 
 ### 3. After the skill finishes, summarize for the user
+
+1. Query the database for created task counts:
+   ```bash
+   sqlite3 .taskmanager/taskmanager.db "
+   SELECT
+       COUNT(*) as total,
+       COUNT(CASE WHEN parent_id IS NULL THEN 1 END) as top_level,
+       COUNT(CASE WHEN parent_id IS NOT NULL THEN 1 END) as subtasks
+   FROM tasks
+   WHERE created_at >= datetime('now', '-1 minute');
+   "
+   ```
+
+2. Report to user:
    - How many new tasks/subtasks were created.
-   - Whether any existing tasks were updated.
    - The IDs and titles of the most important top-level tasks.
 
 ### 4. Cleanup logging session
@@ -79,17 +205,26 @@ When `$1` is a folder (directory):
    ```
    <timestamp> [DECISION] [<session-id>] Completed plan command: N tasks created
    ```
-2. Reset `.taskmanager/state.json`:
-   - Set `logging.debugEnabled = false`
-   - Set `logging.sessionId = null`
+2. Reset session state in database:
+   ```bash
+   sqlite3 .taskmanager/taskmanager.db "
+   UPDATE state SET
+       debug_enabled = 0,
+       session_id = NULL,
+       last_update = datetime('now')
+   WHERE id = 1;
+   "
+   ```
 
 ## Logging Requirements
 
 This command MUST log to `.taskmanager/logs/`:
 
 **To errors.log** (ALWAYS):
+- Database not found errors
 - File not found errors
 - Parse errors
+- SQL errors
 - Validation errors
 
 **To decisions.log** (ALWAYS):
@@ -100,6 +235,25 @@ This command MUST log to `.taskmanager/logs/`:
 - PRD parsing details
 - Task generation algorithm steps
 - Complexity analysis details
+- SQL statements being executed
+
+## Error Handling
+
+**Database errors:**
+- If database does not exist, instruct user to run `taskmanager:init`.
+- If INSERT fails due to duplicate ID, report conflict and suggest resolution.
+- If foreign key constraint fails, check task insertion order.
+- Always ROLLBACK transaction on error.
+
+**Example error handling:**
+```bash
+result=$(sqlite3 .taskmanager/taskmanager.db "BEGIN; INSERT...; COMMIT;" 2>&1)
+if [ $? -ne 0 ]; then
+    echo "SQL Error: $result"
+    sqlite3 .taskmanager/taskmanager.db "ROLLBACK;"
+    # Log to errors.log
+fi
+```
 
 ## Usage examples
 
