@@ -319,3 +319,94 @@ CREATE TABLE IF NOT EXISTS state (
 
 -- Initialize state row
 INSERT OR IGNORE INTO state (id) VALUES (1);
+
+-- ============================================================================
+-- Ideas Table
+-- Capture ideas, thoughts, inspirations to not lose track
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS ideas (
+    id TEXT PRIMARY KEY,                          -- Idea ID (I-0001 format)
+    title TEXT NOT NULL,                          -- Brief title
+    description TEXT,                             -- Full description
+    idea_type TEXT NOT NULL,                      -- feature, improvement, experiment, research, learning, random
+    category TEXT,                                -- Related area: architecture, ux, performance, tooling, etc.
+    project TEXT,                                 -- Related project (optional)
+    source_session_id TEXT,                       -- Session where captured
+    source_context TEXT,                          -- Conversation context
+    priority TEXT DEFAULT 'medium',               -- high, medium, low
+    effort TEXT,                                  -- small, medium, large, unknown
+    potential_impact TEXT,                        -- high, medium, low
+    status TEXT DEFAULT 'captured',               -- captured, exploring, implementing, parked, done, discarded
+    related_ideas TEXT,                           -- JSON array of related idea IDs
+    related_decisions TEXT,                       -- JSON array of related decision IDs
+    notes TEXT,                                   -- Additional notes
+    tags TEXT,                                    -- JSON array of tags
+    vault_note_path TEXT,                         -- Path to Obsidian note if synced
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
+CREATE INDEX IF NOT EXISTS idx_ideas_type ON ideas(idea_type);
+CREATE INDEX IF NOT EXISTS idx_ideas_project ON ideas(project);
+CREATE INDEX IF NOT EXISTS idx_ideas_priority ON ideas(priority);
+
+-- ============================================================================
+-- Daily Notes Table
+-- Track daily summaries, plans, and reflections
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS daily_notes (
+    id TEXT PRIMARY KEY,                          -- Date in YYYY-MM-DD format
+    date TEXT NOT NULL UNIQUE,                    -- Date for this note
+    morning_plan TEXT,                            -- Morning plan/intentions
+    evening_reflection TEXT,                      -- End of day reflection
+    work_summary TEXT,                            -- Auto-generated work summary
+    first_activity_at TEXT,                       -- First recorded activity
+    last_activity_at TEXT,                        -- Last recorded activity
+    total_work_seconds INTEGER DEFAULT 0,         -- Total time worked (inferred)
+    projects_worked TEXT,                         -- JSON array of projects with time
+    sessions_count INTEGER DEFAULT 0,             -- Number of sessions
+    commits_count INTEGER DEFAULT 0,              -- Number of commits
+    completed_commitments TEXT,                   -- JSON array of commitment IDs completed
+    new_commitments TEXT,                         -- JSON array of commitment IDs created
+    overdue_items TEXT,                           -- JSON array of items that were overdue
+    new_ideas TEXT,                               -- JSON array of idea IDs captured
+    new_decisions TEXT,                           -- JSON array of decision IDs made
+    highlights TEXT,                              -- JSON array of notable accomplishments
+    blockers TEXT,                                -- JSON array of blockers/issues
+    personal_notes TEXT,                          -- Free-form personal notes
+    mood_rating INTEGER,                          -- 1-5 mood rating (optional)
+    energy_level INTEGER,                         -- 1-5 energy level (optional)
+    focus_score INTEGER,                          -- 1-5 focus/productivity score (optional)
+    vault_note_path TEXT,                         -- Path to Obsidian note if synced
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_notes_date ON daily_notes(date);
+
+-- ============================================================================
+-- Personal Notes Table
+-- Free-form notes, thoughts, and observations
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS personal_notes (
+    id TEXT PRIMARY KEY,                          -- Note ID (PN-0001 format)
+    title TEXT NOT NULL,                          -- Brief title
+    content TEXT NOT NULL,                        -- Note content
+    note_type TEXT DEFAULT 'general',             -- general, observation, question, reminder, journal
+    project TEXT,                                 -- Related project (optional)
+    session_id TEXT,                              -- Related session (optional)
+    tags TEXT,                                    -- JSON array of tags
+    pinned INTEGER DEFAULT 0,                     -- 1 if pinned/important
+    archived INTEGER DEFAULT 0,                   -- 1 if archived
+    vault_note_path TEXT,                         -- Path to Obsidian note if synced
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_personal_notes_type ON personal_notes(note_type);
+CREATE INDEX IF NOT EXISTS idx_personal_notes_pinned ON personal_notes(pinned);
+CREATE INDEX IF NOT EXISTS idx_personal_notes_archived ON personal_notes(archived);

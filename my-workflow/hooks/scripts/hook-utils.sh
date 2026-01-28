@@ -458,9 +458,9 @@ slugify() {
     echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//' | cut -c1-50
 }
 
-# Escape string for SQL
+# Escape string for SQL (double single quotes for SQLite)
 sql_escape() {
-    echo "${1//\'/\'\'}"
+    echo "$1" | sed "s/'/''/g"
 }
 
 # Escape string for JSON
@@ -537,6 +537,329 @@ activity_log() {
 }
 
 # ============================================================================
+# Daily Notes Functions
+# ============================================================================
+
+# Get or create today's daily note
+ensure_daily_note() {
+    local today
+    today=$(get_date)
+    local db
+    db=$(ensure_db) || return 1
+
+    # Check if daily note exists
+    local exists
+    exists=$(sqlite3 "$db" "SELECT COUNT(*) FROM daily_notes WHERE date = '$today'" 2>/dev/null || echo "0")
+
+    if [[ "$exists" == "0" ]]; then
+        # Create new daily note
+        sqlite3 "$db" "INSERT INTO daily_notes (id, date) VALUES ('$today', '$today')" 2>/dev/null
+        debug_log "Created daily note for $today"
+    fi
+
+    echo "$today"
+}
+
+# Update daily note with new idea
+update_daily_note_ideas() {
+    local idea_id="$1"
+    local db
+    db=$(ensure_db) || return 1
+    local today
+    today=$(ensure_daily_note)
+
+    # Get current ideas list
+    local current_ideas
+    current_ideas=$(sqlite3 "$db" "SELECT COALESCE(new_ideas, '[]') FROM daily_notes WHERE date = '$today'" 2>/dev/null)
+
+    # Add new idea to list
+    if [[ "$current_ideas" == "[]" || -z "$current_ideas" ]]; then
+        current_ideas="[\"$idea_id\"]"
+    else
+        current_ideas=$(echo "$current_ideas" | sed "s/\]$/,\"$idea_id\"]/")
+    fi
+
+    sqlite3 "$db" "UPDATE daily_notes SET new_ideas = '$current_ideas', updated_at = datetime('now') WHERE date = '$today'" 2>/dev/null
+}
+
+# Update daily note with new decision
+update_daily_note_decisions() {
+    local decision_id="$1"
+    local db
+    db=$(ensure_db) || return 1
+    local today
+    today=$(ensure_daily_note)
+
+    local current_decisions
+    current_decisions=$(sqlite3 "$db" "SELECT COALESCE(new_decisions, '[]') FROM daily_notes WHERE date = '$today'" 2>/dev/null)
+
+    if [[ "$current_decisions" == "[]" || -z "$current_decisions" ]]; then
+        current_decisions="[\"$decision_id\"]"
+    else
+        current_decisions=$(echo "$current_decisions" | sed "s/\]$/,\"$decision_id\"]/")
+    fi
+
+    sqlite3 "$db" "UPDATE daily_notes SET new_decisions = '$current_decisions', updated_at = datetime('now') WHERE date = '$today'" 2>/dev/null
+}
+
+# Update daily note with completed commitment
+update_daily_note_completed() {
+    local commitment_id="$1"
+    local db
+    db=$(ensure_db) || return 1
+    local today
+    today=$(ensure_daily_note)
+
+    local current_completed
+    current_completed=$(sqlite3 "$db" "SELECT COALESCE(completed_commitments, '[]') FROM daily_notes WHERE date = '$today'" 2>/dev/null)
+
+    if [[ "$current_completed" == "[]" || -z "$current_completed" ]]; then
+        current_completed="[\"$commitment_id\"]"
+    else
+        current_completed=$(echo "$current_completed" | sed "s/\]$/,\"$commitment_id\"]/")
+    fi
+
+    sqlite3 "$db" "UPDATE daily_notes SET completed_commitments = '$current_completed', updated_at = datetime('now') WHERE date = '$today'" 2>/dev/null
+}
+
+# Update daily note activity times
+update_daily_note_activity() {
+    local db
+    db=$(ensure_db) || return 1
+    local today
+    today=$(ensure_daily_note)
+    local now
+    now=$(get_iso_timestamp)
+
+    # Update first activity if not set
+    sqlite3 "$db" "UPDATE daily_notes SET first_activity_at = COALESCE(first_activity_at, '$now'), last_activity_at = '$now', updated_at = datetime('now') WHERE date = '$today'" 2>/dev/null
+}
+
+# Generate previous day summary for morning briefing
+get_previous_day_summary() {
+    local db
+    db=$(ensure_db) || return 1
+    local yesterday
+    yesterday=$(days_ago_date 1)
+
+    # Check if yesterday's note exists
+    local exists
+    exists=$(sqlite3 "$db" "SELECT COUNT(*) FROM daily_notes WHERE date = '$yesterday'" 2>/dev/null || echo "0")
+
+    if [[ "$exists" == "0" ]]; then
+        echo ""
+        return
+    fi
+
+    # Get yesterday's data
+    local data
+    data=$(sqlite3 -separator '|' "$db" "
+        SELECT
+            first_activity_at,
+            last_activity_at,
+            total_work_seconds,
+            sessions_count,
+            commits_count,
+            completed_commitments,
+            new_ideas,
+            new_decisions
+        FROM daily_notes
+        WHERE date = '$yesterday'
+    " 2>/dev/null)
+
+    if [[ -z "$data" ]]; then
+        echo ""
+        return
+    fi
+
+    IFS='|' read -r first_activity last_activity work_seconds sessions commits completed ideas decisions <<< "$data"
+
+    # Format work time
+    local work_hours=$((work_seconds / 3600))
+    local work_mins=$(((work_seconds % 3600) / 60))
+    local work_time=""
+    if [[ $work_hours -gt 0 ]]; then
+        work_time="${work_hours}h ${work_mins}m"
+    elif [[ $work_mins -gt 0 ]]; then
+        work_time="${work_mins}m"
+    else
+        work_time="minimal"
+    fi
+
+    # Format times
+    local start_time=""
+    local end_time=""
+    if [[ -n "$first_activity" ]]; then
+        start_time=$(echo "$first_activity" | cut -d'T' -f2 | cut -d':' -f1-2)
+    fi
+    if [[ -n "$last_activity" ]]; then
+        end_time=$(echo "$last_activity" | cut -d'T' -f2 | cut -d':' -f1-2)
+    fi
+
+    # Count items
+    local completed_count=0
+    local ideas_count=0
+    local decisions_count=0
+    if [[ -n "$completed" && "$completed" != "[]" ]]; then
+        completed_count=$(echo "$completed" | grep -o '"' | wc -l)
+        completed_count=$((completed_count / 2))
+    fi
+    if [[ -n "$ideas" && "$ideas" != "[]" ]]; then
+        ideas_count=$(echo "$ideas" | grep -o '"' | wc -l)
+        ideas_count=$((ideas_count / 2))
+    fi
+    if [[ -n "$decisions" && "$decisions" != "[]" ]]; then
+        decisions_count=$(echo "$decisions" | grep -o '"' | wc -l)
+        decisions_count=$((decisions_count / 2))
+    fi
+
+    # Build summary
+    echo "## Yesterday's Summary ($yesterday)"
+    echo ""
+    if [[ -n "$start_time" && -n "$end_time" ]]; then
+        echo "- **Work window**: $start_time - $end_time ($work_time active)"
+    fi
+    echo "- **Sessions**: ${sessions:-0}"
+    echo "- **Commits**: ${commits:-0}"
+    if [[ $completed_count -gt 0 ]]; then
+        echo "- **Completed**: $completed_count items"
+    fi
+    if [[ $ideas_count -gt 0 ]]; then
+        echo "- **New ideas**: $ideas_count captured"
+    fi
+    if [[ $decisions_count -gt 0 ]]; then
+        echo "- **Decisions**: $decisions_count made"
+    fi
+}
+
+# Get today's planner data
+get_today_planner() {
+    local db
+    db=$(ensure_db) || return 1
+    local today
+    today=$(get_date)
+
+    echo "## Today's Planner"
+    echo ""
+
+    # Overdue items
+    local overdue
+    overdue=$(sqlite3 -separator '|' "$db" "
+        SELECT id, title, priority, project
+        FROM commitments
+        WHERE status IN ('pending', 'in_progress')
+          AND due_date < '$today'
+        ORDER BY priority DESC, due_date ASC
+        LIMIT 10
+    " 2>/dev/null)
+
+    if [[ -n "$overdue" ]]; then
+        echo "### ⚠️ Overdue"
+        echo ""
+        while IFS='|' read -r id title priority project; do
+            local proj_str=""
+            [[ -n "$project" ]] && proj_str=" [$project]"
+            echo "- [ ] **$title**$proj_str ($priority)"
+        done <<< "$overdue"
+        echo ""
+    fi
+
+    # Due today
+    local due_today
+    due_today=$(sqlite3 -separator '|' "$db" "
+        SELECT id, title, priority, project
+        FROM commitments
+        WHERE status IN ('pending', 'in_progress')
+          AND due_date = '$today'
+        ORDER BY priority DESC
+        LIMIT 10
+    " 2>/dev/null)
+
+    if [[ -n "$due_today" ]]; then
+        echo "### 📅 Due Today"
+        echo ""
+        while IFS='|' read -r id title priority project; do
+            local proj_str=""
+            [[ -n "$project" ]] && proj_str=" [$project]"
+            echo "- [ ] **$title**$proj_str ($priority)"
+        done <<< "$due_today"
+        echo ""
+    fi
+
+    # High priority items
+    local high_priority
+    high_priority=$(sqlite3 -separator '|' "$db" "
+        SELECT id, title, project
+        FROM commitments
+        WHERE status IN ('pending', 'in_progress')
+          AND priority IN ('critical', 'high')
+          AND (due_date IS NULL OR due_date > '$today')
+        ORDER BY priority DESC
+        LIMIT 5
+    " 2>/dev/null)
+
+    if [[ -n "$high_priority" ]]; then
+        echo "### 🔥 High Priority"
+        echo ""
+        while IFS='|' read -r id title project; do
+            local proj_str=""
+            [[ -n "$project" ]] && proj_str=" [$project]"
+            echo "- [ ] **$title**$proj_str"
+        done <<< "$high_priority"
+        echo ""
+    fi
+
+    # Coming up (next 7 days)
+    local coming_up
+    coming_up=$(sqlite3 -separator '|' "$db" "
+        SELECT id, title, due_date, project
+        FROM commitments
+        WHERE status IN ('pending', 'in_progress')
+          AND due_date > '$today'
+          AND due_date <= date('$today', '+7 days')
+        ORDER BY due_date ASC
+        LIMIT 5
+    " 2>/dev/null)
+
+    if [[ -n "$coming_up" ]]; then
+        echo "### 📆 Coming Up (Next 7 Days)"
+        echo ""
+        while IFS='|' read -r id title due_date project; do
+            local proj_str=""
+            [[ -n "$project" ]] && proj_str=" [$project]"
+            echo "- [ ] **$title** - due $due_date$proj_str"
+        done <<< "$coming_up"
+        echo ""
+    fi
+}
+
+# Get ideas inbox
+get_ideas_inbox() {
+    local db
+    db=$(ensure_db) || return 1
+
+    local recent_ideas
+    recent_ideas=$(sqlite3 -separator '|' "$db" "
+        SELECT id, title, idea_type, project
+        FROM ideas
+        WHERE status = 'captured'
+        ORDER BY created_at DESC
+        LIMIT 10
+    " 2>/dev/null)
+
+    if [[ -n "$recent_ideas" ]]; then
+        echo "## 💡 Ideas Inbox"
+        echo ""
+        while IFS='|' read -r id title idea_type project; do
+            local proj_str=""
+            [[ -n "$project" ]] && proj_str=" [$project]"
+            echo "- **$title** ($idea_type)$proj_str"
+        done <<< "$recent_ideas"
+        echo ""
+    fi
+}
+
+# ============================================================================
 # Export Functions
 # ============================================================================
 
@@ -555,3 +878,6 @@ export -f date_to_epoch days_ago_epoch days_ago_date file_mtime touch_date
 export -f slugify sql_escape json_escape
 export -f ensure_dir get_tool_input get_tool_output get_stop_summary
 export -f debug_log activity_log
+export -f ensure_daily_note update_daily_note_ideas update_daily_note_decisions
+export -f update_daily_note_completed update_daily_note_activity
+export -f get_previous_day_summary get_today_planner get_ideas_inbox

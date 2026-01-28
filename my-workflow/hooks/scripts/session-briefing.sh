@@ -294,8 +294,118 @@ if is_enabled "github" && command -v gh &>/dev/null; then
 fi
 
 # ============================================================================
+# Daily Note & Previous Day Summary (Morning Briefing)
+# ============================================================================
+
+# Get date info (cross-platform compatible)
+TODAY=$(get_date)
+YEAR=$(date +%Y)
+MONTH_LOWER=$(date +%B | tr '[:upper:]' '[:lower:]')
+DAY_OF_WEEK=$(date +%A)
+
+# Ensure daily note exists and update activity time
+ensure_daily_note
+update_daily_note_activity
+
+# Check if this is the first session of the day
+FIRST_SESSION_TODAY=$(sqlite3 "$DB" "
+    SELECT COUNT(*)
+    FROM sessions
+    WHERE date(started_at) = date('now')
+      AND id != '$SESSION_ID'
+" 2>/dev/null || echo "0")
+
+# Generate morning briefing if this is first session of the day
+MORNING_BRIEFING=""
+if [[ "$FIRST_SESSION_TODAY" == "0" ]]; then
+    # Previous day summary
+    YESTERDAY_SUMMARY=$(get_previous_day_summary)
+    if [[ -n "$YESTERDAY_SUMMARY" ]]; then
+        MORNING_BRIEFING="$YESTERDAY_SUMMARY\n\n"
+    fi
+fi
+
+# Today's planner
+TODAY_PLANNER=$(get_today_planner)
+if [[ -n "$TODAY_PLANNER" ]]; then
+    MORNING_BRIEFING+="$TODAY_PLANNER\n"
+fi
+
+# Ideas inbox
+IDEAS_INBOX=$(get_ideas_inbox)
+if [[ -n "$IDEAS_INBOX" ]]; then
+    MORNING_BRIEFING+="$IDEAS_INBOX\n"
+fi
+
+# ============================================================================
+# Vault: Create/Update Daily Note
+# ============================================================================
+
+if is_enabled "vault"; then
+    VAULT_PATH=$(check_vault)
+    if [[ -n "$VAULT_PATH" ]]; then
+        WORKFLOW_FOLDER=$(get_workflow_folder)
+        ensure_vault_structure
+
+        # Create daily folder if needed
+        ensure_dir "$WORKFLOW_FOLDER/daily"
+
+        DAILY_FILE="$WORKFLOW_FOLDER/daily/$TODAY.md"
+
+        # Only create new daily note if it doesn't exist
+        if [[ ! -f "$DAILY_FILE" ]]; then
+            {
+                echo "---"
+                echo "title: \"Daily Note: $TODAY\""
+                echo "description: \"Workflow summary for $TODAY\""
+                echo "tags: [daily, workflow, $YEAR, $MONTH_LOWER]"
+                echo "related: []"
+                echo "created: $TODAY"
+                echo "updated: $TODAY"
+                echo "date: \"$TODAY\""
+                echo "day_of_week: \"$DAY_OF_WEEK\""
+                echo "---"
+                echo ""
+                echo "# Daily Note: $TODAY ($DAY_OF_WEEK)"
+                echo ""
+                echo "## Morning Plan"
+                echo ""
+                echo "<!-- Set your intentions for today -->"
+                echo ""
+                # Add today's planner
+                if [[ -n "$TODAY_PLANNER" ]]; then
+                    echo -e "$TODAY_PLANNER"
+                fi
+                echo ""
+                echo "## Work Log"
+                echo ""
+                echo "<!-- Sessions and activities will be logged here -->"
+                echo ""
+                echo "## Reflections"
+                echo ""
+                echo "<!-- End of day thoughts -->"
+                echo ""
+                echo "## Personal Notes"
+                echo ""
+                echo "<!-- Free-form notes -->"
+                echo ""
+            } > "$DAILY_FILE"
+
+            # Update database
+            db_exec "UPDATE daily_notes SET vault_note_path = 'workflow/daily/$TODAY' WHERE date = '$TODAY'"
+            debug_log "Created daily vault note: $DAILY_FILE"
+        fi
+    fi
+fi
+
+# ============================================================================
 # Output Briefing
 # ============================================================================
+
+# Combine morning briefing with existing briefing
+if [[ -n "$MORNING_BRIEFING" ]]; then
+    BRIEFING="$MORNING_BRIEFING$BRIEFING"
+fi
 
 if [[ -n "$BRIEFING" ]]; then
     echo ""
@@ -306,6 +416,7 @@ if [[ -n "$BRIEFING" ]]; then
     if [[ -n "$BRANCH" ]]; then
         echo "**Branch:** $BRANCH"
     fi
+    echo "**Date:** $(get_date) ($DAY_OF_WEEK)"
     echo ""
     echo -e "$BRIEFING"
     echo "---"

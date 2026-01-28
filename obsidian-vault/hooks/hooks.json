@@ -6,12 +6,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-commit.sh\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-commit.sh",
             "timeout": 15
           },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-component-creation.sh\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-component-creation.sh",
             "timeout": 10
           }
         ]
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-component-creation.sh\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-component-creation.sh",
             "timeout": 10
           }
         ]
@@ -29,11 +29,10 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-task-completion.sh\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-task-completion.sh",
             "timeout": 15
           }
         ]
@@ -41,11 +40,21 @@
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-session-summary.sh\"",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-session-summary.sh",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/capture-session-summary.sh",
             "timeout": 20
           }
         ]

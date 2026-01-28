@@ -179,6 +179,9 @@ db_exec "INSERT INTO decisions (
 # Log activity
 activity_log "decision" "Recorded decision: $TITLE" "decisions" "$DECISION_ID" "$PROJECT" "{\"category\":\"$CATEGORY\"}"
 
+# Update daily note
+update_daily_note_decisions "$DECISION_ID"
+
 debug_log "Created decision $DECISION_ID: $TITLE ($CATEGORY)"
 
 # ============================================================================

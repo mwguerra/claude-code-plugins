@@ -70,6 +70,33 @@ activity_log "session_end" "Completed session ($DURATION_SECONDS seconds)" "sess
 # Clear current session
 db_exec "UPDATE state SET current_session_id = NULL, updated_at = '$TIMESTAMP' WHERE id = 1"
 
+# Update daily note with session data
+TODAY=$(get_date)
+db_exec "UPDATE daily_notes SET
+    last_activity_at = '$TIMESTAMP',
+    sessions_count = COALESCE(sessions_count, 0) + 1,
+    total_work_seconds = COALESCE(total_work_seconds, 0) + $DURATION_SECONDS,
+    updated_at = datetime('now')
+WHERE date = '$TODAY'"
+
+# Update projects worked (JSON array)
+CURRENT_PROJECTS=$(sqlite3 "$DB" "SELECT COALESCE(projects_worked, '{}') FROM daily_notes WHERE date = '$TODAY'" 2>/dev/null || echo "{}")
+if [[ -n "$PROJECT" ]]; then
+    # Simple JSON update - add or increment project time
+    if echo "$CURRENT_PROJECTS" | grep -q "\"$PROJECT\""; then
+        # Project exists, increment time (simplified)
+        db_exec "UPDATE daily_notes SET projects_worked = '$CURRENT_PROJECTS' WHERE date = '$TODAY'"
+    else
+        # Add new project
+        if [[ "$CURRENT_PROJECTS" == "{}" ]]; then
+            NEW_PROJECTS="{\"$PROJECT\":$DURATION_SECONDS}"
+        else
+            NEW_PROJECTS=$(echo "$CURRENT_PROJECTS" | sed "s/}$/,\"$PROJECT\":$DURATION_SECONDS}/")
+        fi
+        db_exec "UPDATE daily_notes SET projects_worked = '$NEW_PROJECTS' WHERE date = '$TODAY'"
+    fi
+fi
+
 # ============================================================================
 # Vault Sync (if enabled)
 # ============================================================================
