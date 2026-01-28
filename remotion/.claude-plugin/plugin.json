@@ -1,0 +1,23 @@
+{
+  "name": "remotion",
+  "description": "Expert Remotion video development assistant with comprehensive documentation. Covers compositions, animations, 3D content, audio/video handling, captions, charts, transitions, and all Remotion APIs for creating programmatic videos in React.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
+  },
+  "keywords": [
+    "remotion",
+    "video",
+    "react",
+    "animation",
+    "composition",
+    "3d",
+    "audio",
+    "captions",
+    "charts",
+    "transitions",
+    "lottie",
+    "programmatic-video"
+  ]
+}

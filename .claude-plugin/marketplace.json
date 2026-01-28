@@ -429,6 +429,38 @@
         "productivity",
         "briefings"
       ]
+    },
+    {
+      "name": "remotion",
+      "source": "./remotion",
+      "version": "1.0.0",
+      "description": "Expert Remotion video development assistant with comprehensive documentation. Covers compositions, animations, 3D content, audio/video handling, captions, charts, transitions, and all Remotion APIs for creating programmatic videos in React.",
+      "keywords": [
+        "remotion",
+        "video",
+        "react",
+        "animation",
+        "composition",
+        "3d",
+        "audio",
+        "captions",
+        "charts",
+        "transitions",
+        "lottie",
+        "programmatic-video"
+      ],
+      "category": "development-tools",
+      "tags": [
+        "remotion",
+        "video-development",
+        "react-video",
+        "animation",
+        "compositions",
+        "3d-content",
+        "audio-video",
+        "captions",
+        "programmatic-video"
+      ]
     }
   ]
 }
