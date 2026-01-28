@@ -1,0 +1,26 @@
+{
+  "name": "my-workflow",
+  "description": "Personal workflow management - assistant, secretary, and executive in one. Tracks sessions, commitments, decisions, and goals. Integrates with Obsidian vault and GitHub. Provides intelligent briefings and productivity insights.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
+  },
+  "keywords": [
+    "workflow",
+    "productivity",
+    "assistant",
+    "secretary",
+    "executive",
+    "commitments",
+    "decisions",
+    "goals",
+    "briefing",
+    "github",
+    "obsidian",
+    "tracking",
+    "sessions",
+    "patterns",
+    "knowledge-graph"
+  ]
+}

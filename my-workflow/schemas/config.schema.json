@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "my-workflow-config.schema.json",
+  "title": "My Workflow Configuration",
+  "description": "Configuration schema for the my-workflow plugin",
+  "type": "object",
+  "properties": {
+    "github": {
+      "type": "object",
+      "description": "GitHub integration settings",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "GitHub username"
+        },
+        "trackRepos": {
+          "type": "array",
+          "description": "List of repos to track. Use ['*'] for all repos.",
+          "items": {
+            "type": "string"
+          },
+          "default": ["*"]
+        },
+        "excludeRepos": {
+          "type": "array",
+          "description": "List of repos to exclude from tracking",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "trackIssues": {
+          "type": "boolean",
+          "description": "Track assigned issues",
+          "default": true
+        },
+        "trackPRs": {
+          "type": "boolean",
+          "description": "Track authored PRs",
+          "default": true
+        },
+        "trackReviews": {
+          "type": "boolean",
+          "description": "Track requested reviews",
+          "default": true
+        },
+        "cacheMinutes": {
+          "type": "integer",
+          "description": "Minutes to cache GitHub data",
+          "default": 15,
+          "minimum": 1,
+          "maximum": 60
+        }
+      }
+    },
+    "briefing": {
+      "type": "object",
+      "description": "Session briefing settings",
+      "properties": {
+        "showOnStart": {
+          "type": "boolean",
+          "description": "Show briefing at session start",
+          "default": true
+        },
+        "includeGitHub": {
+          "type": "boolean",
+          "description": "Include GitHub items in briefing",
+          "default": true
+        },
+        "includePendingCommitments": {
+          "type": "boolean",
+          "description": "Include pending commitments",
+          "default": true
+        },
+        "includeRecentDecisions": {
+          "type": "boolean",
+          "description": "Include recent decisions",
+          "default": true
+        },
+        "includeGoalProgress": {
+          "type": "boolean",
+          "description": "Include goal progress summary",
+          "default": true
+        },
+        "includePatterns": {
+          "type": "boolean",
+          "description": "Include detected patterns",
+          "default": false
+        },
+        "daysBack": {
+          "type": "integer",
+          "description": "Days to look back for recent items",
+          "default": 7,
+          "minimum": 1,
+          "maximum": 30
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "Activity logging settings",
+      "properties": {
+        "captureCommits": {
+          "type": "boolean",
+          "description": "Log git commits",
+          "default": true
+        },
+        "captureDecisions": {
+          "type": "boolean",
+          "description": "Extract and log decisions",
+          "default": true
+        },
+        "captureCommitments": {
+          "type": "boolean",
+          "description": "Extract and log commitments",
+          "default": true
+        },
+        "captureToolCalls": {
+          "type": "boolean",
+          "description": "Log individual tool calls (verbose)",
+          "default": false
+        }
+      }
+    },
+    "vault": {
+      "type": "object",
+      "description": "Obsidian vault integration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable vault integration",
+          "default": true
+        },
+        "syncOnSessionEnd": {
+          "type": "boolean",
+          "description": "Sync to vault when session ends",
+          "default": true
+        },
+        "workflowFolder": {
+          "type": "string",
+          "description": "Folder within vault for workflow notes",
+          "default": "workflow"
+        }
+      }
+    },
+    "patterns": {
+      "type": "object",
+      "description": "Pattern detection settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable pattern detection",
+          "default": true
+        },
+        "minConfidence": {
+          "type": "number",
+          "description": "Minimum confidence to surface a pattern",
+          "default": 0.6,
+          "minimum": 0.1,
+          "maximum": 1.0
+        },
+        "minEvidence": {
+          "type": "integer",
+          "description": "Minimum evidence count",
+          "default": 3,
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
