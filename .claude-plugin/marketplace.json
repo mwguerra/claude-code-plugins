@@ -400,6 +400,35 @@
         "documentation",
         "discovery"
       ]
+    },
+    {
+      "name": "my-workflow",
+      "source": "./my-workflow",
+      "version": "1.0.0",
+      "description": "Personal workflow management combining assistant, secretary, and executive roles. Tracks sessions, commitments, decisions, and goals. Integrates with GitHub and Obsidian vault. Provides intelligent briefings and productivity insights.",
+      "keywords": [
+        "workflow",
+        "productivity",
+        "assistant",
+        "commitments",
+        "decisions",
+        "goals",
+        "github",
+        "obsidian",
+        "briefing"
+      ],
+      "category": "productivity",
+      "tags": [
+        "workflow-management",
+        "personal-assistant",
+        "commitments",
+        "decisions",
+        "goals",
+        "github-integration",
+        "obsidian-integration",
+        "productivity",
+        "briefings"
+      ]
     }
   ]
 }

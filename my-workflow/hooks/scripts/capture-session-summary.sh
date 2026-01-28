@@ -30,11 +30,11 @@ PROJECT=$(get_project_name)
 
 debug_log "Session summary length: ${#SUMMARY}"
 
-# Calculate duration
+# Calculate duration (cross-platform)
 START_TIME=$(sqlite3 "$DB" "SELECT started_at FROM sessions WHERE id = '$SESSION_ID'" 2>/dev/null)
 DURATION_SECONDS=0
 if [[ -n "$START_TIME" ]]; then
-    START_EPOCH=$(date -d "$START_TIME" +%s 2>/dev/null || echo "0")
+    START_EPOCH=$(date_to_epoch "$START_TIME")
     END_EPOCH=$(date +%s)
     if [[ "$START_EPOCH" -gt 0 ]]; then
         DURATION_SECONDS=$((END_EPOCH - START_EPOCH))

@@ -1,11 +1,28 @@
 #!/bin/bash
 # My Workflow Plugin - Hook Utility Functions
+# Cross-platform compatible (Linux, macOS, Windows/Git Bash)
 
 # Configuration and database paths
 CONFIG_FILE="$HOME/.claude/my-workflow.json"
 DB_DIR="$HOME/.claude/my-workflow"
 DB_PATH="$DB_DIR/workflow.db"
 OBSIDIAN_CONFIG="$HOME/.claude/obsidian-vault.json"
+
+# ============================================================================
+# Platform Detection
+# ============================================================================
+
+# Detect operating system
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     echo "linux" ;;
+        Darwin*)    echo "macos" ;;
+        CYGWIN*|MINGW*|MSYS*) echo "windows" ;;
+        *)          echo "unknown" ;;
+    esac
+}
+
+OS_TYPE=$(detect_os)
 
 # ============================================================================
 # Configuration Functions
@@ -351,7 +368,7 @@ get_latest_commit() {
 }
 
 # ============================================================================
-# Date/Time Functions
+# Date/Time Functions (Cross-platform)
 # ============================================================================
 
 # Get current date in YYYY-MM-DD format
@@ -367,6 +384,69 @@ get_datetime() {
 # Get ISO 8601 timestamp
 get_iso_timestamp() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
+}
+
+# Convert date string to epoch (cross-platform)
+# Usage: date_to_epoch "2024-01-28T10:30:00Z"
+date_to_epoch() {
+    local date_str="$1"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        # macOS date command
+        date -j -f "%Y-%m-%dT%H:%M:%SZ" "$date_str" +%s 2>/dev/null || \
+        date -j -f "%Y-%m-%d %H:%M:%S" "$date_str" +%s 2>/dev/null || \
+        echo "0"
+    else
+        # Linux/GNU date command
+        date -d "$date_str" +%s 2>/dev/null || echo "0"
+    fi
+}
+
+# Get epoch from N days ago (cross-platform)
+# Usage: days_ago_epoch 7
+days_ago_epoch() {
+    local days="$1"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        date -v-${days}d +%s
+    else
+        date -d "$days days ago" +%s
+    fi
+}
+
+# Get date N days ago in YYYY-MM-DD format (cross-platform)
+# Usage: days_ago_date 7
+days_ago_date() {
+    local days="$1"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        date -v-${days}d +%Y-%m-%d
+    else
+        date -d "$days days ago" +%Y-%m-%d
+    fi
+}
+
+# Get file modification time as epoch (cross-platform)
+# Usage: file_mtime "/path/to/file"
+file_mtime() {
+    local file="$1"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        stat -f %m "$file" 2>/dev/null || echo "0"
+    else
+        stat -c %Y "$file" 2>/dev/null || echo "0"
+    fi
+}
+
+# Touch file with specific date (cross-platform)
+# Usage: touch_date "2024-01-28 10:30:00" "/path/to/file"
+touch_date() {
+    local date_str="$1"
+    local file="$2"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        # macOS touch format: [[CC]YY]MMDDhhmm[.SS]
+        local formatted
+        formatted=$(date -j -f "%Y-%m-%d %H:%M:%S" "$date_str" +%Y%m%d%H%M.%S 2>/dev/null)
+        touch -t "$formatted" "$file" 2>/dev/null
+    else
+        touch -d "$date_str" "$file" 2>/dev/null
+    fi
 }
 
 # ============================================================================
@@ -460,6 +540,8 @@ activity_log() {
 # Export Functions
 # ============================================================================
 
+export OS_TYPE
+export -f detect_os
 export -f get_config is_enabled
 export -f ensure_db db_query db_exec get_next_id
 export -f generate_session_id get_current_session_id set_current_session
@@ -469,6 +551,7 @@ export -f find_related_notes get_todays_session_links get_recent_commit_links
 export -f ensure_vault_structure
 export -f get_project_name get_git_branch get_latest_commit
 export -f get_date get_datetime get_iso_timestamp
+export -f date_to_epoch days_ago_epoch days_ago_date file_mtime touch_date
 export -f slugify sql_escape json_escape
 export -f ensure_dir get_tool_input get_tool_output get_stop_summary
 export -f debug_log activity_log

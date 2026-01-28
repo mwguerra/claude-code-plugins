@@ -71,7 +71,7 @@ detect_git_changes() {
 
             echo "GIT: $short - $msg (by $author)"
         fi
-    done < <(git log --since="$(date -d '7 days ago' +%Y-%m-%d)" --format="%H|%h|%s|%an|%ci" 2>/dev/null)
+    done < <(git log --since="$(days_ago_date 7)" --format="%H|%h|%s|%an|%ci" 2>/dev/null)
 }
 
 # ============================================================================
@@ -92,9 +92,9 @@ detect_file_changes() {
         return
     fi
 
-    # Create temp file with last session timestamp
+    # Create temp file with last session timestamp (cross-platform)
     TEMP_FILE=$(mktemp)
-    touch -d "$LAST_SESSION" "$TEMP_FILE"
+    touch_date "$LAST_SESSION" "$TEMP_FILE"
 
     # Find files modified since last session
     COUNT=0
@@ -110,7 +110,7 @@ detect_file_changes() {
         esac
 
         CHANGE_ID=$(get_next_id "external_changes" "X")
-        MOD_TIME=$(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null)
+        MOD_TIME=$(file_mtime "$file")
         DETAILS="{\"file\":\"$file\",\"modified\":$MOD_TIME}"
 
         db_exec "INSERT INTO external_changes (

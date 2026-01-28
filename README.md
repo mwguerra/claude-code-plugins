@@ -119,6 +119,13 @@ Interactive PRD (Product Requirements Document) builder with comprehensive inter
 /plugin install prd-builder@mwguerra-marketplace
 ```
 
+### my-workflow
+Personal workflow management combining assistant, secretary, and executive roles. Tracks sessions, commitments, decisions, and goals. Integrates with GitHub and Obsidian vault. Provides intelligent briefings and productivity insights.
+
+```bash
+/plugin install my-workflow@mwguerra-marketplace
+```
+
 ## Reinstall Script
 
 If you need to completely reinstall all marketplace plugins (useful after updates or to fix issues), add this script to `~/.claude/reinstall_marketplace.sh`:
