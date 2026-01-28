@@ -171,6 +171,155 @@ get_workflow_folder() {
     echo "$vault_path/$folder"
 }
 
+# Sanitize tag (remove special chars, lowercase)
+sanitize_tag() {
+    echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//'
+}
+
+# Create consistent frontmatter for vault notes
+# Usage: create_vault_frontmatter "title" "description" "tag1, tag2" "[[related1]], [[related2]]" "extra_yaml"
+create_vault_frontmatter() {
+    local title="$1"
+    local description="$2"
+    local tags="$3"
+    local related="$4"
+    local extra="$5"
+    local created="${6:-$(get_date)}"
+
+    # Sanitize tags
+    local sanitized_tags=""
+    IFS=',' read -ra TAG_ARRAY <<< "$tags"
+    for tag in "${TAG_ARRAY[@]}"; do
+        tag=$(echo "$tag" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+        local clean_tag=$(sanitize_tag "$tag")
+        if [[ -n "$clean_tag" ]]; then
+            if [[ -n "$sanitized_tags" ]]; then
+                sanitized_tags="$sanitized_tags, $clean_tag"
+            else
+                sanitized_tags="$clean_tag"
+            fi
+        fi
+    done
+
+    echo "---"
+    echo "title: \"$(echo "$title" | sed 's/"/\\"/g')\""
+    if [[ -n "$description" ]]; then
+        echo "description: \"$(echo "$description" | sed 's/"/\\"/g')\""
+    fi
+    echo "tags: [$sanitized_tags]"
+    if [[ -n "$related" ]]; then
+        echo "related: [$related]"
+    else
+        echo "related: []"
+    fi
+    echo "created: $created"
+    echo "updated: $(get_date)"
+    if [[ -n "$extra" ]]; then
+        echo "$extra"
+    fi
+    echo "---"
+}
+
+# Build wiki-link for Obsidian
+# Usage: wiki_link "workflow/sessions/2024-01-28-session" "optional display text"
+wiki_link() {
+    local path="$1"
+    local display="$2"
+    # Remove .md extension if present
+    path="${path%.md}"
+    if [[ -n "$display" ]]; then
+        echo "[[${path}|${display}]]"
+    else
+        echo "[[${path}]]"
+    fi
+}
+
+# Find related notes in vault by searching frontmatter
+# Usage: find_related_notes "workflow/sessions" "project" "my-project"
+find_related_notes() {
+    local folder="$1"
+    local field="$2"
+    local value="$3"
+    local vault_path
+    vault_path=$(check_vault) || return
+
+    local results=""
+    while IFS= read -r file; do
+        if [[ -f "$file" ]]; then
+            # Get relative path without vault prefix and .md extension
+            local rel_path="${file#$vault_path/}"
+            rel_path="${rel_path%.md}"
+            if [[ -n "$results" ]]; then
+                results="$results, [[${rel_path}]]"
+            else
+                results="[[${rel_path}]]"
+            fi
+        fi
+    done < <(grep -l "^${field}:.*${value}" "$vault_path/$folder"/*.md 2>/dev/null | head -5)
+
+    echo "$results"
+}
+
+# Get today's session notes for cross-referencing
+get_todays_session_links() {
+    local workflow_folder
+    workflow_folder=$(get_workflow_folder) || return
+    local date=$(get_date)
+    local results=""
+
+    for file in "$workflow_folder/sessions/${date}"*.md; do
+        if [[ -f "$file" ]]; then
+            local rel_path="${file#$(get_vault_path)/}"
+            rel_path="${rel_path%.md}"
+            if [[ -n "$results" ]]; then
+                results="$results, [[${rel_path}]]"
+            else
+                results="[[${rel_path}]]"
+            fi
+        fi
+    done
+    echo "$results"
+}
+
+# Get recent commit links for a project
+get_recent_commit_links() {
+    local project="$1"
+    local limit="${2:-5}"
+    local workflow_folder
+    workflow_folder=$(get_workflow_folder) || return
+
+    local results=""
+    local count=0
+    for file in $(ls -t "$workflow_folder/commits/"*.md 2>/dev/null); do
+        if [[ $count -ge $limit ]]; then break; fi
+        if grep -q "^project:.*$project" "$file" 2>/dev/null; then
+            local rel_path="${file#$(get_vault_path)/}"
+            rel_path="${rel_path%.md}"
+            if [[ -n "$results" ]]; then
+                results="$results, [[${rel_path}]]"
+            else
+                results="[[${rel_path}]]"
+            fi
+            count=$((count + 1))
+        fi
+    done
+    echo "$results"
+}
+
+# Ensure all workflow vault directories exist
+ensure_vault_structure() {
+    local workflow_folder
+    workflow_folder=$(get_workflow_folder) || return 1
+
+    ensure_dir "$workflow_folder/sessions"
+    ensure_dir "$workflow_folder/commits"
+    ensure_dir "$workflow_folder/decisions"
+    ensure_dir "$workflow_folder/commitments"
+    ensure_dir "$workflow_folder/goals"
+    ensure_dir "$workflow_folder/reviews"
+    ensure_dir "$workflow_folder/patterns"
+}
+
 # ============================================================================
 # Project/Git Functions
 # ============================================================================
@@ -315,6 +464,9 @@ export -f get_config is_enabled
 export -f ensure_db db_query db_exec get_next_id
 export -f generate_session_id get_current_session_id set_current_session
 export -f get_vault_path check_vault get_workflow_folder
+export -f sanitize_tag create_vault_frontmatter wiki_link
+export -f find_related_notes get_todays_session_links get_recent_commit_links
+export -f ensure_vault_structure
 export -f get_project_name get_git_branch get_latest_commit
 export -f get_date get_datetime get_iso_timestamp
 export -f slugify sql_escape json_escape

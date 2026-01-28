@@ -78,7 +78,7 @@ if is_enabled "vault"; then
     VAULT_PATH=$(check_vault)
     if [[ -n "$VAULT_PATH" ]]; then
         WORKFLOW_FOLDER=$(get_workflow_folder)
-        ensure_dir "$WORKFLOW_FOLDER/commits"
+        ensure_vault_structure
 
         DATE=$(get_date)
         SLUG=$(slugify "$COMMIT_MSG")
@@ -97,26 +97,47 @@ if is_enabled "vault"; then
             COMMIT_TYPE="${BASH_REMATCH[1]}"
         fi
 
+        # Build related notes
+        RELATED=""
+
+        # Link to today's sessions
+        SESSION_LINKS=$(get_todays_session_links)
+        if [[ -n "$SESSION_LINKS" ]]; then
+            RELATED="$SESSION_LINKS"
+        fi
+
+        # Link to project note
+        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+        if [[ -f "$PROJECT_NOTE" ]]; then
+            if [[ -n "$RELATED" ]]; then
+                RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
+            else
+                RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+            fi
+        fi
+
+        # Build extra frontmatter
+        EXTRA="commit: \"$COMMIT_SHORT\"
+hash: \"$COMMIT_HASH\"
+project: \"$PROJECT\"
+branch: \"$BRANCH\"
+author: \"$COMMIT_AUTHOR\"
+commit_type: \"$COMMIT_TYPE\""
+
         # Create vault note
         {
-            echo "---"
-            echo "title: \"$COMMIT_MSG\""
-            echo "commit: \"$COMMIT_SHORT\""
-            echo "hash: \"$COMMIT_HASH\""
-            echo "project: \"$PROJECT\""
-            echo "branch: \"$BRANCH\""
-            echo "author: \"$COMMIT_AUTHOR\""
-            echo "date: $DATE"
-            echo "type: \"$COMMIT_TYPE\""
-            echo "tags: [commit, $PROJECT, $BRANCH, $COMMIT_TYPE]"
-            echo "---"
+            create_vault_frontmatter "$COMMIT_MSG" "Git commit in $PROJECT on branch $BRANCH" "commit, $PROJECT, $BRANCH, $COMMIT_TYPE" "$RELATED" "$EXTRA"
             echo ""
             echo "# $COMMIT_MSG"
             echo ""
-            echo "**Date:** $COMMIT_DATE"
-            echo "**Project:** $PROJECT"
-            echo "**Branch:** $BRANCH"
-            echo "**Commit:** \`$COMMIT_SHORT\` ([full hash]($COMMIT_HASH))"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Date | $COMMIT_DATE |"
+            echo "| Project | $PROJECT |"
+            echo "| Branch | $BRANCH |"
+            echo "| Commit | \`$COMMIT_SHORT\` |"
+            echo "| Author | $COMMIT_AUTHOR |"
+            echo "| Type | $COMMIT_TYPE |"
             echo ""
 
             if [[ -n "$COMMIT_BODY" ]]; then
@@ -133,15 +154,22 @@ if is_enabled "vault"; then
             echo '```'
             echo ""
 
-            echo "## What"
+            echo "## Context"
             echo ""
+            echo "### What"
             echo "<!-- Describe what was changed -->"
             echo ""
-
-            echo "## Why"
-            echo ""
+            echo "### Why"
             echo "<!-- Explain the reasoning -->"
             echo ""
+
+            # Link to session if available
+            if [[ -n "$SESSION_LINKS" ]]; then
+                echo "## Related Session"
+                echo ""
+                echo "This commit was made during: $SESSION_LINKS"
+                echo ""
+            fi
 
         } > "$FILE_PATH"
 

@@ -78,13 +78,14 @@ if is_enabled "vault"; then
     VAULT_PATH=$(check_vault)
     if [[ -n "$VAULT_PATH" ]]; then
         WORKFLOW_FOLDER=$(get_workflow_folder)
-        ensure_dir "$WORKFLOW_FOLDER/sessions"
+        ensure_vault_structure
 
         DATE=$(get_date)
         SLUG=$(slugify "${PROJECT:-session}")
         TIME=$(date +%H%M)
         FILENAME="${DATE}-${TIME}-${SLUG}.md"
         FILE_PATH="$WORKFLOW_FOLDER/sessions/$FILENAME"
+        REL_PATH="workflow/sessions/${FILENAME%.md}"
 
         # Format duration
         HOURS=$((DURATION_SECONDS / 3600))
@@ -98,30 +99,84 @@ if is_enabled "vault"; then
 
         # Get session highlights from activity timeline
         HIGHLIGHTS=$(sqlite3 "$DB" "
-            SELECT title, activity_type
+            SELECT title, activity_type, entity_id
             FROM activity_timeline
             WHERE session_id = '$SESSION_ID'
               AND activity_type NOT IN ('session_start', 'session_end')
             ORDER BY timestamp
         " 2>/dev/null)
 
+        # Build related notes list
+        RELATED=""
+
+        # Find commits from this session
+        COMMIT_LINKS=""
+        if [[ "$COMMITS_JSON" != "[]" ]]; then
+            echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null | while read -r hash; do
+                SHORT=$(git log -1 --format="%h" "$hash" 2>/dev/null)
+                MSG=$(git log -1 --format="%s" "$hash" 2>/dev/null)
+                COMMIT_SLUG=$(slugify "$MSG")
+                COMMIT_FILE="workflow/commits/${DATE}-${COMMIT_SLUG}"
+                if [[ -n "$COMMIT_LINKS" ]]; then
+                    COMMIT_LINKS="$COMMIT_LINKS, [[${COMMIT_FILE}|${SHORT}]]"
+                else
+                    COMMIT_LINKS="[[${COMMIT_FILE}|${SHORT}]]"
+                fi
+            done
+        fi
+
+        # Find decisions from this session
+        DECISION_LINKS=$(sqlite3 "$DB" "
+            SELECT id, title FROM decisions
+            WHERE source_session_id = '$SESSION_ID'
+        " 2>/dev/null | while IFS='|' read -r did dtitle; do
+            DSLUG=$(slugify "$dtitle")
+            echo "[[workflow/decisions/${DATE}-${DSLUG}|${did}]]"
+        done | paste -sd ', ' -)
+
+        # Find commitments from this session
+        COMMITMENT_LINKS=$(sqlite3 "$DB" "
+            SELECT id, title FROM commitments
+            WHERE source_session_id = '$SESSION_ID'
+        " 2>/dev/null | while IFS='|' read -r cid ctitle; do
+            echo "[[workflow/commitments/${cid}|${cid}]]"
+        done | paste -sd ', ' -)
+
+        # Check for project note
+        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+        if [[ -f "$PROJECT_NOTE" ]]; then
+            RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+        fi
+
+        # Combine all related links
+        for links in "$COMMIT_LINKS" "$DECISION_LINKS" "$COMMITMENT_LINKS"; do
+            if [[ -n "$links" ]]; then
+                if [[ -n "$RELATED" ]]; then
+                    RELATED="$RELATED, $links"
+                else
+                    RELATED="$links"
+                fi
+            fi
+        done
+
+        # Build extra frontmatter
+        EXTRA="session_id: \"$SESSION_ID\"
+project: \"$PROJECT\"
+duration: \"$DURATION_STR\"
+duration_seconds: $DURATION_SECONDS"
+
         # Create vault note
         {
-            echo "---"
-            echo "title: \"Session: $PROJECT\""
-            echo "session_id: \"$SESSION_ID\""
-            echo "project: \"$PROJECT\""
-            echo "date: $DATE"
-            echo "duration: \"$DURATION_STR\""
-            echo "duration_seconds: $DURATION_SECONDS"
-            echo "tags: [session, workflow, $PROJECT]"
-            echo "---"
+            create_vault_frontmatter "Session: $PROJECT" "Claude Code session in $PROJECT" "session, workflow, $PROJECT" "$RELATED" "$EXTRA"
             echo ""
             echo "# Session: $PROJECT"
             echo ""
-            echo "**Date:** $(date '+%Y-%m-%d %H:%M')"
-            echo "**Duration:** $DURATION_STR"
-            echo "**Session ID:** $SESSION_ID"
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Date | $(date '+%Y-%m-%d %H:%M') |"
+            echo "| Duration | $DURATION_STR |"
+            echo "| Project | $PROJECT |"
+            echo "| Session ID | \`$SESSION_ID\` |"
             echo ""
 
             if [[ -n "$SUMMARY" ]]; then
@@ -132,10 +187,23 @@ if is_enabled "vault"; then
             fi
 
             if [[ -n "$HIGHLIGHTS" ]]; then
-                echo "## Activity Highlights"
+                echo "## Activity"
                 echo ""
-                while IFS='|' read -r title activity_type; do
-                    echo "- [$activity_type] $title"
+                while IFS='|' read -r title activity_type entity_id; do
+                    case "$activity_type" in
+                        "commit")
+                            echo "- **Commit**: $title"
+                            ;;
+                        "decision")
+                            echo "- **Decision**: $title → [[workflow/decisions/${DATE}-$(slugify "$title")|$entity_id]]"
+                            ;;
+                        "commitment")
+                            echo "- **Commitment**: $title → [[workflow/commitments/$entity_id|$entity_id]]"
+                            ;;
+                        *)
+                            echo "- [$activity_type] $title"
+                            ;;
+                    esac
                 done <<< "$HIGHLIGHTS"
                 echo ""
             fi
@@ -143,11 +211,12 @@ if is_enabled "vault"; then
             if [[ "$COMMITS_JSON" != "[]" ]]; then
                 echo "## Commits"
                 echo ""
-                echo '```'
                 echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null | while read -r hash; do
-                    git log -1 --format="- %h %s" "$hash" 2>/dev/null
+                    SHORT=$(git log -1 --format="%h" "$hash" 2>/dev/null)
+                    MSG=$(git log -1 --format="%s" "$hash" 2>/dev/null)
+                    COMMIT_SLUG=$(slugify "$MSG")
+                    echo "- [[workflow/commits/${DATE}-${COMMIT_SLUG}|${SHORT}]] $MSG"
                 done
-                echo '```'
                 echo ""
             fi
 

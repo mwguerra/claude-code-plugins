@@ -155,5 +155,93 @@ activity_log "commitment" "Extracted commitment: $TITLE" "commitments" "$COMMITM
 
 debug_log "Created commitment $COMMITMENT_ID: $TITLE"
 
+# ============================================================================
+# Vault Sync (if enabled)
+# ============================================================================
+
+if is_enabled "vault"; then
+    VAULT_PATH=$(check_vault)
+    if [[ -n "$VAULT_PATH" ]]; then
+        WORKFLOW_FOLDER=$(get_workflow_folder)
+        ensure_vault_structure
+
+        # Use commitment ID in filename for uniqueness
+        FILENAME="${COMMITMENT_ID}.md"
+        FILE_PATH="$WORKFLOW_FOLDER/commitments/$FILENAME"
+
+        # Build related notes
+        RELATED=""
+
+        # Link to today's sessions
+        SESSION_LINKS=$(get_todays_session_links)
+        if [[ -n "$SESSION_LINKS" ]]; then
+            RELATED="$SESSION_LINKS"
+        fi
+
+        # Link to project note
+        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+        if [[ -f "$PROJECT_NOTE" ]]; then
+            if [[ -n "$RELATED" ]]; then
+                RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
+            else
+                RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+            fi
+        fi
+
+        # Build extra frontmatter
+        EXTRA="commitment_id: \"$COMMITMENT_ID\"
+project: \"$PROJECT\"
+priority: \"$PRIORITY\"
+due_type: \"$DUE_TYPE\"
+status: pending"
+
+        # Create vault note
+        {
+            create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY, pending" "$RELATED" "$EXTRA"
+            echo ""
+            echo "# $TITLE"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| ID | $COMMITMENT_ID |"
+            echo "| Created | $(get_datetime) |"
+            echo "| Project | $PROJECT |"
+            echo "| Priority | $PRIORITY |"
+            echo "| Due Type | $DUE_TYPE |"
+            echo "| Status | Pending |"
+            echo ""
+
+            echo "## Context"
+            echo ""
+            echo "$CONTEXT"
+            echo ""
+
+            echo "## Details"
+            echo ""
+            echo "<!-- Add more details about this commitment -->"
+            echo ""
+
+            echo "## Notes"
+            echo ""
+            echo "<!-- Track progress and notes here -->"
+            echo ""
+
+            # Link to session if available
+            if [[ -n "$SESSION_LINKS" ]]; then
+                echo "## Related Session"
+                echo ""
+                echo "Commitment extracted during: $SESSION_LINKS"
+                echo ""
+            fi
+
+        } > "$FILE_PATH"
+
+        # Update commitment with vault note path
+        db_exec "UPDATE commitments SET vault_note_path = '$FILE_PATH' WHERE id = '$COMMITMENT_ID'"
+
+        debug_log "Created commitment note: $FILE_PATH"
+    fi
+fi
+
 # Silent exit - commitments are reviewed later, not shown immediately
 exit 0

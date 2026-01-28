@@ -181,5 +181,99 @@ activity_log "decision" "Recorded decision: $TITLE" "decisions" "$DECISION_ID" "
 
 debug_log "Created decision $DECISION_ID: $TITLE ($CATEGORY)"
 
+# ============================================================================
+# Vault Sync (if enabled)
+# ============================================================================
+
+if is_enabled "vault"; then
+    VAULT_PATH=$(check_vault)
+    if [[ -n "$VAULT_PATH" ]]; then
+        WORKFLOW_FOLDER=$(get_workflow_folder)
+        ensure_vault_structure
+
+        DATE=$(get_date)
+        SLUG=$(slugify "$TITLE")
+        FILENAME="${DATE}-${SLUG}.md"
+        FILE_PATH="$WORKFLOW_FOLDER/decisions/$FILENAME"
+
+        # Build related notes
+        RELATED=""
+
+        # Link to today's sessions
+        SESSION_LINKS=$(get_todays_session_links)
+        if [[ -n "$SESSION_LINKS" ]]; then
+            RELATED="$SESSION_LINKS"
+        fi
+
+        # Link to project note
+        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+        if [[ -f "$PROJECT_NOTE" ]]; then
+            if [[ -n "$RELATED" ]]; then
+                RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
+            else
+                RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+            fi
+        fi
+
+        # Build extra frontmatter
+        EXTRA="decision_id: \"$DECISION_ID\"
+category: \"$CATEGORY\"
+project: \"$PROJECT\"
+status: active"
+
+        # Create vault note
+        {
+            create_vault_frontmatter "$TITLE" "Decision: $CATEGORY in $PROJECT" "decision, $PROJECT, $CATEGORY" "$RELATED" "$EXTRA"
+            echo ""
+            echo "# $TITLE"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| ID | $DECISION_ID |"
+            echo "| Date | $(get_datetime) |"
+            echo "| Category | $CATEGORY |"
+            echo "| Project | $PROJECT |"
+            echo "| Status | Active |"
+            echo ""
+
+            echo "## Decision"
+            echo ""
+            echo "$CONTEXT"
+            echo ""
+
+            if [[ -n "$RATIONALE" ]]; then
+                echo "## Rationale"
+                echo ""
+                echo "$RATIONALE"
+                echo ""
+            fi
+
+            echo "## Alternatives Considered"
+            echo ""
+            echo "<!-- Document alternatives that were considered -->"
+            echo ""
+
+            echo "## Consequences"
+            echo ""
+            echo "<!-- What are the implications of this decision? -->"
+            echo ""
+
+            # Link to session if available
+            if [[ -n "$SESSION_LINKS" ]]; then
+                echo "## Related Session"
+                echo ""
+                echo "Decision made during: $SESSION_LINKS"
+                echo ""
+            fi
+
+        } > "$FILE_PATH"
+
+        # Update decision with vault note path
+        db_exec "UPDATE decisions SET vault_note_path = '$FILE_PATH' WHERE id = '$DECISION_ID'"
+
+        debug_log "Created decision note: $FILE_PATH"
+    fi
+fi
+
 # Silent exit - decisions are reviewed later
 exit 0
