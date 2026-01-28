@@ -1,28 +1,28 @@
 {
-  "hooks": [
-    {
-      "event": "PostToolUse",
-      "matcher": "Bash",
-      "description": "Check bash command output for errors and search memory",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/search-on-error.sh",
-          "timeout": 5000
-        }
-      ]
-    },
-    {
-      "event": "PostToolUse",
-      "matcher": "mcp__.*playwright.*",
-      "description": "Check Playwright browser output for errors",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "bash $CLAUDE_PLUGIN_ROOT/hooks/scripts/search-on-error.sh",
-          "timeout": 5000
-        }
-      ]
-    }
-  ]
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "description": "Check bash command output for errors and search memory",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/search-on-error.sh\"",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*playwright.*",
+        "description": "Check Playwright browser output for errors",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/search-on-error.sh\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
 }
