@@ -1310,6 +1310,204 @@ safe_db_exec() {
 }
 
 # ============================================================================
+# Session Note Functions
+# ============================================================================
+
+# Get session note path for current or specified session
+# Usage: get_session_note_path [session_id]
+get_session_note_path() {
+    local session_id="${1:-$(get_current_session_id)}"
+
+    if [[ -z "$session_id" ]]; then
+        return 1
+    fi
+
+    local workflow_folder
+    workflow_folder=$(get_workflow_folder) || return 1
+
+    # Look for existing session note
+    local session_file
+    session_file=$(find "$workflow_folder/sessions" -name "*${session_id}*.md" 2>/dev/null | head -1)
+
+    if [[ -n "$session_file" && -f "$session_file" ]]; then
+        echo "$session_file"
+        return 0
+    fi
+
+    # Return expected path for new session
+    local today=$(get_date)
+    local time=$(date +%H%M)
+    echo "$workflow_folder/sessions/${today}-${time}-session.md"
+}
+
+# Append content to a session note's Claude Analysis section
+# Usage: append_to_session_note "title" "content" [session_id]
+append_to_session_note() {
+    local title="$1"
+    local content="$2"
+    local session_id="${3:-$(get_current_session_id)}"
+
+    local session_file
+    session_file=$(get_session_note_path "$session_id")
+
+    if [[ -z "$session_file" ]]; then
+        debug_log "Cannot append to session note: no session file found"
+        return 1
+    fi
+
+    # Ensure file exists with basic structure
+    if [[ ! -f "$session_file" ]]; then
+        debug_log "Session file doesn't exist yet: $session_file"
+        return 1
+    fi
+
+    local timestamp=$(date '+%H:%M')
+
+    # Check if Claude Analysis section exists, add if not
+    if ! grep -q "^## Claude Analysis" "$session_file" 2>/dev/null; then
+        # Find a good insertion point (after Summary section or at the end)
+        if grep -q "^## Summary" "$session_file" 2>/dev/null; then
+            # Insert after Summary section
+            sed -i '/^## Summary/,/^## /{/^## [^S]/i\
+## Claude Analysis\
+
+}' "$session_file" 2>/dev/null || {
+                # Fallback: append at end
+                echo -e "\n## Claude Analysis\n" >> "$session_file"
+            }
+        else
+            # Append before first ## section or at end
+            echo -e "\n## Claude Analysis\n" >> "$session_file"
+        fi
+    fi
+
+    # Format the entry
+    local entry="### $timestamp - $title"
+    local formatted_content=$(echo "$content" | sed 's/^/> /')
+
+    # Append to Claude Analysis section
+    local temp_file="${session_file}.tmp"
+    awk -v entry="$entry" -v content="$content" '
+        /^## Claude Analysis/ {
+            print
+            getline
+            print
+            print entry
+            print ""
+            # Print content with proper formatting
+            n = split(content, lines, "\n")
+            for (i = 1; i <= n; i++) {
+                print lines[i]
+            }
+            print ""
+            next
+        }
+        { print }
+    ' "$session_file" > "$temp_file" && mv "$temp_file" "$session_file"
+
+    debug_log "Appended Claude analysis to session note: $title"
+    return 0
+}
+
+# Add or update session link in daily note
+# Usage: update_daily_session_link "session_id" "project" "start_time" [end_time] [duration_mins]
+update_daily_session_link() {
+    local session_id="$1"
+    local project="$2"
+    local start_time="$3"
+    local end_time="${4:-ongoing}"
+    local duration="${5:-}"
+
+    local workflow_folder
+    workflow_folder=$(get_workflow_folder) || return 1
+
+    local today=$(get_date)
+    local daily_file="$workflow_folder/daily/${today}.md"
+
+    # Ensure daily file exists
+    if [[ ! -f "$daily_file" ]]; then
+        create_daily_vault_template "$daily_file"
+    fi
+
+    # Check if Sessions section exists
+    if ! grep -q "^## Sessions" "$daily_file" 2>/dev/null; then
+        # Add Sessions section after frontmatter
+        sed -i '/^---$/,/^---$/{/^---$/!b;:a;n;/^---$/!ba;a\
+\
+## Sessions\
+
+}' "$daily_file" 2>/dev/null || {
+            # Fallback: add after title
+            sed -i '/^# Daily Note/a\
+\
+## Sessions\
+' "$daily_file" 2>/dev/null || {
+                # Last fallback: append
+                echo -e "\n## Sessions\n" >> "$daily_file"
+            }
+        }
+    fi
+
+    # Format the session link
+    local session_note_name="${today}-${start_time//:/}-session"
+    local time_display="${start_time}"
+
+    if [[ "$end_time" != "ongoing" && -n "$end_time" ]]; then
+        time_display="${start_time} → ${end_time}"
+        if [[ -n "$duration" ]]; then
+            local hours=$((duration / 60))
+            local mins=$((duration % 60))
+            if [[ $hours -gt 0 ]]; then
+                time_display="$time_display (${hours}h ${mins}m)"
+            else
+                time_display="$time_display (${mins}m)"
+            fi
+        fi
+    else
+        time_display="${start_time} → ongoing"
+    fi
+
+    local link_line="- [[workflow/sessions/${session_note_name}|${project}]] ${time_display}"
+
+    # Check if this session is already in the file
+    if grep -q "$session_id" "$daily_file" 2>/dev/null || grep -q "$session_note_name" "$daily_file" 2>/dev/null; then
+        # Update existing line
+        sed -i "s|.*${session_note_name}.*|${link_line}|" "$daily_file" 2>/dev/null || \
+        sed -i "s|.*${session_id}.*|${link_line}|" "$daily_file" 2>/dev/null
+        debug_log "Updated session link in daily note: $session_id"
+    else
+        # Add new line after ## Sessions header
+        sed -i "/^## Sessions/a\\
+${link_line}" "$daily_file" 2>/dev/null || {
+            # Fallback: append to file
+            echo "$link_line" >> "$daily_file"
+        }
+        debug_log "Added session link to daily note: $session_id"
+    fi
+
+    return 0
+}
+
+# Get captured summaries from current session for end-of-session analysis
+# Usage: get_session_summaries [session_id]
+get_session_summaries() {
+    local session_id="${1:-$(get_current_session_id)}"
+
+    local session_file
+    session_file=$(get_session_note_path "$session_id")
+
+    if [[ -z "$session_file" || ! -f "$session_file" ]]; then
+        echo ""
+        return 0
+    fi
+
+    # Extract content from Claude Analysis section
+    awk '/^## Claude Analysis/,/^## [^C]/' "$session_file" 2>/dev/null | \
+        grep -v "^## " | \
+        head -100
+}
+
+# ============================================================================
 # Export Functions
 # ============================================================================
 
@@ -1334,3 +1532,4 @@ export -f get_previous_day_summary get_today_planner get_ideas_inbox
 export -f append_to_section create_daily_vault_template vault_log_activity vault_mark_session_interrupted
 export -f is_claude_running_for_directory cleanup_orphaned_sessions
 export -f random_delay safe_write_file safe_append_file safe_read_file create_vault_note_safe safe_db_exec
+export -f get_session_note_path append_to_session_note update_daily_session_link get_session_summaries

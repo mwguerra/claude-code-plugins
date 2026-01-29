@@ -111,6 +111,8 @@ if is_enabled "vault"; then
         DATE=$(get_date)
         SLUG=$(slugify "${PROJECT:-session}")
         TIME=$(date +%H%M)
+        START_TIME_DISPLAY=$(echo "$START_TIME" | cut -d'T' -f2 | cut -d':' -f1-2 2>/dev/null || echo "$TIME")
+        END_TIME_DISPLAY=$(date +%H:%M)
         FILENAME="${DATE}-${TIME}-${SLUG}.md"
         FILE_PATH="$WORKFLOW_FOLDER/sessions/$FILENAME"
         REL_PATH="workflow/sessions/${FILENAME%.md}"
@@ -124,6 +126,7 @@ if is_enabled "vault"; then
         else
             DURATION_STR="${MINUTES}m"
         fi
+        DURATION_MINS=$((DURATION_SECONDS / 60))
 
         # Get session highlights from activity timeline
         HIGHLIGHTS=$(sqlite3 "$DB" "
@@ -134,11 +137,19 @@ if is_enabled "vault"; then
             ORDER BY timestamp
         " 2>/dev/null)
 
+        # Get captured Claude summaries from session note (if it exists)
+        CAPTURED_SUMMARIES=""
+        EXISTING_SESSION_FILE=$(get_session_note_path "$SESSION_ID")
+        if [[ -n "$EXISTING_SESSION_FILE" && -f "$EXISTING_SESSION_FILE" ]]; then
+            CAPTURED_SUMMARIES=$(get_session_summaries "$SESSION_ID")
+        fi
+
         # Build related notes list
         RELATED=""
 
         # Find commits from this session
         COMMIT_LINKS=""
+        COMMIT_COUNT=0
         if [[ "$COMMITS_JSON" != "[]" ]]; then
             while read -r hash; do
                 LINK=$(get_commit_link "$hash")
@@ -148,6 +159,7 @@ if is_enabled "vault"; then
                     else
                         COMMIT_LINKS="$LINK"
                     fi
+                    COMMIT_COUNT=$((COMMIT_COUNT + 1))
                 fi
             done < <(echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null)
         fi
@@ -186,11 +198,45 @@ if is_enabled "vault"; then
             fi
         done
 
+        # ============================================================================
+        # Generate AI-Powered Session Summary (Sonnet)
+        # ============================================================================
+
+        AI_SUMMARY=""
+        if is_enabled "ai"; then
+            debug_log "Generating AI-powered session summary with Sonnet..."
+
+            # Build highlights text for AI analysis
+            HIGHLIGHTS_TEXT="$SUMMARY"
+            if [[ -n "$CAPTURED_SUMMARIES" ]]; then
+                HIGHLIGHTS_TEXT="$HIGHLIGHTS_TEXT
+
+Captured Claude Analysis:
+$CAPTURED_SUMMARIES"
+            fi
+            if [[ -n "$HIGHLIGHTS" ]]; then
+                HIGHLIGHTS_TEXT="$HIGHLIGHTS_TEXT
+
+Activity Timeline:
+$HIGHLIGHTS"
+            fi
+
+            # Generate comprehensive summary using Sonnet
+            AI_SUMMARY=$(ai_generate_session_summary "$PROJECT" "$DURATION_MINS" "$COMMIT_COUNT" "$HIGHLIGHTS_TEXT")
+
+            if [[ -n "$AI_SUMMARY" ]]; then
+                debug_log "AI session summary generated successfully"
+            else
+                debug_log "AI session summary generation failed, using basic summary"
+            fi
+        fi
+
         # Build extra frontmatter
         EXTRA="session_id: \"$SESSION_ID\"
 project: \"$PROJECT\"
 duration: \"$DURATION_STR\"
-duration_seconds: $DURATION_SECONDS"
+duration_seconds: $DURATION_SECONDS
+commits_count: $COMMIT_COUNT"
 
         # Create vault note (with retry logic for concurrent access)
         {
@@ -200,16 +246,31 @@ duration_seconds: $DURATION_SECONDS"
             echo ""
             echo "| Field | Value |"
             echo "|-------|-------|"
-            echo "| Date | $(date '+%Y-%m-%d %H:%M') |"
+            echo "| Date | $(date '+%Y-%m-%d') |"
+            echo "| Time | ${START_TIME_DISPLAY} → ${END_TIME_DISPLAY} |"
             echo "| Duration | $DURATION_STR |"
             echo "| Project | $PROJECT |"
-            echo "| Session ID | \`$SESSION_ID\` |"
+            echo "| Commits | $COMMIT_COUNT |"
             echo ""
 
-            if [[ -n "$SUMMARY" ]]; then
+            # AI-Generated Summary (from Sonnet)
+            if [[ -n "$AI_SUMMARY" ]]; then
+                echo "## Summary"
+                echo ""
+                echo "$AI_SUMMARY"
+                echo ""
+            elif [[ -n "$SUMMARY" ]]; then
                 echo "## Summary"
                 echo ""
                 echo "$SUMMARY"
+                echo ""
+            fi
+
+            # Captured Claude Analysis (from Haiku during session)
+            if [[ -n "$CAPTURED_SUMMARIES" ]]; then
+                echo "## Claude Analysis"
+                echo ""
+                echo "$CAPTURED_SUMMARIES"
                 echo ""
             fi
 
@@ -226,6 +287,9 @@ duration_seconds: $DURATION_SECONDS"
                             ;;
                         "commitment")
                             echo "- **Commitment**: $title → [[workflow/commitments/$entity_id|$entity_id]]"
+                            ;;
+                        "claude_summary")
+                            echo "- **Summary**: $title"
                             ;;
                         *)
                             echo "- [$activity_type] $title"
@@ -255,6 +319,12 @@ duration_seconds: $DURATION_SECONDS"
 
         # Update session with vault note path
         db_exec "UPDATE sessions SET vault_note_path = '$FILE_PATH' WHERE id = '$SESSION_ID'"
+
+        # ============================================================================
+        # Update Daily Note with Session Link
+        # ============================================================================
+
+        update_daily_session_link "$SESSION_ID" "$PROJECT" "$START_TIME_DISPLAY" "$END_TIME_DISPLAY" "$DURATION_MINS"
 
         debug_log "Created vault note: $FILE_PATH"
         echo "WORKFLOW_SESSION_NOTE: $FILE_PATH"

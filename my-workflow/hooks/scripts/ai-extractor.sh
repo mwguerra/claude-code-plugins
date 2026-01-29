@@ -493,6 +493,257 @@ get_commit_link() {
 }
 
 # =============================================================================
+# Model Selection Helpers
+# =============================================================================
+
+# Get model identifier for API calls
+get_model_id() {
+    local model_name="${1:-haiku}"
+    case "$model_name" in
+        haiku)
+            echo "claude-3-5-haiku-latest"
+            ;;
+        sonnet)
+            echo "claude-sonnet-4-20250514"
+            ;;
+        *)
+            echo "claude-3-5-haiku-latest"
+            ;;
+    esac
+}
+
+# Get model name for CLI calls
+get_cli_model() {
+    local model_name="${1:-haiku}"
+    case "$model_name" in
+        haiku)
+            echo "haiku"
+            ;;
+        sonnet)
+            echo "sonnet"
+            ;;
+        *)
+            echo "haiku"
+            ;;
+    esac
+}
+
+# =============================================================================
+# Response Classification (Haiku)
+# =============================================================================
+
+# Classify if a Claude response is worth saving
+# Usage: ai_classify_response "response_text"
+# Returns: JSON with {save: bool, reason: string, title: string}
+ai_classify_response() {
+    local response_text="$1"
+
+    # Skip very short responses
+    if [[ ${#response_text} -lt 100 ]]; then
+        echo '{"save": false, "reason": "too_short", "title": ""}'
+        return 0
+    fi
+
+    if ! extractor_ai_enabled; then
+        # Fallback: pattern-based detection
+        if echo "$response_text" | grep -qiE '(completed|implemented|created|fixed|pushed|committed|summary|here.s what|results?:)'; then
+            if echo "$response_text" | grep -qE '^[[:space:]]*[-*•]'; then
+                echo '{"save": true, "reason": "pattern_match", "title": "Summary"}'
+                return 0
+            fi
+        fi
+        echo '{"save": false, "reason": "no_pattern_match", "title": ""}'
+        return 0
+    fi
+
+    # Truncate very long text
+    local max_chars=4000
+    if [[ ${#response_text} -gt $max_chars ]]; then
+        response_text="${response_text:0:$max_chars}..."
+    fi
+
+    local prompt='Analyze this Claude response. Is it a meaningful summary, analysis, or status report worth saving for future reference?
+
+Criteria for YES:
+- Reports completed work or accomplishments
+- Explains technical decisions or architecture
+- Provides analysis or insights
+- Lists outcomes, results, or next steps
+- Contains structured information (bullet points with substance)
+
+Criteria for NO:
+- Simple acknowledgments ("Got it", "Sure", "Yes")
+- Questions back to the user
+- Code-only responses without explanation
+- Short clarifications
+- Design proposals still being discussed (not finalized)
+
+Response to analyze:
+---
+'"$response_text"'
+---
+
+Reply with JSON only:
+{"save": true/false, "reason": "brief explanation", "title": "suggested title if save=true"}'
+
+    local result=""
+
+    if extractor_cli_available; then
+        debug_log "Using Haiku to classify response"
+        local cli_response
+        cli_response=$(echo "$prompt" | timeout 15 claude \
+            --print \
+            --model haiku \
+            --output-format json \
+            --max-budget-usd 0.10 \
+            --no-session-persistence \
+            2>/dev/null) || true
+
+        if [[ -n "$cli_response" ]]; then
+            result=$(echo "$cli_response" | jq -r '.result // empty' 2>/dev/null)
+        fi
+    elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        debug_log "Using API to classify response"
+        local response
+        response=$(curl -s --max-time 15 \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -n \
+                --arg model "claude-3-5-haiku-latest" \
+                --arg prompt "$prompt" \
+                '{
+                    model: $model,
+                    max_tokens: 200,
+                    messages: [{role: "user", content: $prompt}]
+                }')" \
+            "https://api.anthropic.com/v1/messages" 2>/dev/null)
+
+        if [[ -n "$response" ]]; then
+            result=$(echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null)
+        fi
+    fi
+
+    # Parse and validate result
+    if [[ -n "$result" ]]; then
+        # Strip markdown code blocks if present
+        result=$(echo "$result" | sed 's/^```json//; s/^```//; s/```$//' | tr '\n' ' ' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+
+        if echo "$result" | jq . >/dev/null 2>&1; then
+            # Ensure required fields exist
+            result=$(echo "$result" | jq '{
+                save: (.save // false),
+                reason: (.reason // "unknown"),
+                title: (.title // "")
+            }')
+            echo "$result"
+            return 0
+        fi
+    fi
+
+    # Default: don't save if classification failed
+    debug_log "Classification failed, defaulting to not save"
+    echo '{"save": false, "reason": "classification_failed", "title": ""}'
+    return 0
+}
+
+# =============================================================================
+# Session Summary Generation (Sonnet)
+# =============================================================================
+
+# Generate comprehensive session summary using Sonnet
+# Usage: ai_generate_session_summary "project" "duration_mins" "commit_count" "highlights"
+ai_generate_session_summary() {
+    local project="$1"
+    local duration="$2"
+    local commit_count="$3"
+    local highlights="$4"
+
+    if ! extractor_ai_enabled; then
+        # Fallback: simple summary
+        echo "Session for $project (${duration} minutes, $commit_count commits)"
+        return 0
+    fi
+
+    # Truncate highlights if too long
+    local max_chars=6000
+    if [[ ${#highlights} -gt $max_chars ]]; then
+        highlights="${highlights:0:$max_chars}..."
+    fi
+
+    local prompt="Analyze this Claude Code session and provide a comprehensive summary.
+
+Session context:
+- Project: $project
+- Duration: $duration minutes
+- Commits: $commit_count
+
+Conversation highlights and captured summaries:
+$highlights
+
+Provide a summary with these sections:
+1. **Key Accomplishments** - What was built, fixed, or completed
+2. **Technical Decisions** - Architecture or approach choices made (if any)
+3. **Problems Solved** - Issues encountered and how they were resolved (if any)
+4. **Next Steps** - Identified follow-up work or open items (if any)
+
+Rules:
+- Be concise but comprehensive
+- Skip sections if nothing relevant
+- Use bullet points for clarity
+- Focus on outcomes, not process
+- Max 300 words total"
+
+    local result=""
+
+    if extractor_cli_available; then
+        debug_log "Using Sonnet for session summary"
+        local cli_response
+        cli_response=$(echo "$prompt" | timeout 45 claude \
+            --print \
+            --model sonnet \
+            --output-format json \
+            --max-budget-usd 0.50 \
+            --no-session-persistence \
+            2>/dev/null) || true
+
+        if [[ -n "$cli_response" ]]; then
+            result=$(echo "$cli_response" | jq -r '.result // empty' 2>/dev/null)
+        fi
+    elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        debug_log "Using API (Sonnet) for session summary"
+        local response
+        response=$(curl -s --max-time 45 \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -n \
+                --arg model "claude-sonnet-4-20250514" \
+                --arg prompt "$prompt" \
+                '{
+                    model: $model,
+                    max_tokens: 1000,
+                    messages: [{role: "user", content: $prompt}]
+                }')" \
+            "https://api.anthropic.com/v1/messages" 2>/dev/null)
+
+        if [[ -n "$response" ]]; then
+            result=$(echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null)
+        fi
+    fi
+
+    if [[ -n "$result" ]]; then
+        echo "$result"
+        return 0
+    fi
+
+    # Fallback if AI failed
+    debug_log "Session summary generation failed, using fallback"
+    echo "Session for $project (${duration} minutes, $commit_count commits)"
+    return 0
+}
+
+# =============================================================================
 # Export Functions
 # =============================================================================
 
@@ -500,3 +751,5 @@ export -f extractor_ai_enabled extractor_get_method
 export -f ai_extract_all_items pattern_extract_all_items smart_extract_all_items
 export -f ai_generate_filename smart_filename
 export -f get_github_repo_url get_commit_github_url get_commit_link
+export -f get_model_id get_cli_model
+export -f ai_classify_response ai_generate_session_summary

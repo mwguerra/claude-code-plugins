@@ -404,6 +404,11 @@ if is_enabled "vault"; then
             db_exec "UPDATE daily_notes SET vault_note_path = 'workflow/daily/$TODAY' WHERE date = '$TODAY'"
             debug_log "Created daily vault note: $DAILY_FILE"
         fi
+
+        # Add session link to daily note (with "ongoing" status)
+        START_TIME=$(date +%H:%M)
+        update_daily_session_link "$SESSION_ID" "$PROJECT" "$START_TIME" "ongoing" ""
+        debug_log "Added session link to daily note"
     fi
 fi
 
