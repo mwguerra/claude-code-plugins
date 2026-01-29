@@ -22,11 +22,14 @@ if [[ "$error_count" -eq 0 ]]; then
     exit 0
 fi
 
-# Read hook input
-INPUT=$(cat)
+# Read hook input from environment variables (Claude Code provides these)
+TOOL_OUTPUT="${CLAUDE_TOOL_OUTPUT:-}"
+EXIT_CODE="${CLAUDE_EXIT_CODE:-0}"
 
-TOOL_OUTPUT=$(echo "$INPUT" | jq -r '.tool_output // .toolOutput // .output // ""')
-EXIT_CODE=$(echo "$INPUT" | jq -r '.exit_code // .exitCode // 0')
+# Skip if no output
+if [[ -z "$TOOL_OUTPUT" ]]; then
+    exit 0
+fi
 
 # Quick check for error indicators
 has_error=false
