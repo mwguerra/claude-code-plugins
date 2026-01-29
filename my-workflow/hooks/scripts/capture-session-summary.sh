@@ -6,6 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
+source "$SCRIPT_DIR/ai-extractor.sh"
 
 debug_log "capture-session-summary.sh triggered"
 
@@ -139,17 +140,16 @@ if is_enabled "vault"; then
         # Find commits from this session
         COMMIT_LINKS=""
         if [[ "$COMMITS_JSON" != "[]" ]]; then
-            echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null | while read -r hash; do
-                SHORT=$(git log -1 --format="%h" "$hash" 2>/dev/null)
-                MSG=$(git log -1 --format="%s" "$hash" 2>/dev/null)
-                COMMIT_SLUG=$(slugify "$MSG")
-                COMMIT_FILE="workflow/commits/${DATE}-${COMMIT_SLUG}"
-                if [[ -n "$COMMIT_LINKS" ]]; then
-                    COMMIT_LINKS="$COMMIT_LINKS, [[${COMMIT_FILE}|${SHORT}]]"
-                else
-                    COMMIT_LINKS="[[${COMMIT_FILE}|${SHORT}]]"
+            while read -r hash; do
+                LINK=$(get_commit_link "$hash")
+                if [[ -n "$LINK" ]]; then
+                    if [[ -n "$COMMIT_LINKS" ]]; then
+                        COMMIT_LINKS="$COMMIT_LINKS, $LINK"
+                    else
+                        COMMIT_LINKS="$LINK"
+                    fi
                 fi
-            done
+            done < <(echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null)
         fi
 
         # Find decisions from this session
@@ -238,12 +238,11 @@ duration_seconds: $DURATION_SECONDS"
             if [[ "$COMMITS_JSON" != "[]" ]]; then
                 echo "## Commits"
                 echo ""
-                echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null | while read -r hash; do
-                    SHORT=$(git log -1 --format="%h" "$hash" 2>/dev/null)
+                while read -r hash; do
                     MSG=$(git log -1 --format="%s" "$hash" 2>/dev/null)
-                    COMMIT_SLUG=$(slugify "$MSG")
-                    echo "- [[workflow/commits/${DATE}-${COMMIT_SLUG}|${SHORT}]] $MSG"
-                done
+                    LINK=$(get_commit_link "$hash")
+                    echo "- $LINK $MSG"
+                done < <(echo "$COMMITS_JSON" | jq -r '.[]' 2>/dev/null)
                 echo ""
             fi
 

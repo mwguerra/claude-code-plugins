@@ -1,12 +1,14 @@
 #!/bin/bash
 # My Workflow Plugin - Extract Commitments from Conversation
 # Triggered by PostToolUse events
-# Silently extracts promises, follow-ups, and action items
+# Captures ALL promises, follow-ups, and action items
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
+source "$SCRIPT_DIR/db-helper.sh"
+source "$SCRIPT_DIR/ai-extractor.sh"
 
 debug_log "capture-commitment.sh triggered"
 
@@ -31,217 +33,178 @@ if [[ -z "$TOOL_OUTPUT" ]]; then
     exit 0
 fi
 
-# ============================================================================
-# Commitment Detection Patterns
-# These patterns indicate promises or action items
-# ============================================================================
-
-# Patterns that indicate a commitment from Claude/assistant
-COMMITMENT_PATTERNS=(
-    # Direct promises
-    "I will "
-    "I'll "
-    "Let me "
-    # Future actions
-    "will need to "
-    "should be done "
-    "needs to be "
-    # Task indicators
-    "TODO:"
-    "FIXME:"
-    "HACK:"
-    # Follow-up indicators
-    "follow up"
-    "follow-up"
-    "get back to"
-    "circle back"
-    "revisit this"
-    # User requests that imply commitment
-    "remind me to"
-    "don't forget to"
-    "make sure to"
-    # Deferred work
-    "later we should"
-    "in a future session"
-    "next time"
-)
-
-# Check if output contains any commitment patterns
-FOUND_COMMITMENT=""
-MATCHING_PATTERN=""
-
-for pattern in "${COMMITMENT_PATTERNS[@]}"; do
-    if echo "$TOOL_OUTPUT" | grep -qi "$pattern"; then
-        FOUND_COMMITMENT="true"
-        MATCHING_PATTERN="$pattern"
-        break
-    fi
-done
-
-if [[ -z "$FOUND_COMMITMENT" ]]; then
-    debug_log "No commitment patterns found"
-    exit 0
-fi
-
-debug_log "Found commitment pattern: $MATCHING_PATTERN"
-
-# ============================================================================
-# Extract Commitment Context
-# ============================================================================
-
-# Get the surrounding context (sentences containing the pattern)
-# This is a simplified extraction - in production would use more sophisticated NLP
-CONTEXT=$(echo "$TOOL_OUTPUT" | grep -i "$MATCHING_PATTERN" | head -3)
-
-if [[ -z "$CONTEXT" ]]; then
-    debug_log "Could not extract context"
-    exit 0
-fi
-
-# Generate a title from the first line of context
-TITLE=$(echo "$CONTEXT" | head -1 | cut -c1-100)
-
-# Clean up the title
-TITLE=$(echo "$TITLE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-# Skip if title is too short or generic
-if [[ ${#TITLE} -lt 10 ]]; then
-    debug_log "Title too short, skipping"
+# Skip very short content
+if [[ ${#TOOL_OUTPUT} -lt 20 ]]; then
+    debug_log "Tool output too short to analyze"
     exit 0
 fi
 
 # ============================================================================
-# Create Commitment Record
+# Extract ALL Commitments using AI or Patterns
 # ============================================================================
 
 PROJECT=$(get_project_name)
-SESSION_ID=$(get_current_session_id)
-TIMESTAMP=$(get_iso_timestamp)
-COMMITMENT_ID=$(get_next_id "commitments" "C")
+SESSION_ID=$(db_get_current_session_id)
+COMMITMENTS_CREATED=0
 
-# Escape for SQL
-ESCAPED_TITLE=$(sql_escape "$TITLE")
-ESCAPED_CONTEXT=$(sql_escape "$CONTEXT")
+# Use smart extraction (AI with pattern fallback)
+EXTRACTION_RESULT=$(smart_extract_all_items "$TOOL_OUTPUT")
 
-# Determine priority based on keywords
-PRIORITY="medium"
-if echo "$CONTEXT" | grep -qi "urgent\|critical\|asap\|immediately"; then
-    PRIORITY="high"
-elif echo "$CONTEXT" | grep -qi "when you have time\|low priority\|nice to have"; then
-    PRIORITY="low"
+if [[ -z "$EXTRACTION_RESULT" ]]; then
+    debug_log "No extraction result"
+    exit 0
 fi
 
-# Determine due type
-DUE_TYPE="someday"
-if echo "$CONTEXT" | grep -qi "today\|now\|immediately"; then
-    DUE_TYPE="asap"
-elif echo "$CONTEXT" | grep -qi "tomorrow\|soon\|this week"; then
-    DUE_TYPE="soft"
-elif echo "$CONTEXT" | grep -qi "deadline\|must\|by"; then
-    DUE_TYPE="hard"
+# Get commitments array
+COMMITMENTS=$(echo "$EXTRACTION_RESULT" | jq -c '.commitments // []')
+
+if [[ "$COMMITMENTS" == "[]" || -z "$COMMITMENTS" ]]; then
+    debug_log "No commitments found in extraction"
+    exit 0
 fi
 
-# Insert commitment (silently)
-db_exec "INSERT INTO commitments (
-    id, title, description, source_type, source_session_id,
-    source_context, project, priority, due_type, status
-) VALUES (
-    '$COMMITMENT_ID', '$ESCAPED_TITLE', '', 'conversation', '$SESSION_ID',
-    '$ESCAPED_CONTEXT', '$PROJECT', '$PRIORITY', '$DUE_TYPE', 'pending'
-)"
+debug_log "Found $(echo "$COMMITMENTS" | jq 'length') potential commitments"
 
-# Log activity (silent - will show in review)
-activity_log "commitment" "Extracted commitment: $TITLE" "commitments" "$COMMITMENT_ID" "$PROJECT" "{\"pattern\":\"$MATCHING_PATTERN\"}"
+# Process each commitment (use process substitution to stay in main shell)
+while read -r commitment; do
+    TITLE=$(echo "$commitment" | jq -r '.title // empty')
+    PRIORITY=$(echo "$commitment" | jq -r '.priority // "medium"')
+    DUE_TYPE=$(echo "$commitment" | jq -r '.due_type // "unspecified"')
 
-debug_log "Created commitment $COMMITMENT_ID: $TITLE"
+    # Skip if title is empty or too short
+    if [[ -z "$TITLE" || ${#TITLE} -lt 10 ]]; then
+        debug_log "Skipping commitment with short/empty title"
+        continue
+    fi
 
-# ============================================================================
-# Vault Sync (if enabled)
-# ============================================================================
+    # Check for duplicates
+    if db_check_duplicate "commitments" "$TITLE" 1 "$PROJECT"; then
+        debug_log "Duplicate commitment skipped: $TITLE"
+        continue
+    fi
 
-if is_enabled "vault"; then
-    VAULT_PATH=$(check_vault)
-    if [[ -n "$VAULT_PATH" ]]; then
-        WORKFLOW_FOLDER=$(get_workflow_folder)
-        ensure_vault_structure
+    # Validate priority
+    case "$PRIORITY" in
+        high|medium|low) ;;
+        *) PRIORITY="medium" ;;
+    esac
 
-        # Use commitment ID in filename for uniqueness
-        FILENAME="${COMMITMENT_ID}.md"
-        FILE_PATH="$WORKFLOW_FOLDER/commitments/$FILENAME"
+    # Validate due_type
+    case "$DUE_TYPE" in
+        immediate|soon|later|unspecified) ;;
+        *) DUE_TYPE="unspecified" ;;
+    esac
 
-        # Build related notes
-        RELATED=""
+    # Insert commitment using db-helper
+    COMMITMENT_ID=$(db_insert_commitment "$TITLE" "$TOOL_OUTPUT" "$PRIORITY" "$DUE_TYPE" "$SESSION_ID" "$PROJECT")
 
-        # Link to today's sessions
-        SESSION_LINKS=$(get_todays_session_links)
-        if [[ -n "$SESSION_LINKS" ]]; then
-            RELATED="$SESSION_LINKS"
-        fi
+    if [[ -z "$COMMITMENT_ID" ]]; then
+        debug_log "Failed to create commitment"
+        continue
+    fi
 
-        # Link to project note
-        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
-        if [[ -f "$PROJECT_NOTE" ]]; then
-            if [[ -n "$RELATED" ]]; then
-                RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
-            else
-                RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+    # Log activity
+    db_log_activity "commitment" "Extracted commitment: $TITLE" "commitments" "$COMMITMENT_ID" "$PROJECT" "{\"priority\":\"$PRIORITY\"}"
+
+    debug_log "Created commitment $COMMITMENT_ID: $TITLE ($PRIORITY)"
+
+    # ============================================================================
+    # Vault Sync (if enabled)
+    # ============================================================================
+
+    if is_enabled "vault"; then
+        VAULT_PATH=$(check_vault)
+        if [[ -n "$VAULT_PATH" ]]; then
+            WORKFLOW_FOLDER=$(get_workflow_folder)
+            ensure_vault_structure
+            ensure_dir "$WORKFLOW_FOLDER/commitments"
+
+            # Use commitment ID in filename for uniqueness
+            FILENAME="${COMMITMENT_ID}.md"
+            FILE_PATH="$WORKFLOW_FOLDER/commitments/$FILENAME"
+            REL_PATH="workflow/commitments/${COMMITMENT_ID}"
+
+            # Build related notes
+            RELATED=""
+
+            # Link to today's sessions
+            SESSION_LINKS=$(get_todays_session_links)
+            if [[ -n "$SESSION_LINKS" ]]; then
+                RELATED="$SESSION_LINKS"
             fi
-        fi
 
-        # Build extra frontmatter
-        EXTRA="commitment_id: \"$COMMITMENT_ID\"
+            # Link to project note
+            PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+            if [[ -f "$PROJECT_NOTE" ]]; then
+                if [[ -n "$RELATED" ]]; then
+                    RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
+                else
+                    RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+                fi
+            fi
+
+            # Build extra frontmatter
+            EXTRA="commitment_id: \"$COMMITMENT_ID\"
 project: \"$PROJECT\"
 priority: \"$PRIORITY\"
 due_type: \"$DUE_TYPE\"
 status: pending"
 
-        # Create vault note
-        {
-            create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY" "$RELATED" "$EXTRA"
-            echo ""
-            echo "# $TITLE"
-            echo ""
-            echo "| Field | Value |"
-            echo "|-------|-------|"
-            echo "| ID | $COMMITMENT_ID |"
-            echo "| Created | $(get_datetime) |"
-            echo "| Project | $PROJECT |"
-            echo "| Priority | $PRIORITY |"
-            echo "| Due Type | $DUE_TYPE |"
-            echo "| Status | Pending |"
-            echo ""
-
-            echo "## Context"
-            echo ""
-            echo "$CONTEXT"
-            echo ""
-
-            echo "## Details"
-            echo ""
-            echo "<!-- Add more details about this commitment -->"
-            echo ""
-
-            echo "## Notes"
-            echo ""
-            echo "<!-- Track progress and notes here -->"
-            echo ""
-
-            # Link to session if available
-            if [[ -n "$SESSION_LINKS" ]]; then
-                echo "## Related Session"
+            # Create vault note
+            {
+                create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY" "$RELATED" "$EXTRA"
                 echo ""
-                echo "Commitment extracted during: $SESSION_LINKS"
+                echo "# $TITLE"
                 echo ""
-            fi
+                echo "| Field | Value |"
+                echo "|-------|-------|"
+                echo "| ID | $COMMITMENT_ID |"
+                echo "| Created | $(get_datetime) |"
+                echo "| Project | $PROJECT |"
+                echo "| Priority | $PRIORITY |"
+                echo "| Due Type | $DUE_TYPE |"
+                echo "| Status | Pending |"
+                echo ""
 
-        } > "$FILE_PATH"
+                echo "## Context"
+                echo ""
+                echo "$TITLE"
+                echo ""
 
-        # Update commitment with vault note path
-        db_exec "UPDATE commitments SET vault_note_path = '$FILE_PATH' WHERE id = '$COMMITMENT_ID'"
+                echo "## Details"
+                echo ""
+                echo "<!-- Add more details about this commitment -->"
+                echo ""
 
-        debug_log "Created commitment note: $FILE_PATH"
+                echo "## Notes"
+                echo ""
+                echo "<!-- Track progress and notes here -->"
+                echo ""
+
+                # Link to session if available
+                if [[ -n "$SESSION_LINKS" ]]; then
+                    echo "## Related Session"
+                    echo ""
+                    echo "Commitment extracted during: $SESSION_LINKS"
+                    echo ""
+                fi
+
+            } > "$FILE_PATH"
+
+            # Update commitment with vault note path
+            db_update_commitment_vault_path "$COMMITMENT_ID" "$FILE_PATH"
+
+            # Log to daily vault note
+            vault_log_activity "commitment" "$TITLE" "$COMMITMENT_ID" "$REL_PATH"
+
+            debug_log "Created commitment note: $FILE_PATH"
+        fi
     fi
-fi
 
-# Silent exit - commitments are reviewed later, not shown immediately
+    COMMITMENTS_CREATED=$((COMMITMENTS_CREATED + 1))
+done < <(echo "$COMMITMENTS" | jq -c '.[]' 2>/dev/null)
+
+debug_log "Created $COMMITMENTS_CREATED commitment(s)"
+
+# Silent exit - commitments are reviewed later
 exit 0

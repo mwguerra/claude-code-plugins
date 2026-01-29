@@ -22,21 +22,29 @@ if [[ -z "$DB" ]]; then
     exit 0
 fi
 
+# Cleanup any orphaned sessions before starting a new one
+cleanup_orphaned_sessions
+
 # Start a new session
 SESSION_ID=$(generate_session_id)
 PROJECT=$(get_project_name)
 BRANCH=$(get_git_branch)
+DIRECTORY=$(pwd)
 TIMESTAMP=$(get_iso_timestamp)
 
-# Create session record
-db_exec "INSERT INTO sessions (id, project, branch, started_at, status)
-         VALUES ('$SESSION_ID', '$PROJECT', '$BRANCH', '$TIMESTAMP', 'active')"
+# Create session record with directory
+ESCAPED_DIR=$(sql_escape "$DIRECTORY")
+db_exec "INSERT INTO sessions (id, project, branch, directory, started_at, status)
+         VALUES ('$SESSION_ID', '$PROJECT', '$BRANCH', '$ESCAPED_DIR', '$TIMESTAMP', 'active')"
 
 # Set as current session
 set_current_session "$SESSION_ID"
 
 # Log activity
 activity_log "session_start" "Started session in $PROJECT" "sessions" "$SESSION_ID" "$PROJECT" "{}"
+
+# Log to daily vault note
+vault_log_activity "session_start" "Session started in $PROJECT (branch: $BRANCH)" "$SESSION_ID" ""
 
 # Build briefing output
 BRIEFING=""

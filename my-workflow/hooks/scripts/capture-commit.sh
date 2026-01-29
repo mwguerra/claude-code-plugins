@@ -6,6 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
+source "$SCRIPT_DIR/ai-extractor.sh"
 
 debug_log "capture-commit.sh triggered"
 
@@ -81,7 +82,7 @@ if is_enabled "vault"; then
         ensure_vault_structure
 
         DATE=$(get_date)
-        SLUG=$(slugify "$COMMIT_MSG")
+        SLUG=$(smart_filename "$COMMIT_MSG" "commit" 40)
         FILENAME="${DATE}-${SLUG}.md"
         FILE_PATH="$WORKFLOW_FOLDER/commits/$FILENAME"
 

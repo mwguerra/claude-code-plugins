@@ -212,32 +212,35 @@ create_vault_frontmatter() {
     local extra="$5"
     local created="${6:-$(get_date)}"
 
-    # Sanitize tags and quote them as strings
-    local sanitized_tags=""
-    IFS=',' read -ra TAG_ARRAY <<< "$tags"
-    for tag in "${TAG_ARRAY[@]}"; do
-        tag=$(echo "$tag" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-        local clean_tag=$(sanitize_tag "$tag")
-        if [[ -n "$clean_tag" ]]; then
-            if [[ -n "$sanitized_tags" ]]; then
-                sanitized_tags="$sanitized_tags, \"$clean_tag\""
-            else
-                sanitized_tags="\"$clean_tag\""
-            fi
-        fi
-    done
-
     echo "---"
     echo "title: \"$(echo "$title" | sed 's/"/\\"/g')\""
     if [[ -n "$description" ]]; then
         echo "description: \"$(echo "$description" | sed 's/"/\\"/g')\""
     fi
-    echo "tags: [$sanitized_tags]"
-    if [[ -n "$related" ]]; then
-        echo "related: [$related]"
-    else
-        echo "related: []"
+
+    # Format tags as YAML list (portable version)
+    echo "tags:"
+    if [[ -n "$tags" ]]; then
+        echo "$tags" | tr ',' '\n' | while read -r tag; do
+            tag=$(echo "$tag" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            local clean_tag=$(sanitize_tag "$tag")
+            if [[ -n "$clean_tag" ]]; then
+                echo "  - \"$clean_tag\""
+            fi
+        done
     fi
+
+    # Format related as YAML list with quoted wiki-links (portable version)
+    echo "related:"
+    if [[ -n "$related" ]]; then
+        echo "$related" | tr ',' '\n' | while read -r link; do
+            link=$(echo "$link" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            if [[ -n "$link" ]]; then
+                echo "  - \"$link\""
+            fi
+        done
+    fi
+
     echo "created: $created"
     echo "updated: $(get_date)"
     if [[ -n "$extra" ]]; then
@@ -879,6 +882,291 @@ get_ideas_inbox() {
 }
 
 # ============================================================================
+# Real-Time Vault Daily Note Sync
+# ============================================================================
+
+# Append a line to a specific section in a markdown file
+# Usage: append_to_section "file" "## Section Header" "- new line"
+append_to_section() {
+    local file="$1"
+    local section="$2"
+    local content="$3"
+    local timestamp=$(date '+%H:%M')
+
+    # If file doesn't exist, create template
+    if [[ ! -f "$file" ]]; then
+        create_daily_vault_template "$file"
+    fi
+
+    # Check if section exists
+    if ! grep -q "^$section" "$file" 2>/dev/null; then
+        # Add section at end
+        echo -e "\n$section\n" >> "$file"
+    fi
+
+    # Find section and insert content before next section or end
+    # Use awk for reliable section insertion
+    awk -v section="$section" -v content="$content" -v ts="$timestamp" '
+        BEGIN { found=0; inserted=0 }
+        {
+            print
+            if ($0 == section) {
+                found=1
+            }
+            if (found && !inserted && /^$/) {
+                print "- [" ts "] " content
+                inserted=1
+            }
+        }
+    ' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+}
+
+# Create daily vault note template
+create_daily_vault_template() {
+    local file="$1"
+    local date=$(basename "$file" .md)
+    local day_of_week=$(date -d "$date" +%A 2>/dev/null || date -j -f "%Y-%m-%d" "$date" +%A 2>/dev/null || echo "")
+
+    mkdir -p "$(dirname "$file")"
+
+    cat > "$file" << EOF
+---
+title: "Daily Note: $date"
+description: "Workflow summary for $date"
+tags: ["daily", "workflow"]
+created: $date
+updated: $date
+date: "$date"
+day_of_week: "$day_of_week"
+---
+
+# Daily Note: $date ($day_of_week)
+
+## Morning Plan
+
+<!-- Set your intentions for today -->
+
+## Work Log
+
+<!-- Activities logged automatically -->
+
+## Decisions Made
+
+<!-- Decisions captured during sessions -->
+
+## Ideas Captured
+
+<!-- Ideas captured during sessions -->
+
+## Commitments
+
+<!-- Commitments made during sessions -->
+
+## Reflections
+
+<!-- End of day thoughts -->
+
+EOF
+}
+
+# Append activity to daily vault note in real-time
+# Usage: vault_log_activity "decision" "Title" "D-0001" "workflow/decisions/..."
+vault_log_activity() {
+    local activity_type="$1"
+    local title="$2"
+    local entity_id="$3"
+    local link_path="${4:-}"
+
+    # Check if vault is enabled
+    if ! is_enabled "vault"; then
+        return 0
+    fi
+
+    local vault_path
+    vault_path=$(check_vault)
+    if [[ -z "$vault_path" ]]; then
+        return 0
+    fi
+
+    local workflow_folder=$(get_workflow_folder)
+    local today=$(get_date)
+    local daily_file="$workflow_folder/daily/${today}.md"
+
+    # Ensure daily file exists
+    if [[ ! -f "$daily_file" ]]; then
+        create_daily_vault_template "$daily_file"
+    fi
+
+    # Format entry based on type
+    local section=""
+    local entry=""
+
+    case "$activity_type" in
+        decision)
+            section="## Decisions Made"
+            if [[ -n "$link_path" ]]; then
+                entry="**Decision**: $title [[${link_path}|${entity_id}]]"
+            else
+                entry="**Decision**: $title ($entity_id)"
+            fi
+            ;;
+        idea)
+            section="## Ideas Captured"
+            if [[ -n "$link_path" ]]; then
+                entry="**Idea**: $title [[${link_path}|${entity_id}]]"
+            else
+                entry="**Idea**: $title ($entity_id)"
+            fi
+            ;;
+        commitment)
+            section="## Commitments"
+            if [[ -n "$link_path" ]]; then
+                entry="**Commitment**: $title [[${link_path}|${entity_id}]]"
+            else
+                entry="**Commitment**: $title ($entity_id)"
+            fi
+            ;;
+        session_start)
+            section="## Work Log"
+            entry="**Session Started**: $title"
+            ;;
+        session_end)
+            section="## Work Log"
+            entry="**Session Ended**: $title (${entity_id})"
+            ;;
+        commit)
+            section="## Work Log"
+            if [[ -n "$link_path" ]]; then
+                entry="**Commit**: $title [[${link_path}|${entity_id}]]"
+            else
+                entry="**Commit**: $title"
+            fi
+            ;;
+        *)
+            section="## Work Log"
+            entry="$title"
+            ;;
+    esac
+
+    # Append to appropriate section
+    append_to_section "$daily_file" "$section" "$entry"
+    debug_log "Logged to daily vault: [$activity_type] $title"
+}
+
+# Mark a session as interrupted in its vault note
+vault_mark_session_interrupted() {
+    local session_id="$1"
+
+    local vault_path
+    vault_path=$(check_vault)
+    if [[ -z "$vault_path" ]]; then
+        return 0
+    fi
+
+    # Find session note (might not exist)
+    local session_note=$(find "$vault_path/workflow/sessions" -name "*${session_id}*.md" 2>/dev/null | head -1)
+
+    if [[ -n "$session_note" && -f "$session_note" ]]; then
+        # Add interrupted status to frontmatter
+        sed -i 's/^status: active/status: interrupted/' "$session_note" 2>/dev/null || true
+
+        # Append note about interruption
+        echo "" >> "$session_note"
+        echo "---" >> "$session_note"
+        echo "*Session was interrupted (Claude closed unexpectedly)*" >> "$session_note"
+
+        debug_log "Marked session note as interrupted: $session_note"
+    fi
+}
+
+# ============================================================================
+# Process Detection for Session Cleanup
+# ============================================================================
+
+# Check if Claude is running for a given directory
+# Returns: 0 if Claude is running, 1 if not
+is_claude_running_for_directory() {
+    local target_dir="$1"
+
+    # Normalize path
+    target_dir=$(realpath "$target_dir" 2>/dev/null || echo "$target_dir")
+
+    # Find all Claude main processes (not subshells)
+    local pids
+    pids=$(pgrep -x "claude" 2>/dev/null) || return 1
+
+    for pid in $pids; do
+        local cwd
+        cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null) || continue
+
+        # Match if directories overlap (handles subdirectories)
+        if [[ "$target_dir" == "$cwd"* ]] || [[ "$cwd" == "$target_dir"* ]]; then
+            debug_log "Found Claude process $pid running in $cwd (matches $target_dir)"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Cleanup orphaned sessions for current project
+# Called at session start
+cleanup_orphaned_sessions() {
+    local current_dir=$(pwd)
+    local project=$(get_project_name)
+    local db
+    db=$(ensure_db) || return 1
+
+    debug_log "Checking for orphaned sessions in project: $project"
+
+    # Get all active sessions
+    local active_sessions
+    active_sessions=$(sqlite3 -separator '|' "$db" "
+        SELECT id, COALESCE(directory, '')
+        FROM sessions
+        WHERE status = 'active'
+    " 2>/dev/null)
+
+    if [[ -z "$active_sessions" ]]; then
+        debug_log "No active sessions to cleanup"
+        return 0
+    fi
+
+    while IFS='|' read -r session_id session_dir; do
+        # If no directory stored, use project as fallback
+        if [[ -z "$session_dir" ]]; then
+            session_dir="$current_dir"
+        fi
+
+        # Skip if Claude is still running for this session
+        if is_claude_running_for_directory "$session_dir"; then
+            debug_log "Session $session_id still has active Claude process, skipping"
+            continue
+        fi
+
+        # Close orphaned session
+        debug_log "Closing orphaned session: $session_id (dir: $session_dir)"
+
+        local timestamp=$(get_iso_timestamp)
+        sqlite3 "$db" "
+            UPDATE sessions
+            SET status = 'interrupted',
+                summary = 'Session interrupted (Claude closed unexpectedly)',
+                ended_at = '$timestamp',
+                updated_at = '$timestamp'
+            WHERE id = '$session_id'
+        " 2>/dev/null
+
+        # Update vault note if exists
+        vault_mark_session_interrupted "$session_id"
+
+        # Log activity
+        activity_log "session_cleanup" "Closed orphaned session: $session_id" "sessions" "$session_id" "$project" "{}"
+
+    done <<< "$active_sessions"
+}
+
+# ============================================================================
 # Export Functions
 # ============================================================================
 
@@ -900,3 +1188,5 @@ export -f debug_log activity_log
 export -f ensure_daily_note update_daily_note_ideas update_daily_note_decisions
 export -f update_daily_note_completed update_daily_note_activity
 export -f get_previous_day_summary get_today_planner get_ideas_inbox
+export -f append_to_section create_daily_vault_template vault_log_activity vault_mark_session_interrupted
+export -f is_claude_running_for_directory cleanup_orphaned_sessions

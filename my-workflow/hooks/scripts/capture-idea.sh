@@ -1,16 +1,18 @@
 #!/bin/bash
 # My Workflow Plugin - Extract Ideas from Conversation
 # Triggered by PostToolUse events
-# Captures ideas, inspirations, and things to explore
+# Captures ALL ideas, suggestions, and explorations
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
+source "$SCRIPT_DIR/db-helper.sh"
+source "$SCRIPT_DIR/ai-extractor.sh"
 
 debug_log "capture-idea.sh triggered"
 
-# Check if idea capture is enabled (default: true)
+# Check if idea capture is enabled
 if ! is_enabled "ideas"; then
     debug_log "Idea capture disabled"
     exit 0
@@ -31,236 +33,158 @@ if [[ -z "$TOOL_OUTPUT" ]]; then
     exit 0
 fi
 
-# ============================================================================
-# Idea Detection Patterns
-# ============================================================================
-
-IDEA_PATTERNS=(
-    # Explicit ideas
-    "idea:"
-    "what if we"
-    "what if I"
-    "we could "
-    "I could "
-    "might be worth"
-    "worth exploring"
-    "worth investigating"
-    "should explore"
-    "should investigate"
-    "interesting to "
-    "would be nice to"
-    "would be cool to"
-    "would be great to"
-    # Future possibilities
-    "in the future"
-    "later we could"
-    "eventually "
-    "someday "
-    "maybe we should"
-    "maybe I should"
-    # Inspiration
-    "inspired by"
-    "reminds me of"
-    "similar to how"
-    # Research/learning
-    "need to learn"
-    "should learn"
-    "want to learn"
-    "curious about"
-    "wonder if"
-    "wonder how"
-    # Improvement ideas
-    "could be improved"
-    "could be better"
-    "room for improvement"
-    "opportunity to"
-)
-
-# Check for idea patterns
-FOUND_IDEA=""
-MATCHING_PATTERN=""
-
-for pattern in "${IDEA_PATTERNS[@]}"; do
-    if echo "$TOOL_OUTPUT" | grep -Eqi "$pattern"; then
-        FOUND_IDEA="true"
-        MATCHING_PATTERN="$pattern"
-        break
-    fi
-done
-
-if [[ -z "$FOUND_IDEA" ]]; then
-    debug_log "No idea patterns found"
-    exit 0
-fi
-
-debug_log "Found idea pattern: $MATCHING_PATTERN"
-
-# ============================================================================
-# Extract Idea Context
-# ============================================================================
-
-# Get the surrounding context (5 lines around match)
-CONTEXT=$(echo "$TOOL_OUTPUT" | grep -Ei "$MATCHING_PATTERN" | head -3)
-
-if [[ -z "$CONTEXT" ]]; then
-    debug_log "Could not extract context"
-    exit 0
-fi
-
-# Generate title from the first match
-TITLE=$(echo "$CONTEXT" | head -1 | cut -c1-100)
-TITLE=$(echo "$TITLE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-# Skip if title is too short
-if [[ ${#TITLE} -lt 10 ]]; then
-    debug_log "Title too short, skipping"
+# Skip very short content
+if [[ ${#TOOL_OUTPUT} -lt 20 ]]; then
+    debug_log "Tool output too short to analyze"
     exit 0
 fi
 
 # ============================================================================
-# Determine Idea Type
-# ============================================================================
-
-IDEA_TYPE="random"
-
-# Feature ideas
-if echo "$CONTEXT" | grep -Eqi "feature|functionality|capability|add|implement|create"; then
-    IDEA_TYPE="feature"
-# Improvement ideas
-elif echo "$CONTEXT" | grep -Eqi "improve|better|optimize|enhance|refactor"; then
-    IDEA_TYPE="improvement"
-# Experiment ideas
-elif echo "$CONTEXT" | grep -Eqi "try|experiment|test|prototype|proof of concept|poc"; then
-    IDEA_TYPE="experiment"
-# Research ideas
-elif echo "$CONTEXT" | grep -Eqi "research|investigate|study|learn|understand"; then
-    IDEA_TYPE="research"
-# Learning ideas
-elif echo "$CONTEXT" | grep -Eqi "learn|tutorial|course|documentation"; then
-    IDEA_TYPE="learning"
-fi
-
-# ============================================================================
-# Determine Category
-# ============================================================================
-
-CATEGORY=""
-
-if echo "$CONTEXT" | grep -Eqi "architecture|design|pattern|structure"; then
-    CATEGORY="architecture"
-elif echo "$CONTEXT" | grep -Eqi "ui|ux|interface|user experience|design"; then
-    CATEGORY="ux"
-elif echo "$CONTEXT" | grep -Eqi "performance|speed|optimization|fast"; then
-    CATEGORY="performance"
-elif echo "$CONTEXT" | grep -Eqi "tool|tooling|developer experience|dx"; then
-    CATEGORY="tooling"
-elif echo "$CONTEXT" | grep -Eqi "test|testing|quality|qa"; then
-    CATEGORY="testing"
-elif echo "$CONTEXT" | grep -Eqi "security|auth|permission"; then
-    CATEGORY="security"
-fi
-
-# ============================================================================
-# Check for Duplicates
+# Extract ALL Ideas using AI or Patterns
 # ============================================================================
 
 PROJECT=$(get_project_name)
-ESCAPED_TITLE=$(sql_escape "$TITLE")
+SESSION_ID=$(db_get_current_session_id)
+IDEAS_CREATED=0
 
-# Check for similar ideas in last 24 hours
-SIMILAR=$(sqlite3 "$DB" "
-    SELECT COUNT(*)
-    FROM ideas
-    WHERE title LIKE '%$(echo "$TITLE" | cut -c1-30 | sed "s/'/''/g")%'
-      AND created_at > datetime('now', '-24 hours')
-" 2>/dev/null || echo "0")
+# Use smart extraction (AI with pattern fallback)
+EXTRACTION_RESULT=$(smart_extract_all_items "$TOOL_OUTPUT")
 
-if [[ "$SIMILAR" -gt 0 ]]; then
-    debug_log "Similar idea already exists, skipping"
+if [[ -z "$EXTRACTION_RESULT" ]]; then
+    debug_log "No extraction result"
     exit 0
 fi
 
-# ============================================================================
-# Create Idea Record
-# ============================================================================
+# Get ideas array
+IDEAS=$(echo "$EXTRACTION_RESULT" | jq -c '.ideas // []')
 
-SESSION_ID=$(get_current_session_id)
-TIMESTAMP=$(get_iso_timestamp)
-IDEA_ID=$(get_next_id "ideas" "I")
+if [[ "$IDEAS" == "[]" || -z "$IDEAS" ]]; then
+    debug_log "No ideas found in extraction"
+    exit 0
+fi
 
-ESCAPED_CONTEXT=$(sql_escape "$CONTEXT")
+debug_log "Found $(echo "$IDEAS" | jq 'length') potential ideas"
 
-db_exec "INSERT INTO ideas (
-    id, title, description, idea_type, category,
-    project, source_session_id, source_context, status
-) VALUES (
-    '$IDEA_ID', '$ESCAPED_TITLE', '$ESCAPED_CONTEXT', '$IDEA_TYPE', '$CATEGORY',
-    '$PROJECT', '$SESSION_ID', '$ESCAPED_CONTEXT', 'captured'
-)"
+# Process each idea (use process substitution to stay in main shell)
+while read -r idea; do
+    TITLE=$(echo "$idea" | jq -r '.title // empty')
+    IDEA_TYPE=$(echo "$idea" | jq -r '.type // "exploration"')
+    POTENTIAL=$(echo "$idea" | jq -r '.potential // empty')
 
-# Log activity
-activity_log "idea" "Captured idea: $TITLE" "ideas" "$IDEA_ID" "$PROJECT" "{\"type\":\"$IDEA_TYPE\"}"
+    # Skip if title is empty or too short
+    if [[ -z "$TITLE" || ${#TITLE} -lt 15 ]]; then
+        debug_log "Skipping idea with short/empty title"
+        continue
+    fi
 
-# Update daily note
-update_daily_note_ideas "$IDEA_ID"
+    # Check for duplicates (30 minute window for ideas)
+    if db_check_duplicate "ideas" "$TITLE" 0.5 "$PROJECT"; then
+        debug_log "Duplicate idea skipped: $TITLE"
+        continue
+    fi
 
-debug_log "Created idea $IDEA_ID: $TITLE ($IDEA_TYPE)"
+    # Validate type
+    case "$IDEA_TYPE" in
+        feature|improvement|exploration|refactor|question) ;;
+        *) IDEA_TYPE="exploration" ;;
+    esac
 
-# ============================================================================
-# Vault Sync (if enabled)
-# ============================================================================
+    # Insert idea using db-helper
+    IDEA_ID=$(db_insert_idea "$TITLE" "$TOOL_OUTPUT" "$IDEA_TYPE" "$SESSION_ID" "$PROJECT")
 
-if is_enabled "vault"; then
-    VAULT_PATH=$(check_vault)
-    if [[ -n "$VAULT_PATH" ]]; then
-        WORKFLOW_FOLDER=$(get_workflow_folder)
-        ensure_vault_structure
+    if [[ -z "$IDEA_ID" ]]; then
+        debug_log "Failed to create idea"
+        continue
+    fi
 
-        # Create ideas subfolder if needed
-        ensure_dir "$WORKFLOW_FOLDER/ideas"
+    # Log activity
+    db_log_activity "idea" "Captured idea: $TITLE" "ideas" "$IDEA_ID" "$PROJECT" "{\"type\":\"$IDEA_TYPE\"}"
 
-        DATE=$(get_date)
-        SLUG=$(slugify "$TITLE")
-        FILENAME="${IDEA_ID}-${SLUG}.md"
-        FILE_PATH="$WORKFLOW_FOLDER/ideas/$FILENAME"
+    # Update daily note in database
+    db_add_daily_idea "$(get_date)" "$IDEA_ID"
 
-        # Build extra frontmatter
-        EXTRA="idea_id: \"$IDEA_ID\"
+    debug_log "Created idea $IDEA_ID: $TITLE ($IDEA_TYPE)"
+
+    # ============================================================================
+    # Vault Sync (if enabled)
+    # ============================================================================
+
+    if is_enabled "vault"; then
+        VAULT_PATH=$(check_vault)
+        if [[ -n "$VAULT_PATH" ]]; then
+            WORKFLOW_FOLDER=$(get_workflow_folder)
+            ensure_vault_structure
+            ensure_dir "$WORKFLOW_FOLDER/ideas"
+
+            DATE=$(get_date)
+            SLUG=$(smart_filename "$TITLE" "idea" 40)
+            FILENAME="${IDEA_ID}-${SLUG}.md"
+            FILE_PATH="$WORKFLOW_FOLDER/ideas/$FILENAME"
+            REL_PATH="workflow/ideas/${FILENAME%.md}"
+
+            # Build related notes
+            RELATED=""
+
+            # Link to today's sessions
+            SESSION_LINKS=$(get_todays_session_links)
+            if [[ -n "$SESSION_LINKS" ]]; then
+                RELATED="$SESSION_LINKS"
+            fi
+
+            # Build extra frontmatter
+            EXTRA="idea_id: \"$IDEA_ID\"
 idea_type: \"$IDEA_TYPE\"
-category: \"$CATEGORY\"
 project: \"$PROJECT\"
 priority: medium
 effort: unknown
 status: captured"
 
-        # Create vault note
-        {
-            create_vault_frontmatter "$TITLE" "Idea: $IDEA_TYPE" "idea, $IDEA_TYPE, $PROJECT" "" "$EXTRA"
-            echo ""
-            echo "# $TITLE"
-            echo ""
-            echo "## Context"
-            echo ""
-            echo "$CONTEXT"
-            echo ""
-            echo "## Notes"
-            echo ""
-            echo "<!-- Add your thoughts here -->"
-            echo ""
-            echo "## Related"
-            echo ""
-            echo "- Session: [[workflow/sessions/$(get_date)-*|Today's sessions]]"
-            if [[ -n "$PROJECT" ]]; then
+            # Create vault note
+            {
+                create_vault_frontmatter "$TITLE" "Idea: $IDEA_TYPE" "idea, $IDEA_TYPE, $PROJECT" "$RELATED" "$EXTRA"
+                echo ""
+                echo "# $TITLE"
+                echo ""
+                echo "## Context"
+                echo ""
+                echo "$TITLE"
+                echo ""
+
+                if [[ -n "$POTENTIAL" ]]; then
+                    echo "## Potential Value"
+                    echo ""
+                    echo "$POTENTIAL"
+                    echo ""
+                fi
+
+                echo "## Notes"
+                echo ""
+                echo "<!-- Add your thoughts here -->"
+                echo ""
+
+                echo "## Related"
+                echo ""
+                if [[ -n "$SESSION_LINKS" ]]; then
+                    echo "- Session: $SESSION_LINKS"
+                fi
                 echo "- Project: $PROJECT"
-            fi
-        } > "$FILE_PATH"
+                echo ""
 
-        # Update database with vault path
-        REL_PATH="workflow/ideas/${FILENAME%.md}"
-        db_exec "UPDATE ideas SET vault_note_path = '$REL_PATH' WHERE id = '$IDEA_ID'"
+            } > "$FILE_PATH"
 
-        debug_log "Created vault note: $FILE_PATH"
+            # Update idea with vault note path
+            db_update_idea_vault_path "$IDEA_ID" "$REL_PATH"
+
+            # Log to daily vault note
+            vault_log_activity "idea" "$TITLE" "$IDEA_ID" "$REL_PATH"
+
+            debug_log "Created idea note: $FILE_PATH"
+        fi
     fi
-fi
+
+    IDEAS_CREATED=$((IDEAS_CREATED + 1))
+done < <(echo "$IDEAS" | jq -c '.[]' 2>/dev/null)
+
+debug_log "Created $IDEAS_CREATED idea(s)"
 
 exit 0

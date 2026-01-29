@@ -1,12 +1,14 @@
 #!/bin/bash
 # My Workflow Plugin - Extract Decisions from Conversation
 # Triggered by PostToolUse events
-# Captures architectural and process decisions with rationale
+# Captures ALL architectural and process decisions with rationale
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
+source "$SCRIPT_DIR/db-helper.sh"
+source "$SCRIPT_DIR/ai-extractor.sh"
 
 debug_log "capture-decision.sh triggered"
 
@@ -31,252 +33,179 @@ if [[ -z "$TOOL_OUTPUT" ]]; then
     exit 0
 fi
 
-# ============================================================================
-# Decision Detection Patterns
-# These patterns indicate decisions being made
-# ============================================================================
-
-DECISION_PATTERNS=(
-    # Explicit decisions
-    "decided to "
-    "decision is to "
-    "we'll go with "
-    "let's go with "
-    "the approach is "
-    "the plan is to "
-    # Architectural choices
-    "using .* for "
-    "implementing .* with "
-    "the architecture "
-    "the design "
-    # Process decisions
-    "from now on "
-    "going forward "
-    "the convention is "
-    "the standard is "
-    # Comparisons leading to choice
-    "instead of "
-    "rather than "
-    "over .* because "
-    # Finality indicators
-    "settled on "
-    "chose to "
-    "picked "
-)
-
-# Check for decision patterns
-FOUND_DECISION=""
-MATCHING_PATTERN=""
-
-for pattern in "${DECISION_PATTERNS[@]}"; do
-    if echo "$TOOL_OUTPUT" | grep -Eqi "$pattern"; then
-        FOUND_DECISION="true"
-        MATCHING_PATTERN="$pattern"
-        break
-    fi
-done
-
-if [[ -z "$FOUND_DECISION" ]]; then
-    debug_log "No decision patterns found"
-    exit 0
-fi
-
-debug_log "Found decision pattern: $MATCHING_PATTERN"
-
-# ============================================================================
-# Extract Decision Context
-# ============================================================================
-
-# Get the surrounding context
-CONTEXT=$(echo "$TOOL_OUTPUT" | grep -Ei "$MATCHING_PATTERN" | head -5)
-
-if [[ -z "$CONTEXT" ]]; then
-    debug_log "Could not extract context"
-    exit 0
-fi
-
-# Generate title from the first match
-TITLE=$(echo "$CONTEXT" | head -1 | cut -c1-100)
-TITLE=$(echo "$TITLE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-# Skip if title is too short
-if [[ ${#TITLE} -lt 15 ]]; then
-    debug_log "Title too short, skipping"
+# Skip very short content
+if [[ ${#TOOL_OUTPUT} -lt 20 ]]; then
+    debug_log "Tool output too short to analyze"
     exit 0
 fi
 
 # ============================================================================
-# Determine Decision Category
+# Extract ALL Decisions using AI or Patterns
 # ============================================================================
 
-CATEGORY="general"
-
-# Architecture patterns
-if echo "$CONTEXT" | grep -Eqi "architecture|design|pattern|structure|database|api|model|schema"; then
-    CATEGORY="architecture"
-# Technology patterns
-elif echo "$CONTEXT" | grep -Eqi "library|framework|tool|package|dependency|version"; then
-    CATEGORY="technology"
-# Process patterns
-elif echo "$CONTEXT" | grep -Eqi "workflow|process|convention|standard|practice|policy"; then
-    CATEGORY="process"
-# Design patterns
-elif echo "$CONTEXT" | grep -Eqi "ui|ux|component|layout|style|color|interface"; then
-    CATEGORY="design"
-fi
-
-# ============================================================================
-# Extract Rationale (if present)
-# ============================================================================
-
-RATIONALE=""
-# Look for "because", "since", "due to" patterns
-RATIONALE_MATCH=$(echo "$TOOL_OUTPUT" | grep -Eoi "(because|since|due to|the reason|this is because)[^.]*\." | head -1)
-if [[ -n "$RATIONALE_MATCH" ]]; then
-    RATIONALE="$RATIONALE_MATCH"
-fi
-
-# ============================================================================
-# Check for Duplicates
-# ============================================================================
-
-# Look for similar recent decisions to avoid duplicates
 PROJECT=$(get_project_name)
-ESCAPED_TITLE=$(sql_escape "$TITLE")
+SESSION_ID=$(db_get_current_session_id)
+DECISIONS_CREATED=0
 
-SIMILAR=$(sqlite3 "$DB" "
-    SELECT COUNT(*)
-    FROM decisions
-    WHERE project = '$PROJECT'
-      AND title LIKE '%$(echo "$TITLE" | cut -c1-30)%'
-      AND created_at > datetime('now', '-1 hour')
-" 2>/dev/null)
+# Use smart extraction (AI with pattern fallback)
+EXTRACTION_RESULT=$(smart_extract_all_items "$TOOL_OUTPUT")
 
-if [[ "$SIMILAR" -gt 0 ]]; then
-    debug_log "Similar decision already exists, skipping"
+if [[ -z "$EXTRACTION_RESULT" ]]; then
+    debug_log "No extraction result"
     exit 0
 fi
 
-# ============================================================================
-# Create Decision Record
-# ============================================================================
+# Get decisions array
+DECISIONS=$(echo "$EXTRACTION_RESULT" | jq -c '.decisions // []')
 
-SESSION_ID=$(get_current_session_id)
-TIMESTAMP=$(get_iso_timestamp)
-DECISION_ID=$(get_next_id "decisions" "D")
+if [[ "$DECISIONS" == "[]" || -z "$DECISIONS" ]]; then
+    debug_log "No decisions found in extraction"
+    exit 0
+fi
 
-ESCAPED_CONTEXT=$(sql_escape "$CONTEXT")
-ESCAPED_RATIONALE=$(sql_escape "$RATIONALE")
+debug_log "Found $(echo "$DECISIONS" | jq 'length') potential decisions"
 
-db_exec "INSERT INTO decisions (
-    id, title, description, rationale, category,
-    project, source_session_id, source_context, status
-) VALUES (
-    '$DECISION_ID', '$ESCAPED_TITLE', '$ESCAPED_CONTEXT', '$ESCAPED_RATIONALE', '$CATEGORY',
-    '$PROJECT', '$SESSION_ID', '$ESCAPED_CONTEXT', 'active'
-)"
+# Process each decision (use process substitution to stay in main shell)
+while read -r decision; do
+    TITLE=$(echo "$decision" | jq -r '.title // empty')
+    CATEGORY=$(echo "$decision" | jq -r '.category // "general"')
+    RATIONALE=$(echo "$decision" | jq -r '.rationale // empty')
 
-# Log activity
-activity_log "decision" "Recorded decision: $TITLE" "decisions" "$DECISION_ID" "$PROJECT" "{\"category\":\"$CATEGORY\"}"
+    # Skip if title is empty or too short
+    if [[ -z "$TITLE" || ${#TITLE} -lt 15 ]]; then
+        debug_log "Skipping decision with short/empty title"
+        continue
+    fi
 
-# Update daily note
-update_daily_note_decisions "$DECISION_ID"
+    # Check for duplicates
+    if db_check_duplicate "decisions" "$TITLE" 1 "$PROJECT"; then
+        debug_log "Duplicate decision skipped: $TITLE"
+        continue
+    fi
 
-debug_log "Created decision $DECISION_ID: $TITLE ($CATEGORY)"
+    # Validate category
+    case "$CATEGORY" in
+        architecture|technology|process|design|general) ;;
+        *) CATEGORY="general" ;;
+    esac
 
-# ============================================================================
-# Vault Sync (if enabled)
-# ============================================================================
+    # Insert decision using db-helper
+    DECISION_ID=$(db_insert_decision "$TITLE" "$TOOL_OUTPUT" "$CATEGORY" "$RATIONALE" "$SESSION_ID" "$PROJECT")
 
-if is_enabled "vault"; then
-    VAULT_PATH=$(check_vault)
-    if [[ -n "$VAULT_PATH" ]]; then
-        WORKFLOW_FOLDER=$(get_workflow_folder)
-        ensure_vault_structure
+    if [[ -z "$DECISION_ID" ]]; then
+        debug_log "Failed to create decision"
+        continue
+    fi
 
-        DATE=$(get_date)
-        SLUG=$(slugify "$TITLE")
-        FILENAME="${DATE}-${SLUG}.md"
-        FILE_PATH="$WORKFLOW_FOLDER/decisions/$FILENAME"
+    # Log activity
+    db_log_activity "decision" "Recorded decision: $TITLE" "decisions" "$DECISION_ID" "$PROJECT" "{\"category\":\"$CATEGORY\"}"
 
-        # Build related notes
-        RELATED=""
+    # Update daily note in database
+    db_add_daily_decision "$(get_date)" "$DECISION_ID"
 
-        # Link to today's sessions
-        SESSION_LINKS=$(get_todays_session_links)
-        if [[ -n "$SESSION_LINKS" ]]; then
-            RELATED="$SESSION_LINKS"
-        fi
+    debug_log "Created decision $DECISION_ID: $TITLE ($CATEGORY)"
 
-        # Link to project note
-        PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
-        if [[ -f "$PROJECT_NOTE" ]]; then
-            if [[ -n "$RELATED" ]]; then
-                RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
-            else
-                RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+    # ============================================================================
+    # Vault Sync (if enabled)
+    # ============================================================================
+
+    if is_enabled "vault"; then
+        VAULT_PATH=$(check_vault)
+        if [[ -n "$VAULT_PATH" ]]; then
+            WORKFLOW_FOLDER=$(get_workflow_folder)
+            ensure_vault_structure
+
+            DATE=$(get_date)
+            SLUG=$(smart_filename "$TITLE" "decision" 40)
+            FILENAME="${DATE}-${SLUG}.md"
+            FILE_PATH="$WORKFLOW_FOLDER/decisions/$FILENAME"
+            REL_PATH="workflow/decisions/${FILENAME%.md}"
+
+            # Build related notes
+            RELATED=""
+
+            # Link to today's sessions
+            SESSION_LINKS=$(get_todays_session_links)
+            if [[ -n "$SESSION_LINKS" ]]; then
+                RELATED="$SESSION_LINKS"
             fi
-        fi
 
-        # Build extra frontmatter
-        EXTRA="decision_id: \"$DECISION_ID\"
+            # Link to project note
+            PROJECT_NOTE="$VAULT_PATH/projects/$PROJECT/README.md"
+            if [[ -f "$PROJECT_NOTE" ]]; then
+                if [[ -n "$RELATED" ]]; then
+                    RELATED="$RELATED, [[projects/$PROJECT/README|$PROJECT]]"
+                else
+                    RELATED="[[projects/$PROJECT/README|$PROJECT]]"
+                fi
+            fi
+
+            # Build extra frontmatter
+            EXTRA="decision_id: \"$DECISION_ID\"
 category: \"$CATEGORY\"
 project: \"$PROJECT\"
 status: active"
 
-        # Create vault note
-        {
-            create_vault_frontmatter "$TITLE" "Decision: $CATEGORY in $PROJECT" "decision, $PROJECT, $CATEGORY" "$RELATED" "$EXTRA"
-            echo ""
-            echo "# $TITLE"
-            echo ""
-            echo "| Field | Value |"
-            echo "|-------|-------|"
-            echo "| ID | $DECISION_ID |"
-            echo "| Date | $(get_datetime) |"
-            echo "| Category | $CATEGORY |"
-            echo "| Project | $PROJECT |"
-            echo "| Status | Active |"
-            echo ""
-
-            echo "## Decision"
-            echo ""
-            echo "$CONTEXT"
-            echo ""
-
-            if [[ -n "$RATIONALE" ]]; then
-                echo "## Rationale"
+            # Create vault note
+            {
+                create_vault_frontmatter "$TITLE" "Decision: $CATEGORY in $PROJECT" "decision, $PROJECT, $CATEGORY" "$RELATED" "$EXTRA"
                 echo ""
-                echo "$RATIONALE"
+                echo "# $TITLE"
                 echo ""
-            fi
-
-            echo "## Alternatives Considered"
-            echo ""
-            echo "<!-- Document alternatives that were considered -->"
-            echo ""
-
-            echo "## Consequences"
-            echo ""
-            echo "<!-- What are the implications of this decision? -->"
-            echo ""
-
-            # Link to session if available
-            if [[ -n "$SESSION_LINKS" ]]; then
-                echo "## Related Session"
+                echo "| Field | Value |"
+                echo "|-------|-------|"
+                echo "| ID | $DECISION_ID |"
+                echo "| Date | $(get_datetime) |"
+                echo "| Category | $CATEGORY |"
+                echo "| Project | $PROJECT |"
+                echo "| Status | Active |"
                 echo ""
-                echo "Decision made during: $SESSION_LINKS"
+
+                echo "## Decision"
                 echo ""
-            fi
+                echo "$TITLE"
+                echo ""
 
-        } > "$FILE_PATH"
+                if [[ -n "$RATIONALE" ]]; then
+                    echo "## Rationale"
+                    echo ""
+                    echo "$RATIONALE"
+                    echo ""
+                fi
 
-        # Update decision with vault note path
-        db_exec "UPDATE decisions SET vault_note_path = '$FILE_PATH' WHERE id = '$DECISION_ID'"
+                echo "## Alternatives Considered"
+                echo ""
+                echo "<!-- Document alternatives that were considered -->"
+                echo ""
 
-        debug_log "Created decision note: $FILE_PATH"
+                echo "## Consequences"
+                echo ""
+                echo "<!-- What are the implications of this decision? -->"
+                echo ""
+
+                # Link to session if available
+                if [[ -n "$SESSION_LINKS" ]]; then
+                    echo "## Related Session"
+                    echo ""
+                    echo "Decision made during: $SESSION_LINKS"
+                    echo ""
+                fi
+
+            } > "$FILE_PATH"
+
+            # Update decision with vault note path
+            db_update_decision_vault_path "$DECISION_ID" "$FILE_PATH"
+
+            # Log to daily vault note
+            vault_log_activity "decision" "$TITLE" "$DECISION_ID" "$REL_PATH"
+
+            debug_log "Created decision note: $FILE_PATH"
+        fi
     fi
-fi
 
-# Silent exit - decisions are reviewed later
+    DECISIONS_CREATED=$((DECISIONS_CREATED + 1))
+done < <(echo "$DECISIONS" | jq -c '.[]' 2>/dev/null)
+
+debug_log "Created $DECISIONS_CREATED decision(s)"
+
 exit 0
