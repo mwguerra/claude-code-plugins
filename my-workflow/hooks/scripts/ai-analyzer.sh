@@ -20,7 +20,7 @@ source "$SCRIPT_DIR/hook-utils.sh"
 AI_MODEL="${WORKFLOW_AI_MODEL:-haiku}"
 AI_MAX_TOKENS=500
 AI_TIMEOUT=15
-AI_MAX_BUDGET="0.01"  # Max $0.01 per analysis
+AI_MAX_BUDGET="0.30"  # Max $0.30 per analysis
 
 # Check if Claude CLI is available and logged in
 claude_cli_available() {
@@ -190,11 +190,21 @@ $user_prompt"
             2>/dev/null) || true
 
         if [[ -n "$cli_response" ]]; then
-            # CLI returns JSON with result field
+            # Check for budget error
+            local subtype
+            subtype=$(echo "$cli_response" | jq -r '.subtype // empty' 2>/dev/null)
+            if [[ "$subtype" == "error_max_budget_usd" ]]; then
+                debug_log "AI analysis exceeded budget"
+                echo "{\"error\": \"budget_exceeded\"}"
+                return 1
+            fi
+
+            # CLI returns JSON wrapper with result field containing model output
             content=$(echo "$cli_response" | jq -r '.result // empty' 2>/dev/null)
-            if [[ -z "$content" ]]; then
-                # Try direct content
-                content="$cli_response"
+
+            if [[ -n "$content" ]]; then
+                # Strip markdown code blocks if present (```json ... ```)
+                content=$(echo "$content" | sed 's/^```json//; s/^```//; s/```$//' | tr -d '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
             fi
         fi
 
