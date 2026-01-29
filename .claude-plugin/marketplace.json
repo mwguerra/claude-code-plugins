@@ -404,7 +404,7 @@
     {
       "name": "my-workflow",
       "source": "./my-workflow",
-      "version": "1.3.0",
+      "version": "1.0.0",
       "description": "Personal workflow management with AI-powered content analysis. Tracks sessions, commitments, decisions, and goals in multiple languages. Integrates with GitHub and Obsidian vault. Provides intelligent briefings and productivity insights.",
       "keywords": [
         "workflow",
