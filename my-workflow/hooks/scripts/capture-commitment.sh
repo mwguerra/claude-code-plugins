@@ -197,7 +197,7 @@ status: pending"
 
         # Create vault note
         {
-            create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY, pending" "$RELATED" "$EXTRA"
+            create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY" "$RELATED" "$EXTRA"
             echo ""
             echo "# $TITLE"
             echo ""

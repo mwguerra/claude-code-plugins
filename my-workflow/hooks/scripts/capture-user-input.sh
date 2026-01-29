@@ -78,6 +78,54 @@ if is_enabled "decisions"; then
 
                     activity_log "decision" "User decision: $TITLE" "decisions" "$DECISION_ID" "$PROJECT" "{\"source\":\"user-input\"}"
                     debug_log "Created user decision $DECISION_ID: $TITLE"
+
+                    # Vault sync for user decisions
+                    if is_enabled "vault"; then
+                        VAULT_PATH=$(check_vault)
+                        if [[ -n "$VAULT_PATH" ]]; then
+                            WORKFLOW_FOLDER=$(get_workflow_folder)
+                            ensure_vault_structure
+
+                            DATE=$(get_date)
+                            SLUG=$(slugify "$TITLE")
+                            FILENAME="${DATE}-${SLUG}.md"
+                            FILE_PATH="$WORKFLOW_FOLDER/decisions/$FILENAME"
+
+                            RELATED=""
+                            SESSION_LINKS=$(get_todays_session_links)
+                            if [[ -n "$SESSION_LINKS" ]]; then
+                                RELATED="$SESSION_LINKS"
+                            fi
+
+                            EXTRA="decision_id: \"$DECISION_ID\"
+category: \"user-decision\"
+project: \"$PROJECT\"
+source: \"user-input\"
+status: active"
+
+                            {
+                                create_vault_frontmatter "$TITLE" "User decision in $PROJECT" "decision, $PROJECT, user-decision" "$RELATED" "$EXTRA"
+                                echo ""
+                                echo "# $TITLE"
+                                echo ""
+                                echo "| Field | Value |"
+                                echo "|-------|-------|"
+                                echo "| ID | $DECISION_ID |"
+                                echo "| Date | $(get_datetime) |"
+                                echo "| Category | User Decision |"
+                                echo "| Project | $PROJECT |"
+                                echo "| Source | User Input |"
+                                echo ""
+                                echo "## Decision"
+                                echo ""
+                                echo "$CONTEXT"
+                                echo ""
+                            } > "$FILE_PATH"
+
+                            db_exec "UPDATE decisions SET vault_note_path = '$FILE_PATH' WHERE id = '$DECISION_ID'"
+                            debug_log "Created user decision vault note: $FILE_PATH"
+                        fi
+                    fi
                 fi
             fi
             break
@@ -139,6 +187,46 @@ if is_enabled "ideas"; then
 
                     activity_log "idea" "User idea: $TITLE" "ideas" "$IDEA_ID" "$PROJECT" "{\"source\":\"user-input\"}"
                     debug_log "Created user idea $IDEA_ID: $TITLE"
+
+                    # Vault sync for user ideas
+                    if is_enabled "vault"; then
+                        VAULT_PATH=$(check_vault)
+                        if [[ -n "$VAULT_PATH" ]]; then
+                            WORKFLOW_FOLDER=$(get_workflow_folder)
+                            ensure_vault_structure
+                            ensure_dir "$WORKFLOW_FOLDER/ideas"
+
+                            DATE=$(get_date)
+                            SLUG=$(slugify "$TITLE")
+                            FILENAME="${IDEA_ID}-${SLUG}.md"
+                            FILE_PATH="$WORKFLOW_FOLDER/ideas/$FILENAME"
+
+                            EXTRA="idea_id: \"$IDEA_ID\"
+idea_type: \"user-idea\"
+project: \"$PROJECT\"
+source: \"user-input\"
+status: inbox"
+
+                            {
+                                create_vault_frontmatter "$TITLE" "User idea in $PROJECT" "idea, user-idea, $PROJECT" "" "$EXTRA"
+                                echo ""
+                                echo "# $TITLE"
+                                echo ""
+                                echo "## Context"
+                                echo ""
+                                echo "$CONTEXT"
+                                echo ""
+                                echo "## Notes"
+                                echo ""
+                                echo "<!-- Add your thoughts here -->"
+                                echo ""
+                            } > "$FILE_PATH"
+
+                            REL_PATH="workflow/ideas/${FILENAME%.md}"
+                            db_exec "UPDATE ideas SET vault_note_path = '$REL_PATH' WHERE id = '$IDEA_ID'"
+                            debug_log "Created user idea vault note: $FILE_PATH"
+                        fi
+                    fi
                 fi
             fi
             break
@@ -200,6 +288,60 @@ if is_enabled "commitments"; then
 
                     activity_log "commitment" "User commitment: $TITLE" "commitments" "$COMMIT_ID" "$PROJECT" "{\"source\":\"user-input\"}"
                     debug_log "Created user commitment $COMMIT_ID: $TITLE"
+
+                    # Vault sync for user commitments
+                    if is_enabled "vault"; then
+                        VAULT_PATH=$(check_vault)
+                        if [[ -n "$VAULT_PATH" ]]; then
+                            WORKFLOW_FOLDER=$(get_workflow_folder)
+                            ensure_vault_structure
+                            ensure_dir "$WORKFLOW_FOLDER/commitments"
+
+                            DATE=$(get_date)
+                            SLUG=$(slugify "$TITLE")
+                            FILENAME="${COMMIT_ID}-${SLUG}.md"
+                            FILE_PATH="$WORKFLOW_FOLDER/commitments/$FILENAME"
+
+                            RELATED=""
+                            SESSION_LINKS=$(get_todays_session_links)
+                            if [[ -n "$SESSION_LINKS" ]]; then
+                                RELATED="$SESSION_LINKS"
+                            fi
+
+                            EXTRA="commitment_id: \"$COMMIT_ID\"
+project: \"$PROJECT\"
+priority: \"normal\"
+source: \"user-input\"
+status: pending"
+
+                            {
+                                create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, normal" "$RELATED" "$EXTRA"
+                                echo ""
+                                echo "# $TITLE"
+                                echo ""
+                                echo "| Field | Value |"
+                                echo "|-------|-------|"
+                                echo "| ID | $COMMIT_ID |"
+                                echo "| Created | $(get_datetime) |"
+                                echo "| Project | $PROJECT |"
+                                echo "| Priority | Normal |"
+                                echo "| Source | User Input |"
+                                echo "| Status | Pending |"
+                                echo ""
+                                echo "## Context"
+                                echo ""
+                                echo "$CONTEXT"
+                                echo ""
+                                echo "## Notes"
+                                echo ""
+                                echo "<!-- Track progress here -->"
+                                echo ""
+                            } > "$FILE_PATH"
+
+                            db_exec "UPDATE commitments SET vault_note_path = '$FILE_PATH' WHERE id = '$COMMIT_ID'"
+                            debug_log "Created user commitment vault note: $FILE_PATH"
+                        fi
+                    fi
                 fi
             fi
             break
