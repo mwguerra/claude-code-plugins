@@ -22,6 +22,5 @@
     "sessions",
     "patterns",
     "knowledge-graph"
-  ],
-  "hooks": "../hooks/hooks.json"
+  ]
 }
