@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/my-workflow-config",
+  "logging": {
+    "captureCommits": true,
+    "captureDecisions": true,
+    "captureCommitments": true,
+    "captureIdeas": true
+  },
+  "briefing": {
+    "showOnStart": true,
+    "includeGitHub": true,
+    "includePlanner": true
+  },
+  "vault": {
+    "enabled": true
+  },
+  "ai": {
+    "enabled": true,
+    "fallbackOnly": false,
+    "model": "claude-3-5-haiku-latest",
+    "maxTokens": 500,
+    "timeout": 10
+  },
+  "_comments": {
+    "ai.enabled": "Enable AI-powered content analysis (requires ANTHROPIC_API_KEY env var)",
+    "ai.fallbackOnly": "If true, only use AI when pattern matching fails. If false, always analyze for better extraction.",
+    "ai.model": "Claude model to use for analysis. Haiku is recommended for cost/speed.",
+    "vault.enabled": "Sync captured items to Obsidian vault (requires obsidian-vault plugin)"
+  }
+}

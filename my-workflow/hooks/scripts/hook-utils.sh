@@ -69,6 +69,12 @@ is_enabled() {
         "github")
             value=$(get_config '.briefing.includeGitHub' 'true')
             ;;
+        "ai")
+            value=$(get_config '.ai.enabled' 'true')
+            ;;
+        "ai_fallback")
+            value=$(get_config '.ai.fallbackOnly' 'false')
+            ;;
         *)
             value="false"
             ;;
