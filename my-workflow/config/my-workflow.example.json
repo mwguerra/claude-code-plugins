@@ -17,14 +17,17 @@
   "ai": {
     "enabled": true,
     "fallbackOnly": false,
-    "model": "claude-3-5-haiku-latest",
+    "model": "haiku",
     "maxTokens": 500,
-    "timeout": 10
+    "timeout": 15,
+    "maxBudgetUsd": 0.01
   },
   "_comments": {
-    "ai.enabled": "Enable AI-powered content analysis (requires ANTHROPIC_API_KEY env var)",
+    "ai.enabled": "Enable AI-powered content analysis",
+    "ai.authentication": "Uses Claude CLI (logged-in account) first, falls back to ANTHROPIC_API_KEY if CLI unavailable",
     "ai.fallbackOnly": "If true, only use AI when pattern matching fails. If false, always analyze for better extraction.",
-    "ai.model": "Claude model to use for analysis. Haiku is recommended for cost/speed.",
+    "ai.model": "Model alias: 'haiku' (recommended), 'sonnet', or 'opus'",
+    "ai.maxBudgetUsd": "Maximum spend per analysis call (Claude CLI only)",
     "vault.enabled": "Sync captured items to Obsidian vault (requires obsidian-vault plugin)"
   }
 }

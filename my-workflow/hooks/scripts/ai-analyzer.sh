@@ -2,6 +2,10 @@
 # My Workflow Plugin - AI Content Analyzer
 # Uses Claude Haiku for intelligent content analysis when patterns don't match
 # Supports multiple languages (English, Portuguese BR, Spanish, etc.)
+#
+# Authentication priority:
+# 1. Claude CLI (uses logged-in account) - preferred
+# 2. Direct API with ANTHROPIC_API_KEY - fallback
 
 set -e
 
@@ -13,9 +17,15 @@ source "$SCRIPT_DIR/hook-utils.sh"
 # ============================================================================
 
 # Model to use for analysis (haiku is cheapest/fastest)
-AI_MODEL="${WORKFLOW_AI_MODEL:-claude-3-5-haiku-latest}"
+AI_MODEL="${WORKFLOW_AI_MODEL:-haiku}"
 AI_MAX_TOKENS=500
-AI_TIMEOUT=10
+AI_TIMEOUT=15
+AI_MAX_BUDGET="0.01"  # Max $0.01 per analysis
+
+# Check if Claude CLI is available and logged in
+claude_cli_available() {
+    command -v claude >/dev/null 2>&1
+}
 
 # Check if AI analysis is enabled
 ai_enabled() {
@@ -26,13 +36,29 @@ ai_enabled() {
         return 1
     fi
 
-    # Check for API key
-    if [[ -z "${ANTHROPIC_API_KEY:-}" ]]; then
-        debug_log "AI analysis disabled: ANTHROPIC_API_KEY not set"
-        return 1
+    # Check for Claude CLI first (uses logged-in account)
+    if claude_cli_available; then
+        return 0
     fi
 
-    return 0
+    # Fall back to API key
+    if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        return 0
+    fi
+
+    debug_log "AI analysis disabled: no Claude CLI or ANTHROPIC_API_KEY"
+    return 1
+}
+
+# Get the AI method to use
+get_ai_method() {
+    if claude_cli_available; then
+        echo "cli"
+    elif [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        echo "api"
+    else
+        echo "none"
+    fi
 }
 
 # ============================================================================
@@ -139,45 +165,84 @@ Respond with valid JSON only, no markdown."
             ;;
     esac
 
-    # Make API call
-    local response
-    response=$(curl -s --max-time "$AI_TIMEOUT" \
-        -H "Content-Type: application/json" \
-        -H "x-api-key: ${ANTHROPIC_API_KEY}" \
-        -H "anthropic-version: 2023-06-01" \
-        -d "$(jq -n \
-            --arg model "$AI_MODEL" \
-            --arg system "$system_prompt" \
-            --arg user "$user_prompt" \
-            --argjson max_tokens "$AI_MAX_TOKENS" \
-            '{
-                model: $model,
-                max_tokens: $max_tokens,
-                system: $system,
-                messages: [{role: "user", content: $user}]
-            }')" \
-        "https://api.anthropic.com/v1/messages" 2>/dev/null)
+    # Determine which method to use
+    local ai_method
+    ai_method=$(get_ai_method)
 
-    if [[ -z "$response" ]]; then
-        debug_log "AI analysis failed: no response"
-        echo "{\"error\": \"no_response\"}"
+    local content=""
+
+    if [[ "$ai_method" == "cli" ]]; then
+        # Use Claude CLI (logged-in account)
+        debug_log "Using Claude CLI for analysis"
+
+        local full_prompt="$system_prompt
+
+$user_prompt"
+
+        # Run claude CLI with print mode, haiku model, JSON output
+        local cli_response
+        cli_response=$(echo "$full_prompt" | timeout "$AI_TIMEOUT" claude \
+            --print \
+            --model "$AI_MODEL" \
+            --output-format json \
+            --max-budget-usd "$AI_MAX_BUDGET" \
+            --no-session-persistence \
+            2>/dev/null) || true
+
+        if [[ -n "$cli_response" ]]; then
+            # CLI returns JSON with result field
+            content=$(echo "$cli_response" | jq -r '.result // empty' 2>/dev/null)
+            if [[ -z "$content" ]]; then
+                # Try direct content
+                content="$cli_response"
+            fi
+        fi
+
+    elif [[ "$ai_method" == "api" ]]; then
+        # Use direct API call
+        debug_log "Using Anthropic API for analysis"
+
+        local response
+        response=$(curl -s --max-time "$AI_TIMEOUT" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -d "$(jq -n \
+                --arg model "claude-3-5-haiku-latest" \
+                --arg system "$system_prompt" \
+                --arg user "$user_prompt" \
+                --argjson max_tokens "$AI_MAX_TOKENS" \
+                '{
+                    model: $model,
+                    max_tokens: $max_tokens,
+                    system: $system,
+                    messages: [{role: "user", content: $user}]
+                }')" \
+            "https://api.anthropic.com/v1/messages" 2>/dev/null)
+
+        if [[ -n "$response" ]]; then
+            content=$(echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null)
+
+            if [[ -z "$content" ]]; then
+                local error
+                error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
+                if [[ -n "$error" ]]; then
+                    debug_log "AI API error: $error"
+                    echo "{\"error\": \"$error\"}"
+                    return 1
+                fi
+            fi
+        fi
+    else
+        debug_log "No AI method available"
+        echo "{\"error\": \"no_ai_method\"}"
         return 1
     fi
 
-    # Extract content from response
-    local content
-    content=$(echo "$response" | jq -r '.content[0].text // empty' 2>/dev/null)
-
+    # Check if we got content
     if [[ -z "$content" ]]; then
-        # Check for error
-        local error
-        error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
-        if [[ -n "$error" ]]; then
-            debug_log "AI analysis error: $error"
-            echo "{\"error\": \"$error\"}"
-            return 1
-        fi
-        echo "{\"error\": \"parse_failed\"}"
+        debug_log "AI analysis failed: no content"
+        echo "{\"error\": \"no_response\"}"
         return 1
     fi
 
