@@ -62,9 +62,21 @@ create_frontmatter() {
     echo "title: \"$title\""
     echo "description: \"$description\""
 
-    # Format tags as YAML array
+    # Format tags as YAML array with quoted strings
     if [[ -n "$tags" ]]; then
-        echo "tags: [$(echo "$tags" | sed 's/,/, /g')]"
+        local formatted_tags=""
+        IFS=',' read -ra TAG_ARRAY <<< "$tags"
+        for tag in "${TAG_ARRAY[@]}"; do
+            tag=$(echo "$tag" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            if [[ -n "$tag" ]]; then
+                if [[ -n "$formatted_tags" ]]; then
+                    formatted_tags="$formatted_tags, \"$tag\""
+                else
+                    formatted_tags="\"$tag\""
+                fi
+            fi
+        done
+        echo "tags: [$formatted_tags]"
     else
         echo "tags: []"
     fi

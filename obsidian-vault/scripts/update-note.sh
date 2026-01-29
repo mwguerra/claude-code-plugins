@@ -136,13 +136,28 @@ if [[ -n "$ADD_TAGS" ]]; then
     current_tags=$(echo "$current_tags" | sed 's/^\[//' | sed 's/\]$//')
 
     if [[ -z "$current_tags" ]] || [[ "$current_tags" == "[]" ]]; then
-        new_tags="$ADD_TAGS"
+        all_tags="$ADD_TAGS"
     else
-        new_tags="$current_tags, $ADD_TAGS"
+        all_tags="$current_tags, $ADD_TAGS"
     fi
 
-    sed -i "s/^tags:.*$/tags: [$new_tags]/" "$FILE_PATH"
-    echo "Updated tags: [$new_tags]"
+    # Format tags as quoted strings
+    formatted_tags=""
+    IFS=',' read -ra TAG_ARRAY <<< "$all_tags"
+    for tag in "${TAG_ARRAY[@]}"; do
+        # Remove surrounding whitespace and quotes
+        tag=$(echo "$tag" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
+        if [[ -n "$tag" ]]; then
+            if [[ -n "$formatted_tags" ]]; then
+                formatted_tags="$formatted_tags, \"$tag\""
+            else
+                formatted_tags="\"$tag\""
+            fi
+        fi
+    done
+
+    sed -i "s/^tags:.*$/tags: [$formatted_tags]/" "$FILE_PATH"
+    echo "Updated tags: [$formatted_tags]"
     CHANGES_MADE=true
 fi
 

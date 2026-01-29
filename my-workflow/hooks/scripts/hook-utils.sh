@@ -212,7 +212,7 @@ create_vault_frontmatter() {
     local extra="$5"
     local created="${6:-$(get_date)}"
 
-    # Sanitize tags
+    # Sanitize tags and quote them as strings
     local sanitized_tags=""
     IFS=',' read -ra TAG_ARRAY <<< "$tags"
     for tag in "${TAG_ARRAY[@]}"; do
@@ -220,9 +220,9 @@ create_vault_frontmatter() {
         local clean_tag=$(sanitize_tag "$tag")
         if [[ -n "$clean_tag" ]]; then
             if [[ -n "$sanitized_tags" ]]; then
-                sanitized_tags="$sanitized_tags, $clean_tag"
+                sanitized_tags="$sanitized_tags, \"$clean_tag\""
             else
-                sanitized_tags="$clean_tag"
+                sanitized_tags="\"$clean_tag\""
             fi
         fi
     done

@@ -358,7 +358,7 @@ if is_enabled "vault"; then
                 echo "---"
                 echo "title: \"Daily Note: $TODAY\""
                 echo "description: \"Workflow summary for $TODAY\""
-                echo "tags: [daily, workflow]"
+                echo "tags: [\"daily\", \"workflow\"]"
                 echo "related: []"
                 echo "created: $TODAY"
                 echo "updated: $TODAY"

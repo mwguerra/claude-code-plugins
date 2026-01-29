@@ -162,7 +162,7 @@ if [[ ! -f "$README_PATH" ]]; then
 ---
 title: "Development Knowledge Base"
 description: "Personal Obsidian vault for developer documentation, project notes, and work journal"
-tags: [index, vault, documentation]
+tags: ["index", "vault", "documentation"]
 related: []
 created: $(date +%Y-%m-%d)
 updated: $(date +%Y-%m-%d)
