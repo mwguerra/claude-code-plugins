@@ -508,9 +508,123 @@ get_tool_output() {
     echo "${CLAUDE_TOOL_OUTPUT:-}"
 }
 
-# Get stop summary from environment
+# Global variable to store hook input (read once from stdin)
+HOOK_INPUT_CACHED=""
+HOOK_INPUT_READ=false
+
+# Read hook input from stdin (only once, caches result)
+read_hook_input() {
+    if [[ "$HOOK_INPUT_READ" == "false" ]]; then
+        # Read stdin with timeout to avoid blocking
+        HOOK_INPUT_CACHED=$(timeout 2 cat 2>/dev/null || echo "")
+        HOOK_INPUT_READ=true
+    fi
+    echo "$HOOK_INPUT_CACHED"
+}
+
+# Get transcript path from hook input
+get_transcript_path() {
+    local input
+    input=$(read_hook_input)
+
+    if [[ -z "$input" ]]; then
+        echo ""
+        return
+    fi
+
+    local transcript_path
+    transcript_path=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+
+    # Expand ~ to home directory
+    if [[ "$transcript_path" == "~/"* ]]; then
+        transcript_path="${HOME}${transcript_path:1}"
+    fi
+
+    echo "$transcript_path"
+}
+
+# Extract last assistant response from transcript JSONL file
+extract_last_assistant_response() {
+    local transcript_path="$1"
+
+    if [[ ! -f "$transcript_path" ]]; then
+        echo ""
+        return 1
+    fi
+
+    local response=""
+    local last_lines
+    last_lines=$(tail -30 "$transcript_path" 2>/dev/null)
+
+    if [[ -n "$last_lines" ]]; then
+        # Try to extract assistant content from JSONL (various formats)
+        response=$(echo "$last_lines" | tac 2>/dev/null | while IFS= read -r line; do
+            # Check for role=assistant format
+            if echo "$line" | jq -e '.role == "assistant"' >/dev/null 2>&1; then
+                local content
+                content=$(echo "$line" | jq -r '
+                    if .content | type == "string" then .content
+                    elif .content | type == "array" then
+                        [.content[] | if type == "object" then .text // "" else . end] | join("\n")
+                    else ""
+                    end
+                ' 2>/dev/null)
+
+                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
+                    echo "$content"
+                    break
+                fi
+            fi
+
+            # Check for message.role format
+            if echo "$line" | jq -e '.message.role == "assistant"' >/dev/null 2>&1; then
+                local content
+                content=$(echo "$line" | jq -r '.message.content // ""' 2>/dev/null)
+                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
+                    echo "$content"
+                    break
+                fi
+            fi
+
+            # Check for type=text blocks
+            if echo "$line" | jq -e '.type == "text"' >/dev/null 2>&1; then
+                local content
+                content=$(echo "$line" | jq -r '.text // ""' 2>/dev/null)
+                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
+                    echo "$content"
+                    break
+                fi
+            fi
+        done)
+    fi
+
+    echo "$response"
+}
+
+# Get stop summary - tries multiple sources
+# 1. CLAUDE_STOP_SUMMARY env var (legacy)
+# 2. transcript_path from hook stdin input
 get_stop_summary() {
-    echo "${CLAUDE_STOP_SUMMARY:-}"
+    # First try legacy environment variable
+    if [[ -n "${CLAUDE_STOP_SUMMARY:-}" ]]; then
+        echo "${CLAUDE_STOP_SUMMARY}"
+        return
+    fi
+
+    # Try to get from transcript file
+    local transcript_path
+    transcript_path=$(get_transcript_path)
+
+    if [[ -n "$transcript_path" && -f "$transcript_path" ]]; then
+        local response
+        response=$(extract_last_assistant_response "$transcript_path")
+        if [[ -n "$response" ]]; then
+            echo "$response"
+            return
+        fi
+    fi
+
+    echo ""
 }
 
 # Get user prompt from environment (for UserPromptSubmit hooks)
@@ -1525,6 +1639,7 @@ export -f get_date get_datetime get_iso_timestamp
 export -f date_to_epoch days_ago_epoch days_ago_date file_mtime touch_date
 export -f slugify sql_escape json_escape
 export -f ensure_dir get_tool_input get_tool_output get_stop_summary get_user_prompt get_agent_output
+export -f read_hook_input get_transcript_path extract_last_assistant_response
 export -f debug_log activity_log
 export -f ensure_daily_note update_daily_note_ideas update_daily_note_decisions
 export -f update_daily_note_completed update_daily_note_activity

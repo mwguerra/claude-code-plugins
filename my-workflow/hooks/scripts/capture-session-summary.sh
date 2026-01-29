@@ -1,14 +1,31 @@
 #!/bin/bash
 # My Workflow Plugin - Capture Session Summary
 # Triggered by Stop event (end of conversation)
+#
+# The Stop event provides JSON via stdin:
+# {
+#   "session_id": "...",
+#   "transcript_path": "~/.claude/projects/.../session.jsonl",
+#   "cwd": "...",
+#   "hook_event_name": "Stop"
+# }
 
 set -e
+
+# Read hook input from stdin FIRST (before sourcing anything)
+# stdin can only be read once, so we capture it immediately
+HOOK_INPUT=$(cat 2>/dev/null || echo "")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
 source "$SCRIPT_DIR/ai-extractor.sh"
 
+# Set the cached hook input so get_stop_summary can use it
+HOOK_INPUT_CACHED="$HOOK_INPUT"
+HOOK_INPUT_READ=true
+
 debug_log "capture-session-summary.sh triggered"
+debug_log "Hook input length: ${#HOOK_INPUT}"
 
 # Ensure database exists
 DB=$(ensure_db)
@@ -24,7 +41,7 @@ if [[ -z "$SESSION_ID" ]]; then
     exit 0
 fi
 
-# Get session summary from environment
+# Get session summary from transcript
 SUMMARY=$(get_stop_summary)
 TIMESTAMP=$(get_iso_timestamp)
 PROJECT=$(get_project_name)

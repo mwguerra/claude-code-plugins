@@ -3,30 +3,47 @@
 # Classifies Claude responses using Haiku and saves worthy summaries to session notes
 #
 # Triggered on: Stop event (when Claude finishes responding)
-# Uses: CLAUDE_STOP_SUMMARY environment variable
+# Input: JSON via stdin containing transcript_path
+#
+# The Stop event provides:
+# {
+#   "session_id": "...",
+#   "transcript_path": "~/.claude/projects/.../session.jsonl",
+#   "cwd": "...",
+#   "hook_event_name": "Stop"
+# }
 
 set -e
+
+# Read hook input from stdin FIRST (before sourcing anything)
+# stdin can only be read once, so we capture it immediately
+HOOK_INPUT=$(cat 2>/dev/null || echo "")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/hook-utils.sh"
 source "$SCRIPT_DIR/ai-extractor.sh"
 
+# Set the cached hook input so get_stop_summary can use it
+HOOK_INPUT_CACHED="$HOOK_INPUT"
+HOOK_INPUT_READ=true
+
 # Don't fail on errors - handle gracefully
 set +e
 
 debug_log "capture-claude-response.sh triggered"
+debug_log "Hook input length: ${#HOOK_INPUT}"
 
 # ============================================================================
 # Main Logic
 # ============================================================================
 
 main() {
-    # Get Claude's response from environment
+    # Get response using the shared helper (uses cached HOOK_INPUT)
     local response
     response=$(get_stop_summary)
 
     if [[ -z "$response" ]]; then
-        debug_log "No response content to analyze"
+        debug_log "No response content to analyze from transcript or env"
         exit 0
     fi
 
@@ -39,6 +56,11 @@ main() {
     # Get current session
     local session_id
     session_id=$(get_current_session_id)
+
+    if [[ -z "$session_id" ]]; then
+        # Try to get from hook input
+        session_id=$(echo "$HOOK_INPUT" | jq -r '.session_id // empty' 2>/dev/null)
+    fi
 
     if [[ -z "$session_id" ]]; then
         debug_log "No active session, skipping response capture"
@@ -116,15 +138,13 @@ EOF
     fi
 
     # Extract key points from response (truncate if too long)
-    local max_save_chars=2000
+    local max_save_chars=4000
     local content_to_save="$response"
     if [[ ${#content_to_save} -gt $max_save_chars ]]; then
         content_to_save="${content_to_save:0:$max_save_chars}..."
     fi
 
     # Format the content nicely
-    # If it already has bullet points, preserve them
-    # Otherwise, keep as-is
     local formatted_content="$content_to_save"
 
     # Append to session note
@@ -133,7 +153,7 @@ EOF
 
         # Log activity
         local project=$(get_project_name)
-        activity_log "claude_summary" "$title" "session" "$session_id" "$project" "{\"reason\": \"$reason\"}"
+        activity_log "claude_summary" "$title" "session" "$session_id" "$project" "{\"reason\": \"$reason\", \"chars\": ${#response}}"
     else
         debug_log "Failed to append to session note"
     fi
