@@ -142,6 +142,7 @@ source: \"user-input\"
 analysis_method: \"$source_type\"
 status: active"
 
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$title" "User decision in $PROJECT" "decision, $PROJECT, $category" "$RELATED" "$EXTRA"
                 echo ""
@@ -160,7 +161,7 @@ status: active"
                 echo ""
                 echo "$context"
                 echo ""
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             db_exec "UPDATE decisions SET vault_note_path = '$FILE_PATH' WHERE id = '$DECISION_ID'"
             debug_log "Created user decision vault note: $FILE_PATH"
@@ -232,6 +233,7 @@ source: \"user-input\"
 analysis_method: \"$source_type\"
 status: inbox"
 
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$title" "User idea in $PROJECT" "idea, $idea_type, $PROJECT" "" "$EXTRA"
                 echo ""
@@ -245,7 +247,7 @@ status: inbox"
                 echo ""
                 echo "<!-- Add your thoughts here -->"
                 echo ""
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             REL_PATH="workflow/ideas/${FILENAME%.md}"
             db_exec "UPDATE ideas SET vault_note_path = '$REL_PATH' WHERE id = '$IDEA_ID'"
@@ -324,6 +326,7 @@ source: \"user-input\"
 analysis_method: \"$source_type\"
 status: pending"
 
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$title" "Commitment in $PROJECT" "commitment, $PROJECT, $priority" "$RELATED" "$EXTRA"
                 echo ""
@@ -347,7 +350,7 @@ status: pending"
                 echo ""
                 echo "<!-- Track progress here -->"
                 echo ""
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             db_exec "UPDATE commitments SET vault_note_path = '$FILE_PATH' WHERE id = '$COMMIT_ID'"
             debug_log "Created user commitment vault note: $FILE_PATH"

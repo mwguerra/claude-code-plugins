@@ -139,7 +139,7 @@ priority: medium
 effort: unknown
 status: captured"
 
-            # Create vault note
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$TITLE" "Idea: $IDEA_TYPE" "idea, $IDEA_TYPE, $PROJECT" "$RELATED" "$EXTRA"
                 echo ""
@@ -170,7 +170,7 @@ status: captured"
                 echo "- Project: $PROJECT"
                 echo ""
 
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             # Update idea with vault note path
             db_update_idea_vault_path "$IDEA_ID" "$REL_PATH"

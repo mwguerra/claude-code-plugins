@@ -125,7 +125,7 @@ branch: \"$BRANCH\"
 author: \"$COMMIT_AUTHOR\"
 commit_type: \"$COMMIT_TYPE\""
 
-        # Create vault note
+        # Create vault note (with retry logic for concurrent access)
         {
             create_vault_frontmatter "$COMMIT_MSG" "Git commit in $PROJECT on branch $BRANCH" "commit, $PROJECT, $BRANCH, $COMMIT_TYPE" "$RELATED" "$EXTRA"
             echo ""
@@ -172,7 +172,7 @@ commit_type: \"$COMMIT_TYPE\""
                 echo ""
             fi
 
-        } > "$FILE_PATH"
+        } | create_vault_note_safe "$FILE_PATH"
 
         debug_log "Created commit note: $FILE_PATH"
     fi

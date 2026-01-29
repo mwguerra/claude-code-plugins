@@ -1167,6 +1167,149 @@ cleanup_orphaned_sessions() {
 }
 
 # ============================================================================
+# File Operation Retry Logic
+# ============================================================================
+
+# Generate random delay between min and max seconds
+random_delay() {
+    local min="${1:-3}"
+    local max="${2:-8}"
+    local range=$((max - min + 1))
+    local delay=$((RANDOM % range + min))
+    sleep "$delay"
+}
+
+# Write to file with retry logic (handles concurrent access)
+# Usage: safe_write_file "filepath" "content" [max_retries]
+safe_write_file() {
+    local filepath="$1"
+    local content="$2"
+    local max_retries="${3:-2}"
+    local attempt=0
+
+    while [[ $attempt -le $max_retries ]]; do
+        if echo "$content" > "$filepath" 2>/dev/null; then
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        if [[ $attempt -le $max_retries ]]; then
+            debug_log "File write failed for $filepath, attempt $attempt of $((max_retries + 1)), waiting..."
+            random_delay 3 8
+        fi
+    done
+
+    debug_log "ERROR: Failed to write to $filepath after $((max_retries + 1)) attempts"
+    return 1
+}
+
+# Append to file with retry logic
+# Usage: safe_append_file "filepath" "content" [max_retries]
+safe_append_file() {
+    local filepath="$1"
+    local content="$2"
+    local max_retries="${3:-2}"
+    local attempt=0
+
+    while [[ $attempt -le $max_retries ]]; do
+        if echo "$content" >> "$filepath" 2>/dev/null; then
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        if [[ $attempt -le $max_retries ]]; then
+            debug_log "File append failed for $filepath, attempt $attempt of $((max_retries + 1)), waiting..."
+            random_delay 3 8
+        fi
+    done
+
+    debug_log "ERROR: Failed to append to $filepath after $((max_retries + 1)) attempts"
+    return 1
+}
+
+# Read file with retry logic
+# Usage: safe_read_file "filepath" [max_retries]
+safe_read_file() {
+    local filepath="$1"
+    local max_retries="${2:-2}"
+    local attempt=0
+    local content
+
+    while [[ $attempt -le $max_retries ]]; do
+        if content=$(cat "$filepath" 2>/dev/null); then
+            echo "$content"
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        if [[ $attempt -le $max_retries ]]; then
+            debug_log "File read failed for $filepath, attempt $attempt of $((max_retries + 1)), waiting..."
+            random_delay 3 8
+        fi
+    done
+
+    debug_log "ERROR: Failed to read $filepath after $((max_retries + 1)) attempts"
+    return 1
+}
+
+# Create vault note with retry logic (uses heredoc content)
+# Usage: create_vault_note_safe "filepath" <<'EOF'
+#   content here
+# EOF
+create_vault_note_safe() {
+    local filepath="$1"
+    local content
+    content=$(cat)  # Read from stdin
+    local max_retries=2
+    local attempt=0
+
+    # Ensure parent directory exists
+    local dir=$(dirname "$filepath")
+    mkdir -p "$dir" 2>/dev/null
+
+    while [[ $attempt -le $max_retries ]]; do
+        if echo "$content" > "$filepath" 2>/dev/null; then
+            debug_log "Successfully wrote vault note: $filepath"
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        if [[ $attempt -le $max_retries ]]; then
+            debug_log "Vault note write failed for $filepath, attempt $attempt of $((max_retries + 1)), waiting..."
+            random_delay 3 8
+        fi
+    done
+
+    debug_log "ERROR: Failed to write vault note $filepath after $((max_retries + 1)) attempts"
+    return 1
+}
+
+# Execute database operation with retry logic
+# Usage: safe_db_exec "sql_statement" [max_retries]
+safe_db_exec() {
+    local sql="$1"
+    local max_retries="${2:-2}"
+    local attempt=0
+    local db
+    db=$(ensure_db) || return 1
+
+    while [[ $attempt -le $max_retries ]]; do
+        if sqlite3 "$db" "$sql" 2>/dev/null; then
+            return 0
+        fi
+
+        attempt=$((attempt + 1))
+        if [[ $attempt -le $max_retries ]]; then
+            debug_log "Database operation failed, attempt $attempt of $((max_retries + 1)), waiting..."
+            random_delay 3 8
+        fi
+    done
+
+    debug_log "ERROR: Database operation failed after $((max_retries + 1)) attempts: $sql"
+    return 1
+}
+
+# ============================================================================
 # Export Functions
 # ============================================================================
 
@@ -1190,3 +1333,4 @@ export -f update_daily_note_completed update_daily_note_activity
 export -f get_previous_day_summary get_today_planner get_ideas_inbox
 export -f append_to_section create_daily_vault_template vault_log_activity vault_mark_session_interrupted
 export -f is_claude_running_for_directory cleanup_orphaned_sessions
+export -f random_delay safe_write_file safe_append_file safe_read_file create_vault_note_safe safe_db_exec

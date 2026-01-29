@@ -192,7 +192,7 @@ project: \"$PROJECT\"
 duration: \"$DURATION_STR\"
 duration_seconds: $DURATION_SECONDS"
 
-        # Create vault note
+        # Create vault note (with retry logic for concurrent access)
         {
             create_vault_frontmatter "Session: $PROJECT" "Claude Code session in $PROJECT" "session, workflow, $PROJECT" "$RELATED" "$EXTRA"
             echo ""
@@ -251,7 +251,7 @@ duration_seconds: $DURATION_SECONDS"
             echo "<!-- Add follow-up items -->"
             echo ""
 
-        } > "$FILE_PATH"
+        } | create_vault_note_safe "$FILE_PATH"
 
         # Update session with vault note path
         db_exec "UPDATE sessions SET vault_note_path = '$FILE_PATH' WHERE id = '$SESSION_ID'"

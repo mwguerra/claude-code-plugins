@@ -146,7 +146,7 @@ category: \"$CATEGORY\"
 project: \"$PROJECT\"
 status: active"
 
-            # Create vault note
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$TITLE" "Decision: $CATEGORY in $PROJECT" "decision, $PROJECT, $CATEGORY" "$RELATED" "$EXTRA"
                 echo ""
@@ -191,7 +191,7 @@ status: active"
                     echo ""
                 fi
 
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             # Update decision with vault note path
             db_update_decision_vault_path "$DECISION_ID" "$FILE_PATH"

@@ -362,6 +362,7 @@ if is_enabled "vault"; then
 
         # Only create new daily note if it doesn't exist
         if [[ ! -f "$DAILY_FILE" ]]; then
+            # Create daily vault note (with retry logic for concurrent access)
             {
                 echo "---"
                 echo "title: \"Daily Note: $TODAY\""
@@ -397,7 +398,7 @@ if is_enabled "vault"; then
                 echo ""
                 echo "<!-- Free-form notes -->"
                 echo ""
-            } > "$DAILY_FILE"
+            } | create_vault_note_safe "$DAILY_FILE"
 
             # Update database
             db_exec "UPDATE daily_notes SET vault_note_path = 'workflow/daily/$TODAY' WHERE date = '$TODAY'"

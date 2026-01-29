@@ -150,7 +150,7 @@ priority: \"$PRIORITY\"
 due_type: \"$DUE_TYPE\"
 status: pending"
 
-            # Create vault note
+            # Create vault note (with retry logic for concurrent access)
             {
                 create_vault_frontmatter "$TITLE" "Commitment in $PROJECT" "commitment, $PROJECT, $PRIORITY" "$RELATED" "$EXTRA"
                 echo ""
@@ -189,7 +189,7 @@ status: pending"
                     echo ""
                 fi
 
-            } > "$FILE_PATH"
+            } | create_vault_note_safe "$FILE_PATH"
 
             # Update commitment with vault note path
             db_update_commitment_vault_path "$COMMITMENT_ID" "$FILE_PATH"
