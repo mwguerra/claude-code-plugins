@@ -509,8 +509,13 @@ get_tool_output() {
 }
 
 # Global variable to store hook input (read once from stdin)
-HOOK_INPUT_CACHED=""
-HOOK_INPUT_READ=false
+# Only initialize if not already set (prevents reset when sourced multiple times)
+if [[ -z "${HOOK_INPUT_CACHED+x}" ]]; then
+    HOOK_INPUT_CACHED=""
+fi
+if [[ -z "${HOOK_INPUT_READ+x}" ]]; then
+    HOOK_INPUT_READ=false
+fi
 
 # Read hook input from stdin (only once, caches result)
 read_hook_input() {
@@ -544,6 +549,18 @@ get_transcript_path() {
 }
 
 # Extract last assistant response from transcript JSONL file
+# Claude Code transcript format:
+# {
+#   "type": "assistant",
+#   "message": {
+#     "role": "assistant",
+#     "content": [
+#       {"type": "text", "text": "..."},
+#       {"type": "thinking", "thinking": "..."},
+#       {"type": "tool_use", ...}
+#     ]
+#   }
+# }
 extract_last_assistant_response() {
     local transcript_path="$1"
 
@@ -553,19 +570,36 @@ extract_last_assistant_response() {
     fi
 
     local response=""
+
+    # Search backwards through the file for the last assistant message with text content
+    # We need to look at more lines since recent messages might only have thinking/tool_use
     local last_lines
-    last_lines=$(tail -30 "$transcript_path" 2>/dev/null)
+    last_lines=$(tail -100 "$transcript_path" 2>/dev/null)
 
     if [[ -n "$last_lines" ]]; then
-        # Try to extract assistant content from JSONL (various formats)
+        # Claude Code format: type=assistant with message.content array
         response=$(echo "$last_lines" | tac 2>/dev/null | while IFS= read -r line; do
-            # Check for role=assistant format
+            # Check for Claude Code format: type=assistant with nested message
+            if echo "$line" | jq -e '.type == "assistant" and .message.role == "assistant"' >/dev/null 2>&1; then
+                # Extract text content from message.content array
+                local content
+                content=$(echo "$line" | jq -r '
+                    [.message.content[] | select(.type == "text") | .text] | join("\n")
+                ' 2>/dev/null)
+
+                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
+                    echo "$content"
+                    break
+                fi
+            fi
+
+            # Fallback: Check for direct role=assistant format
             if echo "$line" | jq -e '.role == "assistant"' >/dev/null 2>&1; then
                 local content
                 content=$(echo "$line" | jq -r '
                     if .content | type == "string" then .content
                     elif .content | type == "array" then
-                        [.content[] | if type == "object" then .text // "" else . end] | join("\n")
+                        [.content[] | select(.type == "text") | .text] | join("\n")
                     else ""
                     end
                 ' 2>/dev/null)
@@ -575,22 +609,20 @@ extract_last_assistant_response() {
                     break
                 fi
             fi
+        done)
+    fi
 
-            # Check for message.role format
-            if echo "$line" | jq -e '.message.role == "assistant"' >/dev/null 2>&1; then
+    # If still no response, try a broader search
+    if [[ -z "$response" ]]; then
+        # Look for any message with text content in the last 200 lines
+        response=$(tail -200 "$transcript_path" 2>/dev/null | tac | while IFS= read -r line; do
+            if echo "$line" | jq -e '.message.content' >/dev/null 2>&1; then
                 local content
-                content=$(echo "$line" | jq -r '.message.content // ""' 2>/dev/null)
-                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
-                    echo "$content"
-                    break
-                fi
-            fi
+                content=$(echo "$line" | jq -r '
+                    [.message.content[] | select(.type == "text") | .text] | join("\n")
+                ' 2>/dev/null)
 
-            # Check for type=text blocks
-            if echo "$line" | jq -e '.type == "text"' >/dev/null 2>&1; then
-                local content
-                content=$(echo "$line" | jq -r '.text // ""' 2>/dev/null)
-                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 50 ]]; then
+                if [[ -n "$content" && "$content" != "null" && ${#content} -gt 100 ]]; then
                     echo "$content"
                     break
                 fi
