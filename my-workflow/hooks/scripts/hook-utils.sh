@@ -57,6 +57,9 @@ is_enabled() {
         "commitments")
             value=$(get_config '.logging.captureCommitments' 'true')
             ;;
+        "ideas")
+            value=$(get_config '.logging.captureIdeas' 'true')
+            ;;
         "briefing")
             value=$(get_config '.briefing.showOnStart' 'true')
             ;;
@@ -501,6 +504,16 @@ get_stop_summary() {
     echo "${CLAUDE_STOP_SUMMARY:-}"
 }
 
+# Get user prompt from environment (for UserPromptSubmit hooks)
+get_user_prompt() {
+    echo "${CLAUDE_USER_PROMPT:-}"
+}
+
+# Get agent output from environment (for SubagentStop hooks)
+get_agent_output() {
+    echo "${CLAUDE_TOOL_OUTPUT:-}"
+}
+
 # ============================================================================
 # Logging Functions
 # ============================================================================
@@ -876,7 +889,7 @@ export -f get_project_name get_git_branch get_latest_commit
 export -f get_date get_datetime get_iso_timestamp
 export -f date_to_epoch days_ago_epoch days_ago_date file_mtime touch_date
 export -f slugify sql_escape json_escape
-export -f ensure_dir get_tool_input get_tool_output get_stop_summary
+export -f ensure_dir get_tool_input get_tool_output get_stop_summary get_user_prompt get_agent_output
 export -f debug_log activity_log
 export -f ensure_daily_note update_daily_note_ideas update_daily_note_decisions
 export -f update_daily_note_completed update_daily_note_activity
