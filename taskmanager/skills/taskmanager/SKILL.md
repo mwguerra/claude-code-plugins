@@ -43,6 +43,7 @@ The SQLite database contains the following tables:
 - `id` (TEXT PRIMARY KEY) — Task ID (e.g., "1", "1.1", "1.1.1")
 - `parent_id` (TEXT) — Parent task ID for hierarchy
 - `title`, `description`, `details` (TEXT) — Task content
+- `test_strategy` (TEXT) — How to verify this task is complete (tests, manual checks, etc.)
 - `status` (TEXT) — Task status (planned, in-progress, done, etc.)
 - `priority` (TEXT) — Priority level (critical, high, medium, low)
 - `type` (TEXT) — Task type (feature, bug, chore, etc.)
@@ -201,7 +202,7 @@ This retrieves a specific task by ID efficiently:
 - Get specific property: `taskmanager:get-task 1.2.3 status`
 - Get nested property: `taskmanager:get-task 1.2.3 complexity.scale`
 
-Available properties: `id`, `title`, `status`, `priority`, `type`, `description`, `complexity`, `complexity.score`, `complexity.scale`, `estimate_seconds`, `started_at`, `completed_at`, `duration_seconds`, `dependencies`, `parent_id`
+Available properties: `id`, `title`, `status`, `priority`, `type`, `description`, `details`, `test_strategy`, `complexity`, `complexity.score`, `complexity.scale`, `estimate_seconds`, `started_at`, `completed_at`, `duration_seconds`, `dependencies`, `tags`, `parent_id`
 
 #### Option 4: Use the update-status command
 ```
@@ -377,6 +378,7 @@ Every task/subtask must be:
 - **Manageable** — small enough for a focused work session
 - **Accurate** — from the PRD, not invented
 - **Implementation-ready** — clear inputs/outputs where possible
+- **Testable** — includes a `test_strategy` describing how to verify completion (e.g., unit tests, integration tests, manual verification steps)
 
 Bad examples:
 
@@ -634,6 +636,16 @@ You MUST continue expanding level-by-level **until:**
 
 1. Insert the final task tree into the `tasks` table
 2. Log decisions to `.taskmanager/logs/decisions.log`
+
+### Post-Planning Expansion
+
+Tasks can also be expanded after initial planning using `taskmanager:expand`. When generating subtasks for expansion:
+
+1. **Use the `complexity_expansion_prompt`** if the task has one. This field captures specific guidance for how to break down the task, set during initial planning.
+2. **Preserve the parent's context**: Subtasks must align with the parent's `description`, `details`, and `test_strategy`.
+3. **Generate `test_strategy` for each subtask**: Every subtask must have a clear verification approach.
+4. **Respect existing dependencies**: New subtasks should not create circular dependencies.
+5. **Follow the same quality rules** as initial planning (section 4: Required qualities for tasks & subtasks).
 
 ---
 

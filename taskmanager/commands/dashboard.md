@@ -155,7 +155,34 @@ LIMIT 5;
 "
 ```
 
-### 7. Writing domain (if applicable)
+### 7. Tag distribution (if tags exist)
+
+```bash
+# Check if any tags exist
+TAG_COUNT=$(sqlite3 .taskmanager/taskmanager.db "SELECT COUNT(*) FROM tasks t, json_each(t.tags) WHERE t.archived_at IS NULL AND t.tags != '[]';")
+
+if [[ "$TAG_COUNT" -gt 0 ]]; then
+    echo ""
+    echo "┌─────────────────────────────────────────────────────────────┐"
+    echo "│ Tags                                                         │"
+    echo "└─────────────────────────────────────────────────────────────┘"
+
+    sqlite3 -box .taskmanager/taskmanager.db "
+    SELECT
+        tag.value as 'Tag',
+        COUNT(DISTINCT t.id) as 'Tasks',
+        SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as 'Done',
+        SUM(CASE WHEN t.status NOT IN ('done', 'canceled', 'duplicate') THEN 1 ELSE 0 END) as 'Remaining'
+    FROM tasks t, json_each(t.tags) tag
+    WHERE t.archived_at IS NULL
+    GROUP BY tag.value
+    ORDER BY COUNT(DISTINCT t.id) DESC
+    LIMIT 10;
+    "
+fi
+```
+
+### 8. Writing domain (if applicable)
 
 ```bash
 # Check if any writing tasks exist

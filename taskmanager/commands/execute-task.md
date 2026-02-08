@@ -178,6 +178,10 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
 7. **Execute the task**:
    - Perform the code changes, file edits, or other work implied by the task.
    - Apply loaded memories as constraints during implementation.
+   - If the task has a `test_strategy`, follow it to verify the implementation:
+     - Write tests as specified in the strategy.
+     - Run the tests and verify they pass before marking the task as done.
+     - If no `test_strategy` is set, consider the task type and add appropriate verification.
 
 8. **Post-execution memory review** (before marking done):
    - **Run conflict detection again** on all applied memories.

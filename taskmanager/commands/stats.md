@@ -28,6 +28,7 @@ Available modes:
 - `--remaining` - Count of remaining tasks
 - `--time` - Estimated time remaining
 - `--completion` - Completion statistics
+- `--tags` - Tag distribution and statistics
 
 ## Behavior
 
@@ -328,6 +329,30 @@ SELECT
     ROUND(100.0 * SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) as 'Percent Complete'
 FROM tasks WHERE archived_at IS NULL;
 "
+```
+
+#### --tags
+
+```bash
+DB=".taskmanager/taskmanager.db"
+
+echo "=== Tag Statistics ==="
+sqlite3 -column -header "$DB" "
+SELECT
+    tag.value as Tag,
+    COUNT(DISTINCT t.id) as 'Total',
+    SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as Done,
+    SUM(CASE WHEN t.status NOT IN ('done', 'canceled', 'duplicate') THEN 1 ELSE 0 END) as Remaining,
+    ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) / NULLIF(COUNT(DISTINCT t.id), 0), 1) || '%' as Complete
+FROM tasks t, json_each(t.tags) tag
+WHERE t.archived_at IS NULL
+GROUP BY tag.value
+ORDER BY COUNT(DISTINCT t.id) DESC;
+"
+
+TAG_COUNT=$(sqlite3 "$DB" "SELECT COUNT(DISTINCT tag.value) FROM tasks t, json_each(t.tags) tag WHERE t.archived_at IS NULL;")
+echo ""
+echo "Total unique tags: $TAG_COUNT"
 ```
 
 ---

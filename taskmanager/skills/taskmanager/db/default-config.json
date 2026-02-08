@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "defaults": {
+    "priority": "medium",
+    "type": "feature",
+    "domain": "software",
+    "complexity_threshold_for_expansion": "M",
+    "max_subtask_depth": 3
+  },
+  "dashboard": {
+    "next_tasks_count": 5,
+    "show_tags": true,
+    "show_writing_progress": true
+  },
+  "execution": {
+    "auto_propagate_status": true,
+    "auto_archive_completed": true,
+    "require_test_strategy": false,
+    "memory_importance_threshold": 3
+  },
+  "planning": {
+    "default_granularity": "normal",
+    "auto_expand_above": "M",
+    "generate_test_strategies": true
+  },
+  "tags": {
+    "default_tags": []
+  }
+}

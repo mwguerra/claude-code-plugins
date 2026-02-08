@@ -1,7 +1,7 @@
 {
   "name": "taskmanager",
-  "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Uses SQLite for efficient storage with full-text search on memories. Features dashboard visualization, autonomous batch execution, native task sync, and persistent memory for constraints, decisions, and conventions.",
-  "version": "1.0.0",
+  "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Uses SQLite for efficient storage with full-text search on memories. Features dashboard visualization, autonomous batch execution, native task sync, persistent memory, tag management, scope adjustment, task expansion, dependency validation, research integration, and configurable defaults.",
+  "version": "1.1.0",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -21,6 +21,13 @@
     "fts5",
     "sync",
     "export",
-    "migration"
+    "migration",
+    "expand",
+    "scope",
+    "tags",
+    "dependencies",
+    "research",
+    "move",
+    "config"
   ]
 }

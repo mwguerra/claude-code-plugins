@@ -70,6 +70,9 @@ touch .taskmanager/logs/decisions.log
 touch .taskmanager/logs/errors.log
 touch .taskmanager/logs/debug.log
 
+# Copy default configuration
+cp "$PLUGIN_DIR/skills/taskmanager/db/default-config.json" .taskmanager/config.json
+
 # Log initialization
 echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v2 (SQLite)" >> .taskmanager/logs/decisions.log
 ```
@@ -94,6 +97,7 @@ Taskmanager initialized successfully!
 Created:
   .taskmanager/
   ├── taskmanager.db    # SQLite database (tasks, memories, state)
+  ├── config.json       # Project configuration
   ├── docs/
   │   └── prd.md        # Project requirements template
   └── logs/

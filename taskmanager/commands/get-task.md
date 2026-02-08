@@ -66,6 +66,7 @@ SELECT $2 FROM tasks WHERE id = '$1';
 | `type` | Task type |
 | `description` | Task description |
 | `details` | Implementation details |
+| `test_strategy` | How to verify task completion |
 | `complexity_score` | Complexity score (0-5) |
 | `complexity_scale` | Complexity scale (XS-XL) |
 | `estimate_seconds` | Estimated time |

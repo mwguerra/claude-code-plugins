@@ -11,6 +11,7 @@ You are implementing the `taskmanager:plan` command.
 ## Arguments
 
 - `$1` (optional): path to a PRD file, a folder containing documentation files, or a prompt describing what to plan. If omitted, use `.taskmanager/docs/prd.md`.
+- `--research`: Research key topics from the PRD before generating tasks (uses `taskmanager:research` internally)
 - `--debug` or `-d`: Enable verbose debug logging to `.taskmanager/logs/debug.log`
 
 ## Database
@@ -284,6 +285,11 @@ fi
 ### Using a prompt
 - `taskmanager:plan "Create a react app that has a counter button that increments one each time its clicked on an on screen counter that begins at zero"`
   - Uses the prompt text directly as PRD content
+
+### With research
+- `taskmanager:plan docs/prd.md --research`
+  - Researches key topics identified from the PRD before generating tasks
+  - Research findings are stored as memories and applied during task generation
 
 ### With debug logging
 - `taskmanager:plan docs/specs/ --debug`
