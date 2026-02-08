@@ -154,7 +154,7 @@ UPDATE tasks SET
     dependencies = (
         SELECT COALESCE(json_group_array(d.value), '[]')
         FROM json_each(dependencies) d
-        WHERE d.value != id
+        WHERE d.value != tasks.id
     ),
     updated_at = datetime('now')
 WHERE id IN (
