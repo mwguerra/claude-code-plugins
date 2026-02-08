@@ -8,8 +8,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SCHEMA_FILE="$PLUGIN_DIR/skills/taskmanager/db/schema.sql"
-CONFIG_SRC="$PLUGIN_DIR/skills/taskmanager/db/default-config.json"
+SCHEMA_FILE="$PLUGIN_DIR/schemas/schema.sql"
+CONFIG_SRC="$PLUGIN_DIR/schemas/default-config.json"
 
 # Create temp working directory with .taskmanager structure
 WORK_DIR=$(mktemp -d)
@@ -17,9 +17,7 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 
 mkdir -p "$WORK_DIR/.taskmanager/logs"
 cp "$CONFIG_SRC" "$WORK_DIR/.taskmanager/config.json"
-touch "$WORK_DIR/.taskmanager/logs/errors.log"
-touch "$WORK_DIR/.taskmanager/logs/decisions.log"
-touch "$WORK_DIR/.taskmanager/logs/debug.log"
+touch "$WORK_DIR/.taskmanager/logs/activity.log"
 
 DB="$WORK_DIR/.taskmanager/taskmanager.db"
 
@@ -29,30 +27,30 @@ sqlite3 "$DB" < "$SCHEMA_FILE"
 # Insert sample data: 3 epics, ~15 tasks, 3 memories
 sqlite3 "$DB" <<'SEED'
 -- Epic 1: Authentication (in-progress, high priority)
-INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
 VALUES
-('1', NULL, 'Authentication System', 'Build full auth system', 'JWT-based auth with login, register, reset', NULL, 'in-progress', 'feature', 'high', 4, 'L', 'Multi-endpoint system', 14400, '["auth","security","sprint-1"]', '[]'),
-('1.1', '1', 'JWT Login/Logout', 'Implement JWT endpoints', 'POST /login, POST /logout', 'Test valid/invalid credentials, token expiry', 'done', 'feature', 'high', 2, 'S', 'Standard JWT', 3600, '["auth","security"]', '[]'),
-('1.2', '1', 'Password Reset', 'Implement password reset via email', 'POST /reset-request, POST /reset-confirm', 'Test email sending, token validation', 'planned', 'feature', 'medium', 2, 'S', 'Email integration', 3600, '["auth","security"]', '["1.1"]'),
-('1.3', '1', 'Role-Based Access Control', 'Implement RBAC', 'Admin, User, Guest roles', 'Test role enforcement on endpoints', 'planned', 'feature', 'medium', 3, 'M', 'Complex permissions', 7200, '["auth","security","rbac"]', '["1.1"]'),
-('1.3.1', '1.3', 'RBAC Middleware', 'Express middleware for role checks', NULL, 'Test middleware with each role', 'planned', 'feature', 'medium', 2, 'S', 'Standard middleware', 1800, '["auth","security"]', '[]'),
-('1.3.2', '1.3', 'RBAC Admin Panel', 'Admin UI for managing roles', NULL, 'Test role CRUD operations', 'planned', 'feature', 'medium', 2, 'S', 'CRUD UI', 3600, '["auth","admin"]', '["1.3.1"]');
+('1', NULL, 'Authentication System', 'Build full auth system', 'JWT-based auth with login, register, reset', NULL, 'in-progress', 'feature', 'high', 'L', 'Multi-endpoint system', 14400, '["auth","security","sprint-1"]', '[]'),
+('1.1', '1', 'JWT Login/Logout', 'Implement JWT endpoints', 'POST /login, POST /logout', 'Test valid/invalid credentials, token expiry', 'done', 'feature', 'high', 'S', 'Standard JWT', 3600, '["auth","security"]', '[]'),
+('1.2', '1', 'Password Reset', 'Implement password reset via email', 'POST /reset-request, POST /reset-confirm', 'Test email sending, token validation', 'planned', 'feature', 'medium', 'S', 'Email integration', 3600, '["auth","security"]', '["1.1"]'),
+('1.3', '1', 'Role-Based Access Control', 'Implement RBAC', 'Admin, User, Guest roles', 'Test role enforcement on endpoints', 'planned', 'feature', 'medium', 'M', 'Complex permissions', 7200, '["auth","security","rbac"]', '["1.1"]'),
+('1.3.1', '1.3', 'RBAC Middleware', 'Express middleware for role checks', NULL, 'Test middleware with each role', 'planned', 'feature', 'medium', 'S', 'Standard middleware', 1800, '["auth","security"]', '[]'),
+('1.3.2', '1.3', 'RBAC Admin Panel', 'Admin UI for managing roles', NULL, 'Test role CRUD operations', 'planned', 'feature', 'medium', 'S', 'CRUD UI', 3600, '["auth","admin"]', '["1.3.1"]');
 
 -- Epic 2: Dashboard (planned)
-INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
 VALUES
-('2', NULL, 'Dashboard', 'Build analytics dashboard', 'Charts, stats, data viz', NULL, 'planned', 'feature', 'medium', 4, 'L', 'Complex frontend', 14400, '["dashboard","frontend","sprint-1"]', '[]'),
-('2.1', '2', 'Chart Components', 'Build D3 chart library', 'Line, bar, pie charts', 'Visual regression tests', 'planned', 'feature', 'medium', 3, 'M', 'D3 integration', 3600, '["dashboard","frontend"]', '[]'),
-('2.2', '2', 'Data Aggregation API', 'Backend for dashboard data', 'Aggregate queries, caching', 'Test with sample datasets', 'planned', 'feature', 'medium', 2, 'S', 'SQL aggregates', 3600, '["dashboard","api"]', '["2.1"]'),
-('2.3', '2', 'Real-time Updates', 'WebSocket live data', 'Socket.io integration', 'Test reconnection, latency', 'planned', 'feature', 'medium', 3, 'M', 'WebSocket complexity', 3600, '["dashboard","websocket"]', '["2.1"]');
+('2', NULL, 'Dashboard', 'Build analytics dashboard', 'Charts, stats, data viz', NULL, 'planned', 'feature', 'medium', 'L', 'Complex frontend', 14400, '["dashboard","frontend","sprint-1"]', '[]'),
+('2.1', '2', 'Chart Components', 'Build D3 chart library', 'Line, bar, pie charts', 'Visual regression tests', 'planned', 'feature', 'medium', 'M', 'D3 integration', 3600, '["dashboard","frontend"]', '[]'),
+('2.2', '2', 'Data Aggregation API', 'Backend for dashboard data', 'Aggregate queries, caching', 'Test with sample datasets', 'planned', 'feature', 'medium', 'S', 'SQL aggregates', 3600, '["dashboard","api"]', '["2.1"]'),
+('2.3', '2', 'Real-time Updates', 'WebSocket live data', 'Socket.io integration', 'Test reconnection, latency', 'planned', 'feature', 'medium', 'M', 'WebSocket complexity', 3600, '["dashboard","websocket"]', '["2.1"]');
 
 -- Epic 3: Infrastructure (critical priority)
-INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
 VALUES
-('3', NULL, 'Infrastructure', 'Set up CI/CD and monitoring', 'Docker, GH Actions, monitoring', NULL, 'planned', 'chore', 'critical', 3, 'M', 'DevOps setup', 10800, '["infra","devops"]', '[]'),
-('3.1', '3', 'Docker Setup', 'Containerize application', 'Dockerfile, docker-compose', 'Build and run tests in container', 'planned', 'chore', 'critical', 1, 'XS', 'Standard Docker', 1800, '["infra","docker","security"]', '[]'),
-('3.2', '3', 'CI Pipeline', 'GitHub Actions workflow', 'Test, lint, build, deploy', 'Verify pipeline runs', 'planned', 'chore', 'high', 2, 'S', 'Standard CI', 3600, '["infra","ci"]', '["3.1"]'),
-('3.3', '3', 'Monitoring', 'Set up Prometheus + Grafana', 'Metrics, alerts, dashboards', 'Test alert triggers', 'blocked', 'chore', 'medium', 2, 'S', 'Standard monitoring', 3600, '["infra","monitoring","security"]', '["3.1","3.2"]');
+('3', NULL, 'Infrastructure', 'Set up CI/CD and monitoring', 'Docker, GH Actions, monitoring', NULL, 'planned', 'chore', 'critical', 'M', 'DevOps setup', 10800, '["infra","devops"]', '[]'),
+('3.1', '3', 'Docker Setup', 'Containerize application', 'Dockerfile, docker-compose', 'Build and run tests in container', 'planned', 'chore', 'critical', 'XS', 'Standard Docker', 1800, '["infra","docker","security"]', '[]'),
+('3.2', '3', 'CI Pipeline', 'GitHub Actions workflow', 'Test, lint, build, deploy', 'Verify pipeline runs', 'planned', 'chore', 'high', 'S', 'Standard CI', 3600, '["infra","ci"]', '["3.1"]'),
+('3.3', '3', 'Monitoring', 'Set up Prometheus + Grafana', 'Metrics, alerts, dashboards', 'Test alert triggers', 'blocked', 'chore', 'medium', 'S', 'Standard monitoring', 3600, '["infra","monitoring","security"]', '["3.1","3.2"]');
 
 -- Memories (3 entries for FTS5 tests)
 INSERT INTO memories (id, title, kind, why_important, body, source_type, source_name, source_via, auto_updatable, importance, confidence, status, scope, tags, links)
@@ -133,13 +131,21 @@ echo ""
 # ====================================================================
 echo "--- Test 1: Schema / Init ---"
 
-# Check 6 tables exist
-TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','sync_log','schema_version');")
-assert_eq "$TABLE_COUNT" "6" "All 6 tables exist"
+# Check 5 tables exist
+TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','schema_version');")
+assert_eq "$TABLE_COUNT" "5" "All 5 tables exist"
 
 # Check schema version
 VERSION=$(sqlite3 "$DB" "SELECT version FROM schema_version LIMIT 1;")
-assert_eq "$VERSION" "2.0.0" "Schema version is 2.0.0"
+assert_eq "$VERSION" "3.0.0" "Schema version is 3.0.0"
+
+# Negative test: sync_log table must NOT exist
+SYNC_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sync_log';")
+assert_eq "$SYNC_EXISTS" "0" "sync_log table does NOT exist"
+
+# State table has only expected columns
+STATE_COLS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM pragma_table_info('state');")
+assert_eq "$STATE_COLS" "7" "State table has exactly 7 columns"
 
 # Check state row exists
 STATE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM state WHERE id = 1;")
@@ -152,14 +158,12 @@ else
     fail "config.json does not exist"
 fi
 
-# Check log files exist
-for LOG in errors.log decisions.log debug.log; do
-    if [[ -f ".taskmanager/logs/$LOG" ]]; then
-        pass "$LOG exists"
-    else
-        fail "$LOG does not exist"
-    fi
-done
+# Check activity.log exists
+if [[ -f ".taskmanager/logs/activity.log" ]]; then
+    pass "activity.log exists"
+else
+    fail "activity.log does not exist"
+fi
 
 echo ""
 
@@ -335,7 +339,7 @@ echo "--- Test 6: Scope command queries ---"
 # Load task query
 SCOPE_TASK=$(sqlite3 "$DB" "
 SELECT id, title, description, details, test_strategy, priority, type,
-       complexity_score, complexity_scale
+       complexity_scale
 FROM tasks
 WHERE id = '1.2' AND archived_at IS NULL;
 ")
@@ -345,14 +349,13 @@ assert_not_empty "$SCOPE_TASK" "Scope: can load task 1.2"
 sqlite3 "$DB" "
 UPDATE tasks SET
     description = 'Implement password reset via email with rate limiting',
-    complexity_score = 3,
     complexity_scale = 'M',
     estimate_seconds = 7200,
     updated_at = datetime('now')
 WHERE id = '1.2';
 "
-UPDATED_SCORE=$(sqlite3 "$DB" "SELECT complexity_score FROM tasks WHERE id = '1.2';")
-assert_eq "$UPDATED_SCORE" "3" "Scope up: complexity increased to 3"
+UPDATED_SCALE=$(sqlite3 "$DB" "SELECT complexity_scale FROM tasks WHERE id = '1.2';")
+assert_eq "$UPDATED_SCALE" "M" "Scope up: complexity_scale increased to M"
 
 # Find dependent tasks (cascade query)
 DEPENDENTS=$(sqlite3 "$DB" "
@@ -383,7 +386,7 @@ PARENT_EST=$(sqlite3 "$DB" "SELECT estimate_seconds FROM tasks WHERE id = '1';")
 assert_gt "$PARENT_EST" "10000" "Parent estimate recomputed from children"
 
 # Restore original values
-sqlite3 "$DB" "UPDATE tasks SET description = 'Implement password reset via email', complexity_score = 2, complexity_scale = 'S', estimate_seconds = 3600 WHERE id = '1.2';"
+sqlite3 "$DB" "UPDATE tasks SET description = 'Implement password reset via email', complexity_scale = 'S', estimate_seconds = 3600 WHERE id = '1.2';"
 
 echo ""
 
@@ -392,25 +395,29 @@ echo ""
 # ====================================================================
 echo "--- Test 7: Expand command queries ---"
 
-# Find expandable tasks (bulk mode query)
+# Find expandable tasks (bulk mode query using complexity_scale)
 EXPANDABLE=$(sqlite3 "$DB" "
-SELECT id, title, complexity_score, complexity_scale
+SELECT id, title, complexity_scale
 FROM tasks
 WHERE archived_at IS NULL
   AND status NOT IN ('done', 'canceled', 'duplicate')
-  AND complexity_score >= 2
+  AND CASE complexity_scale
+      WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE -1
+  END >= 2
   AND NOT EXISTS (
       SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id
   )
-ORDER BY complexity_score DESC, id;
+ORDER BY
+  CASE complexity_scale WHEN 'XL' THEN 0 WHEN 'L' THEN 1 WHEN 'M' THEN 2 WHEN 'S' THEN 3 ELSE 4 END,
+  id;
 ")
 assert_not_empty "$EXPANDABLE" "Expand: found expandable tasks"
 
 # Insert a subtask (simulate expansion)
 sqlite3 "$DB" "
 INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority,
-                   complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
-VALUES ('2.1.1', '2.1', 'Line Chart Component', 'Build D3 line chart', 'SVG-based responsive line chart', 'Snapshot test', 'planned', 'feature', 'medium', 1, 'XS', 'Simple D3 component', 1800, '[\"dashboard\"]', '[]');
+                   complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+VALUES ('2.1.1', '2.1', 'Line Chart Component', 'Build D3 line chart', 'SVG-based responsive line chart', 'Snapshot test', 'planned', 'feature', 'medium', 'XS', 'Simple D3 component', 1800, '[\"dashboard\"]', '[]');
 "
 CHILD_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM tasks WHERE parent_id = '2.1';")
 assert_eq "$CHILD_COUNT" "1" "Expand: subtask inserted under 2.1"
@@ -430,10 +437,12 @@ assert_eq "$PARENT_EST_21" "1800" "Expand: parent estimate rolled up from childr
 
 # Check recursive expansion candidates
 RECURSIVE_CHECK=$(sqlite3 "$DB" "
-SELECT id, title, complexity_score, complexity_scale
+SELECT id, title, complexity_scale
 FROM tasks
 WHERE parent_id = '2.1'
-  AND complexity_score >= 2
+  AND CASE complexity_scale
+      WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE -1
+  END >= 2
   AND NOT EXISTS (
       SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id
   );
@@ -622,9 +631,9 @@ assert_eq "$NEXT_NUM" "4" "Move: next child number under epic 3 is 4"
 sqlite3 "$DB" "
 BEGIN TRANSACTION;
 INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority,
-                   complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+                   complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
 SELECT '3.4', '3', title, description, details, test_strategy, status, type, priority,
-       complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags,
+       complexity_scale, complexity_reasoning, estimate_seconds, tags,
        REPLACE(dependencies, '\"2.1\"', '\"2.1\"')
 FROM tasks WHERE id = '2.3';
 DELETE FROM tasks WHERE id = '2.3';
@@ -639,9 +648,9 @@ assert_eq "$OLD_EXISTS" "0" "Move: task removed from old location 2.3"
 sqlite3 "$DB" "
 BEGIN TRANSACTION;
 INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority,
-                   complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+                   complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
 SELECT '2.3', '2', title, description, details, test_strategy, status, type, priority,
-       complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies
+       complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies
 FROM tasks WHERE id = '3.4';
 DELETE FROM tasks WHERE id = '3.4';
 COMMIT;
@@ -811,7 +820,7 @@ echo "--- Test 13: Export --files query ---"
 EXPORT_DATA=$(sqlite3 "$DB" "
 SELECT id, parent_id, title, description, details, test_strategy,
        status, type, priority,
-       complexity_score, complexity_scale,
+       complexity_scale,
        estimate_seconds,
        tags, dependencies
 FROM tasks
@@ -893,7 +902,7 @@ WITH done_ids AS (
     SELECT id FROM tasks
     WHERE status IN ('done', 'canceled', 'duplicate')
 )
-SELECT t.id, t.title, t.priority, t.complexity_score
+SELECT t.id, t.title, t.priority, t.complexity_scale
 FROM tasks t
 WHERE t.archived_at IS NULL
   AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
@@ -912,7 +921,14 @@ ORDER BY
         WHEN 'medium' THEN 2
         ELSE 3
     END,
-    COALESCE(t.complexity_score, 3),
+    CASE t.complexity_scale
+        WHEN 'XS' THEN 0
+        WHEN 'S' THEN 1
+        WHEN 'M' THEN 2
+        WHEN 'L' THEN 3
+        WHEN 'XL' THEN 4
+        ELSE 2
+    END,
     t.id
 LIMIT 1;
 ")

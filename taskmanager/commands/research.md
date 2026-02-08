@@ -1,7 +1,7 @@
 ---
 allowed-tools: Skill(taskmanager), Skill(taskmanager-memory), Bash, WebSearch, WebFetch, Read, Glob, Grep
 description: Research a topic using web search and codebase analysis, storing findings as memories
-argument-hint: "\"topic\" [--depth <light|medium|deep>] [--task <id>] [--debug]"
+argument-hint: "\"topic\" [--depth <light|medium|deep>] [--task <id>]"
 ---
 
 # Research Command
@@ -20,7 +20,6 @@ Research a topic before task generation or expansion. Gathers context from web s
   - `medium`: Multiple web searches + codebase analysis + pattern identification
   - `deep`: Comprehensive research with multiple sources, codebase deep-dive, and best practices analysis
 - `--task <id>`: Associate research with a specific task (scoped memory)
-- `--debug` or `-d`: Enable verbose debug logging
 
 ## Database Location
 
@@ -28,21 +27,19 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
 
 ## Behavior
 
-### 0. Initialize logging session
+### 0. Initialize session
 
 1. Generate a unique session ID: `sess-$(date +%Y%m%d%H%M%S)`.
-2. Check for `--debug` / `-d` flag.
-3. Update state table:
+2. Update state table:
    ```sql
    UPDATE state SET
        session_id = '<session-id>',
-       debug_enabled = <1|0>,
        last_update = datetime('now')
    WHERE id = 1;
    ```
-4. Log to `decisions.log`:
+3. Log to `activity.log`:
    ```
-   <timestamp> [DECISION] [<session-id>] Started research command: "<topic>"
+   <timestamp> [DECISION] [research] Started research: "<topic>"
    ```
 
 ### 1. Check for existing research
@@ -190,19 +187,18 @@ Show:
 - Memories created (IDs and titles).
 - Recommended next steps:
   - "Run `taskmanager:plan` to generate tasks based on this research"
-  - "Run `taskmanager:expand <id>` to expand a task using these findings"
-  - "Run `taskmanager:scope up <id>` to adjust scope based on research"
+  - "Run `taskmanager:plan --expand <id>` to expand a task using these findings"
+  - "Run `taskmanager:update <id> --scope up` to adjust scope based on research"
 
-### 7. Cleanup logging session
+### 7. Cleanup session
 
-1. Log to `decisions.log`:
+1. Log to `activity.log`:
    ```
-   <timestamp> [DECISION] [<session-id>] Completed research: "<topic>". Created N memories.
+   <timestamp> [DECISION] [research] Completed research: "<topic>". Created N memories.
    ```
 2. Reset state table:
    ```sql
    UPDATE state SET
-       debug_enabled = 0,
        session_id = NULL,
        last_update = datetime('now')
    WHERE id = 1;
@@ -210,21 +206,20 @@ Show:
 
 ---
 
-## Logging Requirements
+## Logging
 
-**To errors.log** (ALWAYS):
-- Web search failures
-- Database errors
+All logging goes to `.taskmanager/logs/activity.log`:
 
-**To decisions.log** (ALWAYS):
+```
+<timestamp> [ERROR] [research] <error message>
+<timestamp> [DECISION] [research] <decision message>
+```
+
+Log these events:
 - Research start and completion
 - Memories created
 - Key findings summary
-
-**To debug.log** (ONLY when `--debug` enabled):
-- Web search queries and results
-- Codebase analysis details
-- Memory creation SQL
+- Errors (web search failures, database errors)
 
 ---
 
@@ -239,9 +234,6 @@ taskmanager:research "Redis caching strategies" --depth light
 
 # Deep research for a specific task
 taskmanager:research "GraphQL vs REST API design" --depth deep --task 1.2
-
-# Research with debug logging
-taskmanager:research "Filament v4 custom fields" --debug
 ```
 
 ---
@@ -263,6 +255,6 @@ This is equivalent to:
 ## Related Commands
 
 - `taskmanager:plan` - Generate tasks (can use `--research` flag)
-- `taskmanager:expand` - Expand tasks using research context
+- `taskmanager:plan --expand <id>` - Expand tasks using research context
 - `taskmanager:memory` - Manage memories directly
-- `taskmanager:scope` - Adjust scope based on research
+- `taskmanager:update <id> --scope up|down` - Adjust scope based on research

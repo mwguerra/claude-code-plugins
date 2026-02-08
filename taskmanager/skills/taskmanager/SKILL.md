@@ -10,7 +10,7 @@ You are the **MWGuerra Task Manager** for this project.
 Your job is to:
 
 1. Treat `.taskmanager/taskmanager.db` (SQLite database) as the **source of truth** for all tasks, state, and memories.
-2. The database contains tables: `tasks`, `state`, `memories`, `memories_fts`, `sync_log`, and `schema_version`.
+2. The database contains tables: `tasks`, `state`, `memories`, `memories_fts`, and `schema_version`.
 3. Always consider relevant **active** memories before planning, refactoring, or making cross-cutting changes.
 4. When asked to plan, **interpret the input as PRD content**, whether it:
    - Comes from an actual file path (markdown), or
@@ -30,14 +30,12 @@ Always work relative to the project root.
 
 - `.taskmanager/taskmanager.db` — SQLite database (source of truth for all data)
 - `.taskmanager/docs/prd.md` — PRD documentation
-- `.taskmanager/logs/errors.log` — Append errors here (ALWAYS)
-- `.taskmanager/logs/debug.log` — Append debug info here (ONLY when debug enabled)
-- `.taskmanager/logs/decisions.log` — Append decisions here (ALWAYS)
+- `.taskmanager/logs/activity.log` — Append-only log (errors, decisions)
 - `.taskmanager/backup-v1/` — Migration backup from JSON format (if migrated)
 
 ### Database Schema
 
-The database schema is defined in `skills/taskmanager/db/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `tasks`, `memories`, `memories_fts`, `state`, `sync_log`, `schema_version`.
+The database schema is defined in `schemas/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `tasks`, `memories`, `memories_fts`, `state`, `schema_version`.
 
 Do not delete or modify `.taskmanager/taskmanager.db` directly except through this skill.
 
@@ -58,9 +56,9 @@ Memory management is handled by the `taskmanager-memory` skill. Key rules:
 
 **IMPORTANT:** Use these instead of loading all data:
 
-- `taskmanager:stats --json` — Compact JSON summary (counts, completion, next tasks)
-- `taskmanager:get-task <id> [key]` — Get task by ID or specific property
-- `taskmanager:update-status <status> <id1> [id2...]` — Batch status updates (no propagation)
+- `taskmanager:show --stats --json` — Compact JSON summary (counts, completion, next tasks)
+- `taskmanager:show <id> [field]` — Get task by ID or specific property
+- `taskmanager:update <id1>,<id2> --status <s>` — Batch status updates
 - Direct `sqlite3` queries for custom lookups
 
 Use token-efficient methods before batch execution, when resuming work, and when checking progress.
@@ -92,11 +90,11 @@ When modifying the `state` table:
 1. Query the current state row (there is only one row with `id = 1`).
 2. Use UPDATE statements to modify state fields.
 3. Track:
-   - Current mode (`mode` column: `"idle"`, `"planning"`, `"executing"`, etc.).
    - Pointers (`current_task_id` for the task being executed).
-   - Logging configuration (`debug_enabled`, `session_id`).
+   - Session tracking (`session_id`).
+   - Task-scoped memories (`task_memory` JSON column).
 
-Only modify columns that exist in the schema.
+Only modify columns that exist in the schema: `id`, `current_task_id`, `task_memory`, `debug_enabled`, `session_id`, `started_at`, `last_update`.
 
 ---
 
@@ -249,14 +247,13 @@ When generating or expanding tasks from a PRD:
 
 1. First build the hierarchical task tree (top-level → subtasks → deeper levels).
 2. For every **leaf task**, assign `estimate_seconds` by considering:
-   - `complexity.scale` (`"XS"`, `"S"`, `"M"`, `"L"`, `"XL"`),
-   - `complexity.score` (0–5),
+   - `complexity_scale` (`"XS"`, `"S"`, `"M"`, `"L"`, `"XL"`),
    - `priority` (`"low"`, `"medium"`, `"high"`, `"critical"`),
    - and any notes in `description` / `details`.
 
-Use `complexity_scale` as a base and fine-tune with `complexity_score` and `priority`. Prefer simple, explainable estimates (e.g. XS = 0.5-1h, S = 1-2h, M = 2-4h, L = 1 working day, XL = 2+ days) and convert to **seconds** when stored in `estimate_seconds`.
+Use `complexity_scale` as a base and fine-tune with `priority`. Prefer simple, explainable estimates (e.g. XS = 0.5-1h, S = 1-2h, M = 2-4h, L = 1 working day, XL = 2+ days) and convert to **seconds** when stored in `estimate_seconds`.
 
-You MUST never leave a leaf task without an estimate once planning for that leaf is complete.
+Time estimation is optional during initial planning but mandatory for leaf tasks before execution.
 
 #### 4.1.2 Parent task estimates (rollup)
 
@@ -317,8 +314,6 @@ After updating a leaf task's status and time fields, you MUST:
 
 This ensures that parent tasks reflect the state of their children both in **status** and in **time/estimate**.
 
-For writing domain support (`domain = 'writing'`), see the `taskmanager-writing` skill.
-
 ---
 
 ## 5. Level-by-Level Task Generation Workflow (explicit)
@@ -356,11 +351,11 @@ You MUST continue expanding level-by-level **until:**
 ### Then:
 
 1. Insert the final task tree into the `tasks` table
-2. Log decisions to `.taskmanager/logs/decisions.log`
+2. Log decisions to `.taskmanager/logs/activity.log`
 
 ### Post-Planning Expansion
 
-Tasks can also be expanded after initial planning using `taskmanager:expand`. When generating subtasks for expansion:
+Tasks can also be expanded after initial planning using `taskmanager:plan --expand <id>`. When generating subtasks for expansion:
 
 1. **Use the `complexity_expansion_prompt`** if the task has one. This field captures specific guidance for how to break down the task, set during initial planning.
 2. **Preserve the parent's context**: Subtasks must align with the parent's `description`, `details`, and `test_strategy`.
@@ -374,10 +369,10 @@ Tasks can also be expanded after initial planning using `taskmanager:expand`. Wh
 
 You MAY update the `state` table:
 
-- `current_step`: `'planning'`
 - `current_task_id`: NULL
+- `session_id`: set at command start, clear at end
 - Track task creation metrics via the `tasks` table counts
-- Update `last_update` timestamp and log decisions to decisions.log
+- Update `last_update` timestamp and log decisions to activity.log
 
 ---
 
@@ -436,7 +431,7 @@ WHERE dependencies IS NULL
    )
 ORDER BY
   CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
-  complexity_score,
+  CASE complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
   id
 LIMIT 1;
 ```
@@ -477,8 +472,6 @@ At the **start** of executing a task:
 ```sql
 UPDATE state SET
   current_task_id = :task_id,
-  current_step = 'execution',
-  mode = :mode,  -- 'autonomous' or 'interactive'
   last_update = datetime('now')
 WHERE id = 1;
 ```
@@ -488,12 +481,11 @@ At the **end** of executing a task:
 ```sql
 UPDATE state SET
   current_task_id = NULL,
-  current_step = CASE WHEN :has_more_work THEN 'idle' ELSE 'done' END,
   last_update = datetime('now')
 WHERE id = 1;
 ```
 
-Log the decision to the decisions.log file for audit trail.
+Log the decision to `activity.log` for audit trail.
 
 ### 8.4 Handling dependencies for single-task execution
 
@@ -568,24 +560,32 @@ When a task reaches a terminal status (`'done'`, `'canceled'`, `'duplicate'`), a
 
 ## 9. Memory Integration During Execution
 
-Memory integration during task execution is handled by the `execute-task` and `run-tasks` commands. Key principles:
+Memory integration during task execution is handled by the `run` command. Key principles:
 
-- **Pre-execution**: Load relevant global memories (`importance >= 3`) and task-scoped memories. Display summary. Track applied memory IDs in state.
+- **Pre-execution**: Load relevant global memories (`importance >= 3`) and task-scoped memories. Display summary.
 - **During execution**: Treat loaded memories as hard constraints. Violations require conflict resolution.
-- **Post-execution**: Review task-scoped memories for promotion to global. Update `use_count` and `last_used_at`. Clear `applied_memories` in state.
+- **Post-execution**: Review task-scoped memories for promotion to global. Update `use_count` and `last_used_at`.
 
 ### Memory Arguments
 
-Commands that execute tasks support:
+The `run` command supports:
 
 - `--memory "description"` (or `-gm`): Creates a **global memory** in the `memories` table.
 - `--task-memory "description"` (or `-tm`): Creates a **task-scoped memory** in the `state` table's `task_memory` column. Reviewed for promotion at task completion.
 
-See `execute-task.md` and `run-tasks.md` for the full workflow.
+See `run.md` for the full workflow.
 
 ---
 
 ## 10. Logging
 
-Follow the logging rules defined in the agent spec (`agents/taskmanager.md`, section 5). Key columns: `debug_enabled` and `session_id` in the state table.
+All logging goes to a single file: `.taskmanager/logs/activity.log`.
+
+```
+<timestamp> [<level>] [<command>] <message>
+```
+
+Levels: `ERROR`, `DECISION`. Logs are append-only.
+
+Key state columns for session tracking: `session_id` in the state table.
 

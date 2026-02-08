@@ -18,23 +18,24 @@ Initialize a new `.taskmanager/` directory with SQLite database for task managem
 ```bash
 if [[ -d ".taskmanager" ]]; then
     if [[ -f ".taskmanager/taskmanager.db" ]]; then
-        echo "Taskmanager already initialized (SQLite v2)"
-        exit 0
+        # Check version
+        VERSION=$(sqlite3 .taskmanager/taskmanager.db "SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1;" 2>/dev/null)
+        if [[ "$VERSION" == "2.0.0" ]]; then
+            echo "Found v2.0.0 database. Run the migration script to upgrade to v3.0.0:"
+            echo "  bash \$PLUGIN_DIR/schemas/migrate-v2-to-v3.sh"
+            exit 0
+        elif [[ "$VERSION" == "3.0.0" ]]; then
+            echo "Taskmanager already initialized (v3.0.0)"
+            exit 0
+        fi
     elif [[ -f ".taskmanager/tasks.json" ]]; then
-        echo "Found JSON v1 installation. Run migration."
-        # Trigger auto-migration
+        echo "Found JSON v1 installation. Run v1->v2 migration first, then v2->v3."
+        exit 0
     fi
 fi
 ```
 
-### 2. Check for JSON files needing migration
-
-If `.taskmanager/tasks.json` exists but `taskmanager.db` does not:
-1. Inform user: "Found existing JSON-based taskmanager. Migrating to SQLite..."
-2. Run the migration script from the plugin's db/ directory
-3. Verify migration succeeded
-
-### 3. Create fresh installation
+### 2. Create fresh installation
 
 If no `.taskmanager/` exists:
 
@@ -44,7 +45,7 @@ mkdir -p .taskmanager/logs
 mkdir -p .taskmanager/docs
 
 # Create database with schema
-sqlite3 .taskmanager/taskmanager.db < "$PLUGIN_DIR/skills/taskmanager/db/schema.sql"
+sqlite3 .taskmanager/taskmanager.db < "$PLUGIN_DIR/schemas/schema.sql"
 
 # Create default PRD file
 cat > .taskmanager/docs/prd.md << 'EOF'
@@ -65,34 +66,32 @@ Describe your project here.
 - Requirement two
 EOF
 
-# Initialize empty log files
-touch .taskmanager/logs/decisions.log
-touch .taskmanager/logs/errors.log
-touch .taskmanager/logs/debug.log
+# Initialize log file
+touch .taskmanager/logs/activity.log
 
 # Copy default configuration
-cp "$PLUGIN_DIR/skills/taskmanager/db/default-config.json" .taskmanager/config.json
+cp "$PLUGIN_DIR/schemas/default-config.json" .taskmanager/config.json
 
 # Log initialization
-echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v2 (SQLite)" >> .taskmanager/logs/decisions.log
+echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v3.0.0 (SQLite)" >> .taskmanager/logs/activity.log
 ```
 
-### 4. Verify installation
+### 3. Verify installation
 
 ```bash
 # Check database is valid
 sqlite3 .taskmanager/taskmanager.db "SELECT version FROM schema_version;"
-# Should output: 2.0.0
+# Should output: 3.0.0
 
 # Check tables exist
 sqlite3 .taskmanager/taskmanager.db ".tables"
-# Should output: memories memories_fts schema_version state sync_log tasks
+# Should output: memories memories_fts schema_version state tasks
 ```
 
-### 5. Report to user
+### 4. Report to user
 
 ```
-Taskmanager initialized successfully!
+Taskmanager initialized successfully! (v3.0.0)
 
 Created:
   .taskmanager/
@@ -101,14 +100,23 @@ Created:
   ├── docs/
   │   └── prd.md        # Project requirements template
   └── logs/
-      ├── decisions.log
-      ├── errors.log
-      └── debug.log
+      └── activity.log  # All logging
 
-Next steps:
+Quick start:
   1. Edit .taskmanager/docs/prd.md with your project requirements
   2. Run taskmanager:plan to generate tasks from the PRD
-  3. Run taskmanager:next-task to see what to work on
+  3. Run taskmanager:show --next to see what to work on
+  4. Run taskmanager:run to start executing tasks
+
+Available commands (8):
+  taskmanager:init      Initialize project
+  taskmanager:plan      Create tasks from PRD or expand existing tasks
+  taskmanager:show      View dashboard, tasks, stats
+  taskmanager:run       Execute tasks
+  taskmanager:update    Modify tasks, status, tags, dependencies
+  taskmanager:research  Research topics and store findings
+  taskmanager:memory    Manage project memories
+  taskmanager:export    Export data to JSON or markdown
 ```
 
 ## Notes
@@ -116,3 +124,4 @@ Next steps:
 - SQLite WAL mode is enabled for better concurrent access
 - The schema enforces data integrity via CHECK constraints
 - Full-text search is available for memories via FTS5
+- Single `activity.log` file replaces the previous 3-file logging system

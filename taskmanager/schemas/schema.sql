@@ -1,10 +1,10 @@
--- Taskmanager SQLite Schema v2.0.0
+-- Taskmanager SQLite Schema v3.0.0
 -- This file defines the complete database structure
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
 
--- Tasks table (replaces tasks.json and tasks-archive.json)
+-- Tasks table
 CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
     parent_id TEXT REFERENCES tasks(id) ON DELETE CASCADE,
@@ -18,21 +18,12 @@ CREATE TABLE IF NOT EXISTS tasks (
         CHECK (type IN ('feature', 'bug', 'chore', 'analysis', 'spike')),
     priority TEXT NOT NULL DEFAULT 'medium'
         CHECK (priority IN ('low', 'medium', 'high', 'critical')),
-    complexity_score INTEGER CHECK (complexity_score BETWEEN 0 AND 5),
     complexity_scale TEXT CHECK (complexity_scale IN ('XS', 'S', 'M', 'L', 'XL')),
     complexity_reasoning TEXT,
     complexity_expansion_prompt TEXT,
     estimate_seconds INTEGER,
     duration_seconds INTEGER,
     owner TEXT,
-
-    -- Writing domain
-    domain TEXT DEFAULT 'software' CHECK (domain IN ('software', 'writing')),
-    writing_type TEXT,
-    content_unit TEXT,
-    writing_stage TEXT,
-    target_word_count INTEGER,
-    current_word_count INTEGER,
 
     -- Timestamps
     created_at TEXT DEFAULT (datetime('now')),
@@ -53,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_archived ON tasks(archived_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
 
--- Memories table (replaces memories.json)
+-- Memories table
 CREATE TABLE IF NOT EXISTS memories (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -115,44 +106,19 @@ CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
     VALUES (NEW.rowid, NEW.title, NEW.body, NEW.tags);
 END;
 
--- State table (replaces state.json) - single row
+-- State table (single row)
 CREATE TABLE IF NOT EXISTS state (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     current_task_id TEXT REFERENCES tasks(id),
-    current_subtask_path TEXT,
-    current_step TEXT DEFAULT 'idle',
-    mode TEXT DEFAULT 'interactive',
-    started_at TEXT,
-    last_update TEXT,
-
-    -- JSON columns
-    evidence TEXT DEFAULT '{}',
-    verifications_passed TEXT DEFAULT '{}',
     task_memory TEXT DEFAULT '[]',
-    applied_memories TEXT DEFAULT '[]',
-
-    -- Logging
     debug_enabled INTEGER DEFAULT 0,
-    session_id TEXT
+    session_id TEXT,
+    started_at TEXT,
+    last_update TEXT
 );
 
 -- Initialize state with single row
 INSERT OR IGNORE INTO state (id) VALUES (1);
-
--- Sync log for native task integration
-CREATE TABLE IF NOT EXISTS sync_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    direction TEXT NOT NULL CHECK (direction IN ('push', 'pull')),
-    task_id TEXT NOT NULL,
-    native_task_id TEXT,
-    action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'completed', 'deleted')),
-    synced_at TEXT DEFAULT (datetime('now')),
-    session_id TEXT,
-    details TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_sync_task ON sync_log(task_id);
-CREATE INDEX IF NOT EXISTS idx_sync_native ON sync_log(native_task_id);
 
 -- Schema version tracking
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -160,4 +126,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     applied_at TEXT DEFAULT (datetime('now'))
 );
 
-INSERT OR IGNORE INTO schema_version (version) VALUES ('2.0.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('3.0.0');

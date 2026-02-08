@@ -1,7 +1,7 @@
 ---
 allowed-tools: Bash, AskUserQuestion
 description: Manage project memories (constraints, decisions, conventions) - add, list, search, update, deprecate with FTS5 full-text search
-argument-hint: "<action> [args] [--debug]"
+argument-hint: "<action> [args]"
 ---
 
 # Memory Command
@@ -15,22 +15,6 @@ This command provides direct access to the project memory system using SQLite wi
 ```bash
 DB=".taskmanager/taskmanager.db"
 ```
-
-## Global Options
-
-- `--debug` or `-d`: Enable verbose debug logging
-
-When `--debug` is provided:
-1. Generate a unique session ID: `sess-$(date +%Y%m%d%H%M%S)`
-2. Update state table:
-   ```bash
-   sqlite3 "$DB" "UPDATE state SET debug_enabled = 1, session_id = 'sess-$(date +%Y%m%d%H%M%S)' WHERE id = 1;"
-   ```
-3. Write verbose debug information during the operation.
-4. Reset at completion:
-   ```bash
-   sqlite3 "$DB" "UPDATE state SET debug_enabled = 0, session_id = NULL WHERE id = 1;"
-   ```
 
 ## Actions
 
@@ -492,26 +476,21 @@ if [[ ! -f "$DB" ]]; then
 fi
 ```
 
-## Logging Requirements
+## Logging
 
-This command MUST log to the database:
+All logging goes to `.taskmanager/logs/activity.log`:
 
-**For errors** - Log to errors.log file:
-- Memory not found errors
-- Parse/validation errors
-- Conflict detection errors
-- FTS search errors
+```
+<timestamp> [ERROR] [memory] <error message>
+<timestamp> [DECISION] [memory] <decision message>
+```
 
-**For decisions** - Log to decisions.log file:
+Log these events:
 - Memory creation (add)
 - Memory updates
 - Memory deprecation/supersession
 - Conflict resolutions
-
-**For debug** (ONLY when `--debug` enabled):
-- Memory queries executed
-- FTS search details
-- Conflict detection intermediate results
+- Errors (not found, parse/validation, FTS search errors)
 
 ## Notes
 

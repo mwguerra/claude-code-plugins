@@ -1,9 +1,8 @@
 {
-  "version": "2.0.0",
+  "version": "3.0.0",
   "defaults": {
     "priority": "medium",
     "type": "feature",
-    "domain": "software",
     "complexity_threshold_for_expansion": "M",
     "max_subtask_depth": 3
   },

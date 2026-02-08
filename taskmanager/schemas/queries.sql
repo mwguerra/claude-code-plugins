@@ -58,7 +58,14 @@
 --         WHEN 'medium' THEN 2
 --         ELSE 3
 --     END,
---     COALESCE(t.complexity_score, 3)
+--     CASE t.complexity_scale
+--         WHEN 'XS' THEN 0
+--         WHEN 'S' THEN 1
+--         WHEN 'M' THEN 2
+--         WHEN 'L' THEN 3
+--         WHEN 'XL' THEN 4
+--         ELSE 2
+--     END
 -- LIMIT 1;
 
 -- ============================================================================

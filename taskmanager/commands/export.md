@@ -29,7 +29,7 @@ Export taskmanager data to JSON format for inspection, sharing, or backup. Also 
 sqlite3 -json .taskmanager/taskmanager.db "
 SELECT * FROM tasks WHERE archived_at IS NULL ORDER BY id;
 " | jq '{
-    version: "2.0.0",
+    version: "3.0.0",
     exported_at: (now | todate),
     tasks: .
 }'
@@ -43,7 +43,7 @@ If `--include-archived` is specified, remove the `WHERE archived_at IS NULL` fil
 sqlite3 -json .taskmanager/taskmanager.db "
 SELECT * FROM memories ORDER BY id;
 " | jq '{
-    version: "2.0.0",
+    version: "3.0.0",
     exported_at: (now | todate),
     memories: .
 }'
@@ -53,7 +53,7 @@ SELECT * FROM memories ORDER BY id;
 
 ```bash
 {
-    echo '{"version": "2.0.0", "exported_at": "'$(date -Iseconds)'",'
+    echo '{"version": "3.0.0", "exported_at": "'$(date -Iseconds)'",'
     echo '"tasks": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM tasks ORDER BY id;"
     echo ','
@@ -79,12 +79,10 @@ Generate one markdown file per task in `.taskmanager/docs/tasks/`.
    ```sql
    SELECT id, parent_id, title, description, details, test_strategy,
           status, type, priority,
-          complexity_score, complexity_scale, complexity_reasoning,
+          complexity_scale, complexity_reasoning,
           estimate_seconds, duration_seconds,
           started_at, completed_at,
-          tags, dependencies,
-          domain, writing_type, writing_stage,
-          target_word_count, current_word_count
+          tags, dependencies
    FROM tasks
    WHERE archived_at IS NULL
    ORDER BY id;
@@ -102,7 +100,7 @@ Generate one markdown file per task in `.taskmanager/docs/tasks/`.
    | **Status** | <status> |
    | **Priority** | <priority> |
    | **Type** | <type> |
-   | **Complexity** | <complexity_scale> (<complexity_score>/5) |
+   | **Complexity** | <complexity_scale> |
    | **Estimate** | <estimate formatted as hours> |
    | **Dependencies** | <comma-separated list or "None"> |
    | **Tags** | <comma-separated list or "None"> |
@@ -197,6 +195,6 @@ taskmanager:export --files --include-archived
 
 ## Related Commands
 
-- `taskmanager:stats` - View quick statistics
-- `taskmanager:dashboard` - View progress dashboard
-- `taskmanager:get-task <id>` - View single task details
+- `taskmanager:show --stats` - View quick statistics
+- `taskmanager:show` - View progress dashboard
+- `taskmanager:show <id>` - View single task details

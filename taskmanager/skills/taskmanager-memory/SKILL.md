@@ -408,97 +408,29 @@ This preserves decision history and audit trail.
 
 ---
 
-## 10. Logging Behavior
+## 10. Logging
 
-This skill MUST write to the log files under `.taskmanager/logs/` for all memory operations.
+All logging goes to a single file: `.taskmanager/logs/activity.log`.
 
-### 10.1 What to Log
-
-**errors.log** - ALWAYS append when:
-- Database connection failures
-- SQL query errors
-- Conflict detection finds issues
-- Invalid memory IDs referenced
-
-Example:
-```text
-2025-12-11T10:00:00Z [ERROR] [sess-abc123] SQLite error: no such table: memories
-2025-12-11T10:00:01Z [ERROR] [sess-abc123] Conflict: M-0001 references deleted file app/OldAuth.php
-2025-12-11T10:00:02Z [ERROR] [sess-abc123] Memory M-9999 not found when attempting update
+```
+<timestamp> [<level>] [memory] <message>
 ```
 
-**decisions.log** - ALWAYS append when:
-- Memory created
-- Memory updated
-- Memory deprecated or superseded
+Levels: `ERROR`, `DECISION`. Logs are append-only.
+
+Log these events:
+- Memory created, updated, deprecated, superseded
 - Memory applied to task
-- Conflict resolution completed
-- Task memory promoted to global
+- Conflict detection and resolution
+- Errors (database failures, invalid IDs, query errors)
 
-Example:
+Examples:
 ```text
-2025-12-11T10:00:00Z [DECISION] [sess-abc123] Created memory M-0005: "Always validate API inputs"
-2025-12-11T10:00:01Z [DECISION] [sess-abc123] Applied memories to task 1.2: M-0001, M-0003, M-0005
-2025-12-11T10:00:02Z [DECISION] [sess-abc123] Conflict resolved for M-0001: kept (user decision)
-2025-12-11T10:05:00Z [DECISION] [sess-abc123] Deprecated M-0002: "No longer using old auth pattern"
-2025-12-11T10:05:01Z [DECISION] [sess-abc123] Promoted task memory to global: M-0006
+2025-12-11T10:00:00Z [DECISION] [memory] Created memory M-0005: "Always validate API inputs"
+2025-12-11T10:00:01Z [DECISION] [memory] Applied memories to task 1.2: M-0001, M-0003, M-0005
+2025-12-11T10:00:02Z [ERROR] [memory] Conflict: M-0001 references deleted file app/OldAuth.php
+2025-12-11T10:05:00Z [DECISION] [memory] Deprecated M-0002: "No longer using old auth pattern"
 ```
-
-**debug.log** - ONLY append when debug mode is enabled in state:
-- SQL queries executed
-- Memory matching algorithm steps
-- Conflict detection intermediate results
-- Full memory state dumps
-- File existence checks during conflict detection
-
-Example:
-```text
-2025-12-11T10:00:00Z [DEBUG] [sess-abc123] SQL: SELECT * FROM memories WHERE status = 'active'
-2025-12-11T10:00:01Z [DEBUG] [sess-abc123] Found 8 active memories
-2025-12-11T10:00:02Z [DEBUG] [sess-abc123] M-0001: matched by scope.domains (contains "auth")
-2025-12-11T10:00:03Z [DEBUG] [sess-abc123] M-0002: skipped (importance 2 < threshold 3)
-2025-12-11T10:00:04Z [DEBUG] [sess-abc123] Conflict detection: checking file existence for M-0003.scope.files
-2025-12-11T10:00:05Z [DEBUG] [sess-abc123] File check: app/Services/Auth.php EXISTS
-```
-
-### 10.2 Logging During Conflict Detection
-
-When running conflict detection, log:
-
-1. **Start of detection** (DEBUG):
-   ```text
-   [DEBUG] Starting conflict detection for N active memories
-   ```
-
-2. **Per-memory checks** (DEBUG):
-   ```text
-   [DEBUG] Checking M-XXXX for conflicts...
-   [DEBUG] - File check: <path> EXISTS/MISSING
-   [DEBUG] - Implementation check: <result>
-   ```
-
-3. **Conflicts found** (ERROR):
-   ```text
-   [ERROR] Conflict: M-XXXX - <conflict description>
-   ```
-
-4. **Resolution outcome** (DECISION):
-   ```text
-   [DECISION] Conflict resolved for M-XXXX: <resolution> (<reason>)
-   ```
-
-### 10.3 Debug Mode Integration
-
-Check the state table for debug mode:
-
-```sql
-SELECT debug_enabled FROM state WHERE id = 1;
-```
-
-- If result is `1`: Write verbose DEBUG entries to debug.log
-- If result is `0` or NULL: Skip DEBUG entries, only write ERROR and DECISION
-
-The calling command is responsible for setting debug mode based on `--debug` flag.
 
 ---
 
