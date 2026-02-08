@@ -184,6 +184,8 @@ fi
 
 ### 8. Writing domain (if applicable)
 
+This section uses the `taskmanager-writing` skill. Only shown if `domain = 'writing'` tasks exist.
+
 ```bash
 # Check if any writing tasks exist
 WRITING_COUNT=$(sqlite3 .taskmanager/taskmanager.db "SELECT COUNT(*) FROM tasks WHERE domain = 'writing' AND archived_at IS NULL;")

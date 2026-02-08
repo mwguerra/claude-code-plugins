@@ -322,116 +322,23 @@ At task completion (before marking "done"):
 
 ---
 
-## 7. Conflict Detection
+## 7. Conflict Detection (Opt-In)
 
-Conflict detection runs automatically at the **start** and **end** of every task execution.
+Conflict detection is available via `taskmanager:memory conflicts`. It is NOT run automatically during task execution.
 
-### 7.1 When to Run Conflict Detection
+When invoked, it checks active memories for:
 
-- **Pre-execution**: After loading relevant memories, before starting work.
-- **Post-execution**: After task work is complete, before marking status as "done".
+- **File obsolescence**: Referenced files in `scope.files` that no longer exist
+- **Stale memories**: Active memories with `use_count = 0` and `created_at` older than 30 days
 
-### 7.2 Conflict Detection Algorithm
+### Resolution
 
-For each **active** memory that was loaded for this task:
+For each conflict found, offer resolution options via AskUserQuestion:
+- "Keep as-is"
+- "Update memory"
+- "Deprecate memory"
 
-1. **File/Pattern Obsolescence Check**:
-   - Query memories with file scopes:
-     ```sql
-     SELECT id, title, scope FROM memories
-     WHERE status = 'active'
-       AND json_extract(scope, '$.files') IS NOT NULL;
-     ```
-   - Use `Glob` to check if referenced files/directories still exist.
-   - If any file path no longer exists, flag as obsolete conflict.
-
-2. **Implementation Divergence Check**:
-   - Analyze `body` for specific implementation requirements.
-   - Check if current codebase contradicts the memory:
-     - Example: Memory says "use TypeScript strict mode" but `tsconfig.json` has `strict: false`.
-     - Example: Memory says "always use Pest for tests" but new tests use PHPUnit.
-   - If contradiction detected, flag as divergence conflict.
-
-3. **Test Failure Check**:
-   - Query memories with testing-related domains:
-     ```sql
-     SELECT id, title FROM memories
-     WHERE status = 'active'
-       AND EXISTS (
-         SELECT 1 FROM json_each(json_extract(scope, '$.domains')) d
-         WHERE d.value LIKE '%test%'
-       );
-     ```
-   - Check if recent test runs show failures in related areas.
-   - If tests are failing in memory-scoped areas, flag as test failure conflict.
-
-### 7.3 Conflict Severity
-
-Classify conflicts by severity:
-
-- **Critical**: Memory with `importance >= 4` has a divergence conflict.
-- **Warning**: Memory with `importance < 4` has any conflict.
-- **Info**: File obsolescence where the file is not critical.
-
----
-
-## 8. Conflict Resolution Workflow
-
-When a conflict is detected, the resolution process depends on the memory's ownership.
-
-### 8.1 User-Created Memories (`source_type = 'user'`)
-
-NEVER auto-update. ALWAYS ask the user.
-
-Use `AskUserQuestion` with options:
-
-1. **"Keep memory as-is"**
-   - Acknowledge the conflict but take no action.
-   - Record resolution:
-     ```sql
-     UPDATE memories SET
-       conflict_resolutions = json_insert(
-         conflict_resolutions,
-         '$[#]',
-         json_object(
-           'timestamp', datetime('now'),
-           'resolution', 'kept',
-           'reason', '<brief explanation>',
-           'taskId', '<task ID>'
-         )
-       ),
-       last_conflict_at = datetime('now'),
-       updated_at = datetime('now')
-     WHERE id = '<memory_id>';
-     ```
-
-2. **"Update memory to reflect current state"**
-   - Update the memory's `body`, `tags`, or `scope` to match current implementation.
-   - Record with `'resolution', 'modified'`.
-
-3. **"Deprecate this memory"**
-   - Set `status = 'deprecated'`.
-   - Record with `'resolution', 'deprecated'`.
-
-4. **"Supersede with new memory"**
-   - Create a new memory with updated decision.
-   - Set old memory `status = 'superseded'` and `superseded_by = '<new_id>'`.
-   - Record with `'resolution', 'superseded'`.
-
-### 8.2 System-Created Memories (`source_type != 'user'`)
-
-For system-created memories (`source_type` is `agent`, `command`, `hook`, or `other`):
-
-- **Refinements** (small updates that don't reverse the decision):
-  - Auto-update allowed. Update `body`, bump `updated_at`.
-  - Record with `'resolution', 'modified'`.
-
-- **Reversals** (substantial change or contradiction):
-  - Ask the user using `AskUserQuestion` with same options as 8.1.
-
-### 8.3 Recording Conflict Resolutions
-
-Every conflict resolution MUST be recorded using:
+Record all resolutions in the `conflict_resolutions` JSON column:
 
 ```sql
 UPDATE memories SET
@@ -440,9 +347,9 @@ UPDATE memories SET
     '$[#]',
     json_object(
       'timestamp', datetime('now'),
-      'resolution', '<kept|modified|deprecated|superseded>',
+      'resolution', '<kept|modified|deprecated>',
       'reason', '<brief explanation>',
-      'taskId', '<task ID where conflict was detected>'
+      'taskId', '<task ID>'
     )
   ),
   last_conflict_at = datetime('now'),
@@ -450,19 +357,20 @@ UPDATE memories SET
 WHERE id = '<memory_id>';
 ```
 
-### 8.4 Conflict Resolution in Batch/Auto-Run Mode
+---
 
-During autonomous task execution (`/run-tasks`):
+## 8. Conflict Resolution by Ownership
 
-- If a **critical** conflict is detected:
-  - Pause execution.
-  - Present conflict to user.
-  - Wait for resolution before continuing.
+When resolving conflicts (whether via opt-in detection or during manual review):
 
-- If a **warning** or **info** conflict is detected:
-  - Log the conflict.
-  - Continue execution.
-  - Present summary of conflicts at the end of the batch.
+### User-Created Memories (`source_type = 'user'`)
+
+NEVER auto-update. ALWAYS ask the user via `AskUserQuestion`.
+
+### System-Created Memories (`source_type != 'user'`)
+
+- **Refinements** (small updates): Auto-update allowed.
+- **Reversals** (substantial changes): Ask the user.
 
 ---
 
@@ -584,7 +492,7 @@ When running conflict detection, log:
 Check the state table for debug mode:
 
 ```sql
-SELECT json_extract(logging, '$.debugEnabled') FROM state WHERE id = 1;
+SELECT debug_enabled FROM state WHERE id = 1;
 ```
 
 - If result is `1`: Write verbose DEBUG entries to debug.log

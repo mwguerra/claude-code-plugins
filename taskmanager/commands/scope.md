@@ -147,7 +147,7 @@ If `--cascade` is specified:
    WHERE archived_at IS NULL
      AND status NOT IN ('done', 'canceled', 'duplicate')
      AND EXISTS (
-         SELECT 1 FROM json_each(dependencies) d
+         SELECT 1 FROM json_each(tasks.dependencies) d
          WHERE d.value = '<task-id>'
      );
    ```

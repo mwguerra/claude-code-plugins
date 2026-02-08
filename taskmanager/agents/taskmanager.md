@@ -21,7 +21,7 @@ dashboard, or commands). All behavior lives in the plugin's skills and commands.
 
 This agent has access to the following resources within the `taskmanager` plugin:
 
-### Commands (21 total)
+### Commands (20 total)
 
 | Command | Description |
 |---------|-------------|
@@ -45,14 +45,14 @@ This agent has access to the following resources within the `taskmanager` plugin
 | `taskmanager:migrate-archive` | Archive completed tasks by setting archived_at timestamp |
 | `taskmanager:sync` | Two-way sync with Claude Code native tasks |
 | `taskmanager:export` | Export database to JSON or individual task files |
-| `taskmanager:rollback` | Revert to JSON format from SQLite |
 
-### Skills (2 total)
+### Skills (3 total)
 
 | Skill | Description |
 |-------|-------------|
 | `taskmanager` | Core task management - parse PRDs, generate hierarchical tasks, manage status propagation, time estimation |
 | `taskmanager-memory` | Memory management - constraints, decisions, conventions with conflict detection and resolution |
+| `taskmanager-writing` | Writing domain support - books, articles, documentation with word count tracking and writing stage pipeline |
 
 ### Template
 
@@ -89,6 +89,7 @@ Project configuration is stored in `.taskmanager/config.json`. Commands should r
 
 ```json
 {
+  "version": "2.0.0",
   "defaults": {
     "priority": "medium",
     "type": "feature",
@@ -97,23 +98,7 @@ Project configuration is stored in `.taskmanager/config.json`. Commands should r
     "max_subtask_depth": 3
   },
   "dashboard": {
-    "next_tasks_count": 5,
-    "show_tags": true,
-    "show_writing_progress": true
-  },
-  "execution": {
-    "auto_propagate_status": true,
-    "auto_archive_completed": true,
-    "require_test_strategy": false,
-    "memory_importance_threshold": 3
-  },
-  "planning": {
-    "default_granularity": "normal",
-    "auto_expand_above": "M",
-    "generate_test_strategies": true
-  },
-  "tags": {
-    "default_tags": []
+    "next_tasks_count": 5
   }
 }
 ```
@@ -258,7 +243,7 @@ The hierarchy is enforced via foreign key constraint.
 
   - `domain` can be:
     - `"software"` (default)
-    - `"writing"` (for books, articles, documentation, fiction, etc.)
+    - `"writing"` (for books, articles, documentation, fiction, etc.) — see the `taskmanager-writing` skill for details
 
   - All invariants (status propagation, time estimation, dependencies, critical path) are domain-agnostic.
 
@@ -341,32 +326,37 @@ Project memories are stored in the `memories` table with FTS5 full-text search s
 ```sql
 CREATE TABLE memories (
   id TEXT PRIMARY KEY,              -- Format: M-0001, M-0002, etc.
-  content TEXT NOT NULL,
-  category TEXT,                    -- constraint, decision, convention, etc.
-  importance INTEGER DEFAULT 3,     -- 1-5 scale
-  status TEXT DEFAULT 'active',     -- active, deprecated, superseded
-  source_type TEXT,                 -- user, system, agent
-  source_task_id TEXT,
-  source_command TEXT,
-  tags TEXT,                        -- JSON array
-  file_patterns TEXT,               -- JSON array
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL                -- constraint, decision, bugfix, workaround, convention, architecture, process, integration, anti-pattern, other
+    CHECK (kind IN ('constraint', 'decision', 'bugfix', 'workaround', 'convention', 'architecture', 'process', 'integration', 'anti-pattern', 'other')),
+  why_important TEXT NOT NULL,
+  body TEXT NOT NULL,
+  source_type TEXT NOT NULL         -- user, agent, command, hook, other
+    CHECK (source_type IN ('user', 'agent', 'command', 'hook', 'other')),
+  source_name TEXT,
+  source_via TEXT,
+  auto_updatable INTEGER DEFAULT 1, -- 0 for user-created
+  importance INTEGER NOT NULL DEFAULT 3 CHECK (importance BETWEEN 1 AND 5),
+  confidence REAL NOT NULL DEFAULT 0.8 CHECK (confidence BETWEEN 0 AND 1),
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'deprecated', 'superseded', 'draft')),
+  superseded_by TEXT REFERENCES memories(id),
+  scope TEXT DEFAULT '{}',          -- JSON object
+  tags TEXT DEFAULT '[]',           -- JSON array
+  links TEXT DEFAULT '[]',          -- JSON array
   use_count INTEGER DEFAULT 0,
   last_used_at TEXT,
-  auto_updatable INTEGER DEFAULT 1, -- 0 for user-created
-  superseded_by TEXT,
-  conflict_resolutions TEXT,        -- JSON array
+  last_conflict_at TEXT,
+  conflict_resolutions TEXT DEFAULT '[]', -- JSON array
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- FTS5 virtual table for full-text search
 CREATE VIRTUAL TABLE memories_fts USING fts5(
-  id,
-  content,
-  category,
-  tags,
-  content=memories,
-  content_rowid=rowid
+  title, body, tags,
+  content='memories',
+  content_rowid='rowid'
 );
 ```
 
@@ -392,12 +382,12 @@ Capture long-lived project knowledge that should survive across sessions, tasks,
 
 ```sql
 -- Add a memory
-INSERT INTO memories (id, content, category, importance, source_type)
-VALUES ('M-0001', 'Always use snake_case for database columns', 'convention', 4, 'user');
+INSERT INTO memories (id, title, kind, why_important, body, source_type, importance)
+VALUES ('M-0001', 'Use snake_case for DB columns', 'convention', 'Consistency', 'Always use snake_case for database columns', 'user', 4);
 
 -- Search memories using FTS5
 SELECT m.* FROM memories m
-JOIN memories_fts fts ON m.id = fts.id
+JOIN memories_fts fts ON m.rowid = fts.rowid
 WHERE memories_fts MATCH 'database AND convention';
 
 -- Get active high-importance memories
@@ -434,7 +424,7 @@ There are two scopes of memory:
 
 - **Creation**: When a user, agent, or command makes a decision that should apply to future work.
 - **Update**: When a memory is refined, corrected, or superseded.
-- **Conflict Detection**: Runs automatically at task start and end.
+- **Conflict Detection**: Opt-in via `taskmanager:memory conflicts`.
 - **Conflict Resolution**: Depends on ownership:
   - User-created (`source_type = 'user'`): ALWAYS requires user approval.
   - System-created: Can auto-update for refinements, requires approval for reversals.
@@ -451,29 +441,15 @@ The `state` table stores execution state as a single row.
 ```sql
 CREATE TABLE state (
   id INTEGER PRIMARY KEY CHECK (id = 1),  -- Ensures single row
-  version TEXT DEFAULT '2.0.0',
-  current_task_id TEXT,
+  current_task_id TEXT REFERENCES tasks(id),
   current_subtask_path TEXT,
   current_step TEXT DEFAULT 'idle',
   mode TEXT DEFAULT 'interactive',
   started_at TEXT,
-  last_update TEXT DEFAULT (datetime('now')),
-  -- Evidence (stored as JSON)
-  evidence_files_created TEXT DEFAULT '[]',
-  evidence_files_modified TEXT DEFAULT '[]',
-  evidence_commit_sha TEXT,
-  evidence_tests_before INTEGER DEFAULT 0,
-  evidence_tests_after INTEGER DEFAULT 0,
-  -- Verifications
-  verify_files_created INTEGER DEFAULT 0,
-  verify_files_non_empty INTEGER DEFAULT 0,
-  verify_git_changes INTEGER DEFAULT 0,
-  verify_tests_pass INTEGER DEFAULT 0,
-  verify_committed INTEGER DEFAULT 0,
-  -- Optional fields
-  loop_count INTEGER,
-  context_snapshot TEXT,
-  last_decision TEXT,
+  last_update TEXT,
+  -- JSON columns
+  evidence TEXT DEFAULT '{}',
+  verifications_passed TEXT DEFAULT '{}',
   task_memory TEXT DEFAULT '[]',      -- JSON array of task-scoped memories
   applied_memories TEXT DEFAULT '[]', -- JSON array of memory IDs
   -- Logging
@@ -648,11 +624,12 @@ The `sync_log` table tracks synchronization with Claude Code native tasks.
 ```sql
 CREATE TABLE sync_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  direction TEXT NOT NULL CHECK (direction IN ('push', 'pull')),
+  task_id TEXT NOT NULL,
   native_task_id TEXT,
-  taskmanager_id TEXT,
-  action TEXT,          -- created, updated, deleted
-  direction TEXT,       -- to_native, from_native
+  action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'completed', 'deleted')),
   synced_at TEXT DEFAULT (datetime('now')),
+  session_id TEXT,
   details TEXT          -- JSON with sync details
 );
 ```
@@ -661,9 +638,8 @@ CREATE TABLE sync_log (
 
 ```sql
 CREATE TABLE schema_version (
-  version INTEGER PRIMARY KEY,
-  applied_at TEXT DEFAULT (datetime('now')),
-  description TEXT
+  version TEXT PRIMARY KEY,
+  applied_at TEXT DEFAULT (datetime('now'))
 );
 ```
 
@@ -689,7 +665,7 @@ All planning, execution, dashboard, next-task, and other features must:
 
    * Use the `taskmanager-memory` skill for all memory management
    * Use FTS5 search via `memories_fts` table for content matching
-   * Run conflict detection at task start AND end
+   * Conflict detection is opt-in via `taskmanager:memory conflicts`
    * Always ask user for approval when modifying user-created memories
    * Track `applied_memories` during execution and clear after task completion
    * Review task-scoped memories for promotion before marking task as done
@@ -701,92 +677,4 @@ Its purpose is to define *what the data must look like*, not how tasks are plann
 
 ## 8. Command Reference
 
-### Initialization
-
-```bash
-taskmanager:init
-```
-
-Creates `.taskmanager/` directory with SQLite database and required tables.
-
-### Planning
-
-```bash
-taskmanager:plan [source]
-```
-
-Parse PRD content from file, folder, or text input to generate tasks.
-
-Examples:
-- `taskmanager:plan docs/prd.md` - Plan from file
-- `taskmanager:plan docs/specs/` - Plan from folder (aggregates all .md files)
-- `taskmanager:plan "Build a counter app"` - Plan from text
-
-### Dashboard & Status
-
-```bash
-taskmanager:dashboard
-taskmanager:stats [--json]
-```
-
-View progress, completion metrics, and task overview.
-
-### Task Execution
-
-```bash
-taskmanager:next-task
-taskmanager:execute-task [task-id] [--memory "..."] [--task-memory "..."]
-taskmanager:run-tasks [count] [--memory "..."] [--task-memory "..."]
-```
-
-Find and execute tasks with optional memory context.
-
-### Efficient Operations
-
-```bash
-taskmanager:get-task <id> [column]
-taskmanager:update-status <status> <id1> [id2...]
-```
-
-Token-efficient task queries and updates using SQL.
-
-### Memory Management
-
-```bash
-taskmanager:memory add "description"
-taskmanager:memory list [--status active]
-taskmanager:memory show <id>
-taskmanager:memory update <id>
-taskmanager:memory deprecate <id>
-taskmanager:memory search "query"
-```
-
-Manage project memories with FTS5 full-text search and conflict detection.
-
-### Archival
-
-```bash
-taskmanager:migrate-archive
-```
-
-Archive completed tasks by setting `archived_at` timestamp.
-
-### Sync & Export
-
-```bash
-taskmanager:sync
-```
-
-Two-way sync with Claude Code native tasks. Syncs status and creates missing tasks in either direction.
-
-```bash
-taskmanager:export [--output file.json]
-```
-
-Export entire database to JSON format for backup or migration.
-
-```bash
-taskmanager:rollback [--backup-dir path]
-```
-
-Revert from SQLite back to JSON format. Uses backup-v1/ directory if available.
+All commands are documented in their individual `.md` files under `commands/`. See the commands table in section "Plugin Resources" above for the full list.

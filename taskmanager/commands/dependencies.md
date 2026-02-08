@@ -153,7 +153,7 @@ WHERE id IN (
 UPDATE tasks SET
     dependencies = (
         SELECT COALESCE(json_group_array(d.value), '[]')
-        FROM json_each(dependencies) d
+        FROM json_each(tasks.dependencies) d
         WHERE d.value != tasks.id
     ),
     updated_at = datetime('now')
@@ -264,7 +264,7 @@ Total fixes: N
    UPDATE tasks SET
        dependencies = (
            SELECT COALESCE(json_group_array(d.value), '[]')
-           FROM json_each(dependencies) d
+           FROM json_each(tasks.dependencies) d
            WHERE d.value != '<to-id>'
        ),
        updated_at = datetime('now')

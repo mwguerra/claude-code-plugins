@@ -72,7 +72,6 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
        ```
 
 3. **Initialize deferred data** (track in memory during execution):
-   - `deferredConflicts = []` (conflicts to present at batch end).
    - `executedTasks = []` (track what was executed).
 
 ### 2. Task iteration loop
@@ -148,14 +147,6 @@ LIMIT 1;
     AND (json_extract(json_each.value, '$.taskId') = '<task-id>'
          OR json_extract(json_each.value, '$.taskId') = '*');
   ```
-- **Run conflict detection** on all loaded memories:
-  - **Critical conflicts** (importance >= 4):
-    - Pause execution.
-    - Present conflict to user.
-    - Wait for resolution before continuing.
-  - **Warning/Info conflicts** (importance < 4):
-    - Add to `deferredConflicts[]`.
-    - Continue execution.
 - Display summary of applicable memories.
 - Store applied memory IDs in state:
   ```sql
@@ -217,9 +208,6 @@ LIMIT 1;
 
 #### 2.5 Post-execution memory review
 
-- **Run conflict detection again** on all applied memories.
-- **Critical conflicts**: Pause and resolve.
-- **Warning/Info conflicts**: Add to `deferredConflicts[]`.
 - **Review task-specific memories** (NOT `"*"` memories):
   - Query task memories for this specific task:
     ```sql
@@ -359,11 +347,7 @@ After finishing or reaching the limit:
      WHERE id = 1;
      ```
 
-2. **Present deferred conflicts** (if any):
-   - Show summary of all warning/info conflicts encountered during the batch.
-   - For each conflict, ask user how to resolve.
-
-3. **Summarize with SQL aggregates**:
+2. **Summarize with SQL aggregates**:
    - Query task statistics:
      ```sql
      SELECT

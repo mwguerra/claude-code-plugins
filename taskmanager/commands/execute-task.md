@@ -117,10 +117,6 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
        AND (json_extract(json_each.value, '$.taskId') = '$TASK_ID'
             OR json_extract(json_each.value, '$.taskId') = '*');
      ```
-   - **Run conflict detection** on all loaded memories:
-     - Check for file/pattern obsolescence.
-     - Check for implementation divergence.
-     - If conflicts detected, resolve using the conflict resolution workflow.
    - Display summary of applicable memories.
    - Store applied memory IDs in state:
      ```sql
@@ -184,8 +180,6 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
      - If no `test_strategy` is set, consider the task type and add appropriate verification.
 
 8. **Post-execution memory review** (before marking done):
-   - **Run conflict detection again** on all applied memories.
-   - If conflicts detected, resolve using the conflict resolution workflow.
    - **Review task-scoped memories**:
      - Query task memories for this task:
        ```sql

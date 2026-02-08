@@ -1,22 +1,73 @@
 #!/usr/bin/env bash
 # Taskmanager SQL Query Tests
 #
-# Tests SQL queries from command .md files against the schema.
-# Currently a reference script — not self-bootstrapping.
-# To run: create a .taskmanager/taskmanager.db from schema.sql,
-# insert sample data, then execute from the project root.
-#
-# Future: rebuild as self-contained (creates temp DB, runs, cleans up).
+# Self-contained test script: creates a temp directory with DB + config,
+# runs all SQL query tests, then cleans up automatically.
 
 set -euo pipefail
 
-DB=".taskmanager/taskmanager.db"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCHEMA_FILE="$PLUGIN_DIR/skills/taskmanager/db/schema.sql"
+CONFIG_SRC="$PLUGIN_DIR/skills/taskmanager/db/default-config.json"
+
+# Create temp working directory with .taskmanager structure
+WORK_DIR=$(mktemp -d)
+trap 'rm -rf "$WORK_DIR"' EXIT
+
+mkdir -p "$WORK_DIR/.taskmanager/logs"
+cp "$CONFIG_SRC" "$WORK_DIR/.taskmanager/config.json"
+touch "$WORK_DIR/.taskmanager/logs/errors.log"
+touch "$WORK_DIR/.taskmanager/logs/decisions.log"
+touch "$WORK_DIR/.taskmanager/logs/debug.log"
+
+DB="$WORK_DIR/.taskmanager/taskmanager.db"
+
+# Initialize database from schema
+sqlite3 "$DB" < "$SCHEMA_FILE"
+
+# Insert sample data: 3 epics, ~15 tasks, 3 memories
+sqlite3 "$DB" <<'SEED'
+-- Epic 1: Authentication (in-progress, high priority)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+VALUES
+('1', NULL, 'Authentication System', 'Build full auth system', 'JWT-based auth with login, register, reset', NULL, 'in-progress', 'feature', 'high', 4, 'L', 'Multi-endpoint system', 14400, '["auth","security","sprint-1"]', '[]'),
+('1.1', '1', 'JWT Login/Logout', 'Implement JWT endpoints', 'POST /login, POST /logout', 'Test valid/invalid credentials, token expiry', 'done', 'feature', 'high', 2, 'S', 'Standard JWT', 3600, '["auth","security"]', '[]'),
+('1.2', '1', 'Password Reset', 'Implement password reset via email', 'POST /reset-request, POST /reset-confirm', 'Test email sending, token validation', 'planned', 'feature', 'medium', 2, 'S', 'Email integration', 3600, '["auth","security"]', '["1.1"]'),
+('1.3', '1', 'Role-Based Access Control', 'Implement RBAC', 'Admin, User, Guest roles', 'Test role enforcement on endpoints', 'planned', 'feature', 'medium', 3, 'M', 'Complex permissions', 7200, '["auth","security","rbac"]', '["1.1"]'),
+('1.3.1', '1.3', 'RBAC Middleware', 'Express middleware for role checks', NULL, 'Test middleware with each role', 'planned', 'feature', 'medium', 2, 'S', 'Standard middleware', 1800, '["auth","security"]', '[]'),
+('1.3.2', '1.3', 'RBAC Admin Panel', 'Admin UI for managing roles', NULL, 'Test role CRUD operations', 'planned', 'feature', 'medium', 2, 'S', 'CRUD UI', 3600, '["auth","admin"]', '["1.3.1"]');
+
+-- Epic 2: Dashboard (planned)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+VALUES
+('2', NULL, 'Dashboard', 'Build analytics dashboard', 'Charts, stats, data viz', NULL, 'planned', 'feature', 'medium', 4, 'L', 'Complex frontend', 14400, '["dashboard","frontend","sprint-1"]', '[]'),
+('2.1', '2', 'Chart Components', 'Build D3 chart library', 'Line, bar, pie charts', 'Visual regression tests', 'planned', 'feature', 'medium', 3, 'M', 'D3 integration', 3600, '["dashboard","frontend"]', '[]'),
+('2.2', '2', 'Data Aggregation API', 'Backend for dashboard data', 'Aggregate queries, caching', 'Test with sample datasets', 'planned', 'feature', 'medium', 2, 'S', 'SQL aggregates', 3600, '["dashboard","api"]', '["2.1"]'),
+('2.3', '2', 'Real-time Updates', 'WebSocket live data', 'Socket.io integration', 'Test reconnection, latency', 'planned', 'feature', 'medium', 3, 'M', 'WebSocket complexity', 3600, '["dashboard","websocket"]', '["2.1"]');
+
+-- Epic 3: Infrastructure (critical priority)
+INSERT INTO tasks (id, parent_id, title, description, details, test_strategy, status, type, priority, complexity_score, complexity_scale, complexity_reasoning, estimate_seconds, tags, dependencies)
+VALUES
+('3', NULL, 'Infrastructure', 'Set up CI/CD and monitoring', 'Docker, GH Actions, monitoring', NULL, 'planned', 'chore', 'critical', 3, 'M', 'DevOps setup', 10800, '["infra","devops"]', '[]'),
+('3.1', '3', 'Docker Setup', 'Containerize application', 'Dockerfile, docker-compose', 'Build and run tests in container', 'planned', 'chore', 'critical', 1, 'XS', 'Standard Docker', 1800, '["infra","docker","security"]', '[]'),
+('3.2', '3', 'CI Pipeline', 'GitHub Actions workflow', 'Test, lint, build, deploy', 'Verify pipeline runs', 'planned', 'chore', 'high', 2, 'S', 'Standard CI', 3600, '["infra","ci"]', '["3.1"]'),
+('3.3', '3', 'Monitoring', 'Set up Prometheus + Grafana', 'Metrics, alerts, dashboards', 'Test alert triggers', 'blocked', 'chore', 'medium', 2, 'S', 'Standard monitoring', 3600, '["infra","monitoring","security"]', '["3.1","3.2"]');
+
+-- Memories (3 entries for FTS5 tests)
+INSERT INTO memories (id, title, kind, why_important, body, source_type, source_name, source_via, auto_updatable, importance, confidence, status, scope, tags, links)
+VALUES
+('M-0001', 'Use Pest for testing', 'convention', 'Standardizes test framework', 'All tests must use Pest v4 with parallel execution. Use expect() assertions.', 'user', 'developer', 'manual', 1, 4, 0.9, 'active', '{"files": ["tests/"]}', '["testing","pest","convention"]', '[]'),
+('M-0002', 'Redis for session caching', 'architecture', 'Performance requirement', 'Use Redis with token bucket rate limiting for API endpoints. TTL: 3600s for sessions.', 'agent', 'research', 'taskmanager:research', 1, 3, 0.8, 'active', '{"domains": ["caching","api"]}', '["redis","caching","architecture"]', '[]'),
+('M-0003', 'Fix: SQLite WAL mode on NFS', 'bugfix', 'Prevents data corruption', 'SQLite WAL mode does not work on NFS mounts. Use DELETE journal mode for shared filesystems.', 'user', 'developer', 'manual', 0, 5, 1.0, 'active', '{"files": ["db/"]}', '["sqlite","bugfix","nfs"]', '[]');
+SEED
+
 PASS=0
 FAIL=0
 ERRORS=""
 
-# Change to test project directory
-cd "$(dirname "$0")"
+# Work from temp directory (tests use relative .taskmanager path)
+cd "$WORK_DIR"
 
 pass() {
     PASS=$((PASS + 1))
@@ -310,7 +361,7 @@ FROM tasks
 WHERE archived_at IS NULL
   AND status NOT IN ('done', 'canceled', 'duplicate')
   AND EXISTS (
-      SELECT 1 FROM json_each(dependencies) d
+      SELECT 1 FROM json_each(tasks.dependencies) d
       WHERE d.value = '1.1'
   );
 ")
@@ -461,7 +512,7 @@ sqlite3 "$DB" "
 UPDATE tasks SET
     dependencies = (
         SELECT COALESCE(json_group_array(d.value), '[]')
-        FROM json_each(dependencies) d
+        FROM json_each(tasks.dependencies) d
         WHERE d.value IN (SELECT id FROM tasks)
     ),
     updated_at = datetime('now')
@@ -483,7 +534,7 @@ sqlite3 "$DB" "
 UPDATE tasks SET
     dependencies = (
         SELECT COALESCE(json_group_array(d.value), '[]')
-        FROM json_each(dependencies) d
+        FROM json_each(tasks.dependencies) d
         WHERE d.value != tasks.id
     ),
     updated_at = datetime('now')
@@ -514,7 +565,7 @@ sqlite3 "$DB" "
 UPDATE tasks SET
     dependencies = (
         SELECT COALESCE(json_group_array(d.value), '[]')
-        FROM json_each(dependencies) d
+        FROM json_each(tasks.dependencies) d
         WHERE d.value != '1.3'
     ),
     updated_at = datetime('now')
@@ -685,9 +736,18 @@ print(','.join(keys))
 assert_contains "$CONFIG_KEYS" "version" "Config: has 'version' key"
 assert_contains "$CONFIG_KEYS" "defaults" "Config: has 'defaults' key"
 assert_contains "$CONFIG_KEYS" "dashboard" "Config: has 'dashboard' key"
-assert_contains "$CONFIG_KEYS" "execution" "Config: has 'execution' key"
-assert_contains "$CONFIG_KEYS" "planning" "Config: has 'planning' key"
-assert_contains "$CONFIG_KEYS" "tags" "Config: has 'tags' key"
+
+# Verify simplified config has no deprecated sections
+if echo "$CONFIG_KEYS" | grep -qF "execution"; then
+    fail "Config: should not have 'execution' key (deprecated)"
+else
+    pass "Config: no deprecated 'execution' key"
+fi
+if echo "$CONFIG_KEYS" | grep -qF "planning"; then
+    fail "Config: should not have 'planning' key (deprecated)"
+else
+    pass "Config: no deprecated 'planning' key"
+fi
 
 echo ""
 
@@ -761,7 +821,7 @@ ORDER BY id;
 assert_not_empty "$EXPORT_DATA" "Export: query returns all active tasks"
 
 EXPORT_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM tasks WHERE archived_at IS NULL;")
-assert_eq "$EXPORT_COUNT" "15" "Export: correct number of active tasks"
+assert_eq "$EXPORT_COUNT" "14" "Export: correct number of active tasks"
 
 # Check export format for markdown (verify subtask listing)
 SUBTASKS_OF_1=$(sqlite3 "$DB" "
@@ -813,7 +873,7 @@ fi
 
 # Check key values
 TOTAL=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['total'])")
-assert_eq "$TOTAL" "15" "Stats --json: total tasks = 15"
+assert_eq "$TOTAL" "14" "Stats --json: total tasks = 14"
 
 DONE=$(echo "$JSON_OUTPUT" | python3 -c "import sys,json; print(json.load(sys.stdin)['done'])")
 assert_eq "$DONE" "1" "Stats --json: done tasks = 1"
