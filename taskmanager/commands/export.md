@@ -29,7 +29,7 @@ Export taskmanager data to JSON format for inspection, sharing, or backup. Also 
 sqlite3 -json .taskmanager/taskmanager.db "
 SELECT * FROM tasks WHERE archived_at IS NULL ORDER BY id;
 " | jq '{
-    version: "3.0.0",
+    version: "4.0.0",
     exported_at: (now | todate),
     tasks: .
 }'
@@ -43,7 +43,7 @@ If `--include-archived` is specified, remove the `WHERE archived_at IS NULL` fil
 sqlite3 -json .taskmanager/taskmanager.db "
 SELECT * FROM memories ORDER BY id;
 " | jq '{
-    version: "3.0.0",
+    version: "4.0.0",
     exported_at: (now | todate),
     memories: .
 }'
