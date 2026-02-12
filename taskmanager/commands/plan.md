@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager), Bash, AskUserQuestion
-argument-hint: "[file-path-or-folder-or-prompt] [--expand <id>] [--expand-all] [--research] [--skip-analysis] [--milestones]"
+argument-hint: "[file-path-or-folder-or-prompt] [--expand <id>] [--expand-all] [--no-expand] [--research] [--skip-analysis] [--milestones]"
 description: Parse a PRD into tasks, or expand existing tasks into subtasks
 ---
 
@@ -17,6 +17,7 @@ You are implementing the `taskmanager:plan` command.
 - `--force`: Re-expand tasks that already have subtasks
 - `--estimate`: Generate time estimates (not default during expansion)
 - `--skip-analysis`: Bypass Phases 2-4 (PRD analysis, macro questions, milestones) for quick re-planning
+- `--no-expand`: Skip the automatic post-plan expansion loop (Phase 7). By default, all eligible tasks are auto-expanded after initial planning.
 - `--milestones` (default: on): Control milestone generation. Use `--no-milestones` to disable.
 
 ## Database
@@ -263,6 +264,50 @@ Query and display:
 3. **Analysis summary**: Key risks, assumptions, decisions made.
 4. **Task counts** per status.
 
+### 4. Auto-Expansion Loop (Phase 7 — unless --no-expand)
+
+After the summary, automatically expand all eligible tasks. This eliminates the need for a separate `--expand-all` invocation after planning.
+
+**Skip conditions** — skip this phase entirely if:
+- `--no-expand` flag is set, OR
+- `auto_expand_after_plan` is `false` in config (`default-config.json` → `planning`), OR
+- `--expand` or `--expand-all` flags are present (standalone expansion mode)
+
+**Procedure:**
+
+1. Read the complexity threshold from config (`defaults.complexity_threshold_for_expansion`, default: `"M"`).
+2. Read the max subtask depth from config (`defaults.max_subtask_depth`, default: `3`).
+3. **Loop** until no more eligible tasks remain:
+   a. Query eligible tasks (same query as `--expand-all`):
+      ```sql
+      SELECT id, title, description, details, test_strategy, complexity_scale,
+             complexity_reasoning, complexity_expansion_prompt, priority, type, tags, dependencies,
+             milestone_id, acceptance_criteria, moscow, business_value
+      FROM tasks
+      WHERE archived_at IS NULL
+        AND status NOT IN ('done', 'canceled', 'duplicate')
+        AND CASE complexity_scale
+            WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE -1
+        END >= <threshold_value>
+        AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id)
+        AND LENGTH(REPLACE(REPLACE(id, '.', ''), id, '')) < <max_subtask_depth>
+      ORDER BY
+          CASE complexity_scale WHEN 'XL' THEN 0 WHEN 'L' THEN 1 WHEN 'M' THEN 2 WHEN 'S' THEN 3 ELSE 4 END,
+          CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+          id;
+      ```
+      The depth check (`LENGTH(REPLACE(...))`) counts dots in the ID to determine current depth, ensuring tasks beyond `max_subtask_depth` are not expanded further.
+   b. If no eligible tasks found, exit the loop.
+   c. For each eligible task, expand it using the same logic as `--expand <id>` (see Expansion Mode below).
+   d. After expanding a batch, re-query to check if newly created subtasks are themselves eligible for further expansion.
+4. Display a summary of expansions performed:
+   ```
+   Auto-expansion complete:
+   - X tasks expanded
+   - Y subtasks created
+   - Deepest level reached: Z
+   ```
+
 ### Expansion Mode (--expand)
 
 ### expand <id> — Single task expansion
@@ -369,6 +414,9 @@ taskmanager:plan docs/prd.md --skip-analysis
 
 # Plan without milestones
 taskmanager:plan docs/prd.md --no-milestones
+
+# Plan without auto-expansion (tasks stay as top-level only)
+taskmanager:plan docs/prd.md --no-expand
 
 # Expand a single task
 taskmanager:plan --expand 1.2

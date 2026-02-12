@@ -1,7 +1,7 @@
 {
   "name": "taskmanager",
   "description": "Manage project tasks with hierarchical planning, dependency tracking, and persistent project memory. Backed by SQLite.",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"

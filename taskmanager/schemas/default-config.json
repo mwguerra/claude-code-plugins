@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0",
+  "version": "4.1.0",
   "defaults": {
     "priority": "medium",
     "type": "feature",
@@ -12,7 +12,8 @@
   },
   "planning": {
     "require_prd_analysis": true,
-    "ask_macro_questions": true
+    "ask_macro_questions": true,
+    "auto_expand_after_plan": true
   },
   "milestones": {
     "execution_mode": "flexible"

@@ -340,9 +340,9 @@ This ensures that parent tasks reflect the state of their children both in **sta
 
 ---
 
-## 5. Planning Workflow (6 Phases)
+## 5. Planning Workflow (7 Phases)
 
-The planning workflow has 6 phases. Phases 2-4 are new and run before task generation.
+The planning workflow has 7 phases. Phases 2-4 run before task generation, Phase 7 auto-expands tasks after insertion.
 
 ### Phase 1: Input & Memory Load (existing)
 
@@ -444,6 +444,17 @@ If Phase 2 identified cross-cutting concerns, generate a dedicated epic with sub
    - MoSCoW distribution
    - Critical path highlights
    - Analysis summary (key risks, assumptions, decisions made)
+
+### Phase 7: Auto-Expansion Loop (NEW)
+
+After inserting tasks and showing the summary, automatically expand all eligible tasks:
+
+1. **Skip if**: `--no-expand` flag is set, or `auto_expand_after_plan` is `false` in config.
+2. **Read config**: Use `complexity_threshold_for_expansion` (default: `"M"`) and `max_subtask_depth` (default: `3`).
+3. **Loop**: Query all leaf tasks at or above the threshold that haven't reached max depth. Expand each one. Re-query and repeat until no eligible tasks remain.
+4. **Summary**: Display count of tasks expanded, subtasks created, and deepest level reached.
+
+This eliminates the need to manually run `--expand-all` after planning. Use `--no-expand` to opt out.
 
 ### Post-Planning Expansion
 
