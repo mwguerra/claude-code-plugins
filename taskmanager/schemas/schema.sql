@@ -1,4 +1,4 @@
--- Taskmanager SQLite Schema v3.0.0
+-- Taskmanager SQLite Schema v3.1.0
 -- This file defines the complete database structure
 
 PRAGMA foreign_keys = ON;
@@ -106,6 +106,25 @@ CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
     VALUES (NEW.rowid, NEW.title, NEW.body, NEW.tags);
 END;
 
+-- Deferrals table
+CREATE TABLE IF NOT EXISTS deferrals (
+    id TEXT PRIMARY KEY,                -- Format: D-0001, D-0002, ...
+    source_task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
+    target_task_id TEXT REFERENCES tasks(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'applied', 'reassigned', 'canceled')),
+    applied_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_deferrals_target ON deferrals(target_task_id, status);
+CREATE INDEX IF NOT EXISTS idx_deferrals_source ON deferrals(source_task_id);
+CREATE INDEX IF NOT EXISTS idx_deferrals_status ON deferrals(status);
+
 -- State table (single row)
 CREATE TABLE IF NOT EXISTS state (
     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -126,4 +145,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     applied_at TEXT DEFAULT (datetime('now'))
 );
 
-INSERT OR IGNORE INTO schema_version (version) VALUES ('3.0.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('3.1.0');

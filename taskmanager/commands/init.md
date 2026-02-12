@@ -21,11 +21,16 @@ if [[ -d ".taskmanager" ]]; then
         # Check version
         VERSION=$(sqlite3 .taskmanager/taskmanager.db "SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1;" 2>/dev/null)
         if [[ "$VERSION" == "2.0.0" ]]; then
-            echo "Found v2.0.0 database. Run the migration script to upgrade to v3.0.0:"
+            echo "Found v2.0.0 database. Run the migration scripts to upgrade:"
             echo "  bash \$PLUGIN_DIR/schemas/migrate-v2-to-v3.sh"
+            echo "  bash \$PLUGIN_DIR/schemas/migrate-v3-to-v3.1.sh"
             exit 0
         elif [[ "$VERSION" == "3.0.0" ]]; then
-            echo "Taskmanager already initialized (v3.0.0)"
+            echo "Found v3.0.0 database. Run the migration script to upgrade to v3.1.0:"
+            echo "  bash \$PLUGIN_DIR/schemas/migrate-v3-to-v3.1.sh"
+            exit 0
+        elif [[ "$VERSION" == "3.1.0" ]]; then
+            echo "Taskmanager already initialized (v3.1.0)"
             exit 0
         fi
     elif [[ -f ".taskmanager/tasks.json" ]]; then
@@ -73,7 +78,7 @@ touch .taskmanager/logs/activity.log
 cp "$PLUGIN_DIR/schemas/default-config.json" .taskmanager/config.json
 
 # Log initialization
-echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v3.0.0 (SQLite)" >> .taskmanager/logs/activity.log
+echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v3.1.0 (SQLite)" >> .taskmanager/logs/activity.log
 ```
 
 ### 3. Verify installation
@@ -81,17 +86,17 @@ echo "$(date -Iseconds) [DECISION] [init] Initialized taskmanager v3.0.0 (SQLite
 ```bash
 # Check database is valid
 sqlite3 .taskmanager/taskmanager.db "SELECT version FROM schema_version;"
-# Should output: 3.0.0
+# Should output: 3.1.0
 
 # Check tables exist
 sqlite3 .taskmanager/taskmanager.db ".tables"
-# Should output: memories memories_fts schema_version state tasks
+# Should output: deferrals memories memories_fts schema_version state tasks
 ```
 
 ### 4. Report to user
 
 ```
-Taskmanager initialized successfully! (v3.0.0)
+Taskmanager initialized successfully! (v3.1.0)
 
 Created:
   .taskmanager/

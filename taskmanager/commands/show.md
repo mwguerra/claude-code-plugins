@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash
-argument-hint: "[<id> [field]] | [--next [N]] | [--stats [...]]"
+argument-hint: "[<id> [field]] | [--next [N]] | [--stats [...]] | [--deferrals [<task-id>]]"
 description: View dashboard, task details, next tasks, or statistics
 ---
 
@@ -19,6 +19,8 @@ Unified read-only view into the task database. Replaces: `dashboard`, `get-task`
 - `show <id> <field>` → single field value
 - `show --next [N]` → next N available tasks (default: 1)
 - `show --stats [--summary|--json|--status|--priority|--levels|--remaining|--time|--completion|--tags]`
+- `show --deferrals` → all pending deferrals
+- `show --deferrals <task-id>` → deferrals targeting a specific task
 
 ## Database Location
 
@@ -56,7 +58,25 @@ FROM tasks WHERE archived_at IS NULL;
 "
 ```
 
-Include sections for: progress bar, status breakdown, priority breakdown, time estimates, next tasks, tag distribution (if tags exist).
+Include sections for: progress bar, status breakdown, priority breakdown, time estimates, next tasks, tag distribution (if tags exist), **pending deferrals summary** (if any exist).
+
+#### Deferrals section (in dashboard)
+
+Only show if pending deferrals exist:
+
+```bash
+DEFERRAL_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM deferrals WHERE status = 'pending';")
+if [[ "$DEFERRAL_COUNT" -gt 0 ]]; then
+    echo "--- Pending Deferrals ---"
+    sqlite3 -box "$DB" "
+    SELECT
+        COUNT(*) as 'Pending',
+        SUM(CASE WHEN target_task_id IS NOT NULL THEN 1 ELSE 0 END) as 'Assigned',
+        SUM(CASE WHEN target_task_id IS NULL THEN 1 ELSE 0 END) as 'Unassigned'
+    FROM deferrals WHERE status = 'pending';
+    "
+fi
+```
 
 **Removed:** The writing progress section from the old dashboard is no longer shown.
 
@@ -157,10 +177,50 @@ SELECT json_object(
         WHERE archived_at IS NULL
           AND status NOT IN ('done', 'canceled', 'duplicate')
           AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id)
-    )
+    ),
+    'pending_deferrals', (SELECT COUNT(*) FROM deferrals WHERE status = 'pending'),
+    'unassigned_deferrals', (SELECT COUNT(*) FROM deferrals WHERE status = 'pending' AND target_task_id IS NULL)
 );
 "
 ```
+
+### `show --deferrals [task-id]` — Deferrals view
+
+#### All pending deferrals (no task-id):
+
+```bash
+sqlite3 -column -header "$DB" "
+SELECT
+    d.id as ID,
+    SUBSTR(d.title, 1, 30) as Title,
+    d.source_task_id as Source,
+    COALESCE(d.target_task_id, 'unassigned') as Target,
+    d.status as Status,
+    SUBSTR(d.reason, 1, 30) as Reason
+FROM deferrals d
+WHERE d.status = 'pending'
+ORDER BY d.created_at;
+"
+```
+
+#### Deferrals for a specific task (as target):
+
+```bash
+sqlite3 -column -header "$DB" "
+SELECT
+    d.id as ID,
+    SUBSTR(d.title, 1, 30) as Title,
+    d.source_task_id as Source,
+    d.status as Status,
+    SUBSTR(d.reason, 1, 40) as Reason,
+    SUBSTR(d.body, 1, 50) as Details
+FROM deferrals d
+WHERE d.target_task_id = '<task-id>'
+ORDER BY d.status, d.created_at;
+"
+```
+
+If no deferrals found: `"No deferrals found for task <task-id>"`
 
 ## Notes
 
@@ -192,4 +252,8 @@ taskmanager:show --next 5
 taskmanager:show --stats
 taskmanager:show --stats --json
 taskmanager:show --stats --tags
+
+# Deferrals
+taskmanager:show --deferrals
+taskmanager:show --deferrals 1.2.3
 ```

@@ -131,13 +131,13 @@ echo ""
 # ====================================================================
 echo "--- Test 1: Schema / Init ---"
 
-# Check 5 tables exist
-TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','schema_version');")
-assert_eq "$TABLE_COUNT" "5" "All 5 tables exist"
+# Check 6 tables exist
+TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','schema_version','deferrals');")
+assert_eq "$TABLE_COUNT" "6" "All 6 tables exist"
 
 # Check schema version
 VERSION=$(sqlite3 "$DB" "SELECT version FROM schema_version LIMIT 1;")
-assert_eq "$VERSION" "3.0.0" "Schema version is 3.0.0"
+assert_eq "$VERSION" "3.1.0" "Schema version is 3.1.0"
 
 # Negative test: sync_log table must NOT exist
 SYNC_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sync_log';")
@@ -1123,6 +1123,171 @@ JOIN memories_fts fts ON m.rowid = fts.rowid
 WHERE memories_fts MATCH 'xyzzy123';
 ")
 assert_eq "$FTS_AFTER_DEL" "0" "FTS5: sync trigger works for DELETE"
+
+echo ""
+
+# ====================================================================
+# TEST 19: Deferrals
+# ====================================================================
+echo "--- Test 19: Deferrals ---"
+
+# 19a: INSERT/SELECT CRUD
+NEXT_DEF_ID=$(sqlite3 "$DB" "SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1) FROM deferrals;")
+assert_eq "$NEXT_DEF_ID" "D-0001" "Deferrals: next ID is D-0001 (empty table)"
+
+sqlite3 "$DB" "
+INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+VALUES ('D-0001', '1.1', '3.1', 'Add OAuth support', 'Implement OAuth2 with Google and GitHub providers', 'Too complex for MVP');
+INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+VALUES ('D-0002', '2.1', '2.3', 'Chart animations', 'Add smooth transitions to chart updates', 'Non-critical, defer to polish phase');
+INSERT INTO deferrals (id, source_task_id, title, body, reason)
+VALUES ('D-0003', '1.2', 'Rate limiting edge cases', 'Handle burst traffic scenarios for API endpoints', 'Deferred to hardening phase');
+"
+
+DEF_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM deferrals;")
+assert_eq "$DEF_COUNT" "3" "Deferrals: 3 records inserted"
+
+# Read back a specific deferral
+DEF_TITLE=$(sqlite3 "$DB" "SELECT title FROM deferrals WHERE id = 'D-0001';")
+assert_eq "$DEF_TITLE" "Add OAuth support" "Deferrals: can read back deferral by ID"
+
+# 19b: Query deferrals by target task
+TARGET_DEFS=$(sqlite3 "$DB" "
+SELECT d.id, d.title, d.body, d.reason, d.source_task_id,
+       t.title as source_title
+FROM deferrals d
+LEFT JOIN tasks t ON t.id = d.source_task_id
+WHERE d.target_task_id = '3.1' AND d.status = 'pending'
+ORDER BY d.created_at;
+")
+assert_not_empty "$TARGET_DEFS" "Deferrals: query by target returns results"
+assert_contains "$TARGET_DEFS" "D-0001" "Deferrals: target query finds D-0001"
+assert_contains "$TARGET_DEFS" "OAuth" "Deferrals: target query includes title"
+
+# 19c: Query deferrals by source task
+SOURCE_DEFS=$(sqlite3 "$DB" "SELECT id, title FROM deferrals WHERE source_task_id = '1.1';")
+assert_contains "$SOURCE_DEFS" "D-0001" "Deferrals: query by source finds D-0001"
+
+# 19d: Unassigned deferral (target_task_id IS NULL)
+UNASSIGNED=$(sqlite3 "$DB" "
+SELECT d.id, d.title FROM deferrals d
+WHERE d.status = 'pending' AND d.target_task_id IS NULL;
+")
+assert_contains "$UNASSIGNED" "D-0003" "Deferrals: D-0003 is unassigned (NULL target)"
+
+# 19e: Dashboard aggregate query
+DASH_DEF=$(sqlite3 "$DB" "
+SELECT
+    COUNT(*) as pending,
+    SUM(CASE WHEN target_task_id IS NOT NULL THEN 1 ELSE 0 END) as assigned,
+    SUM(CASE WHEN target_task_id IS NULL THEN 1 ELSE 0 END) as unassigned
+FROM deferrals WHERE status = 'pending';
+")
+assert_contains "$DASH_DEF" "3" "Deferrals: dashboard shows 3 pending"
+
+# 19f: Status transitions
+# pending -> applied
+sqlite3 "$DB" "UPDATE deferrals SET status = 'applied', applied_at = datetime('now'), updated_at = datetime('now') WHERE id = 'D-0001';"
+APPLIED_STATUS=$(sqlite3 "$DB" "SELECT status FROM deferrals WHERE id = 'D-0001';")
+assert_eq "$APPLIED_STATUS" "applied" "Deferrals: D-0001 status -> applied"
+
+APPLIED_AT=$(sqlite3 "$DB" "SELECT applied_at IS NOT NULL FROM deferrals WHERE id = 'D-0001';")
+assert_eq "$APPLIED_AT" "1" "Deferrals: applied_at is set after apply"
+
+# pending -> canceled
+sqlite3 "$DB" "UPDATE deferrals SET status = 'canceled', updated_at = datetime('now') WHERE id = 'D-0002';"
+CANCELED_STATUS=$(sqlite3 "$DB" "SELECT status FROM deferrals WHERE id = 'D-0002';")
+assert_eq "$CANCELED_STATUS" "canceled" "Deferrals: D-0002 status -> canceled"
+
+# pending -> reassigned (with new deferral)
+sqlite3 "$DB" "
+UPDATE deferrals SET status = 'reassigned', updated_at = datetime('now') WHERE id = 'D-0003';
+INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+VALUES ('D-0004', '1.2', '3.2', 'Rate limiting edge cases', 'Handle burst traffic scenarios for API endpoints', 'Reassigned from unassigned to task 3.2');
+"
+REASSIGNED_STATUS=$(sqlite3 "$DB" "SELECT status FROM deferrals WHERE id = 'D-0003';")
+assert_eq "$REASSIGNED_STATUS" "reassigned" "Deferrals: D-0003 status -> reassigned"
+
+NEW_DEF_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM deferrals WHERE id = 'D-0004' AND target_task_id = '3.2';")
+assert_eq "$NEW_DEF_EXISTS" "1" "Deferrals: reassignment created D-0004 targeting 3.2"
+
+# 19g: CHECK constraint validation
+INVALID_STATUS=$(sqlite3 "$DB" "UPDATE deferrals SET status = 'invalid' WHERE id = 'D-0004';" 2>&1 || true)
+if echo "$INVALID_STATUS" | grep -qi "constraint\|check"; then
+    pass "Deferrals: CHECK constraint rejects invalid status"
+else
+    # Verify status was not actually changed
+    STILL_PENDING=$(sqlite3 "$DB" "SELECT status FROM deferrals WHERE id = 'D-0004';")
+    if [[ "$STILL_PENDING" == "pending" ]]; then
+        pass "Deferrals: CHECK constraint rejects invalid status"
+    else
+        fail "Deferrals: CHECK constraint did NOT reject invalid status"
+    fi
+fi
+
+# 19h: FK constraint - ON DELETE RESTRICT (source)
+RESTRICT_RESULT=$(sqlite3 "$DB" "PRAGMA foreign_keys = ON; DELETE FROM tasks WHERE id = '1.2';" 2>&1 || true)
+TASK_STILL_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM tasks WHERE id = '1.2';")
+assert_eq "$TASK_STILL_EXISTS" "1" "Deferrals: FK RESTRICT prevents deleting source task 1.2"
+
+# 19i: FK constraint - ON DELETE SET NULL (target)
+# Create a temporary task to use as target, then delete it
+sqlite3 "$DB" "INSERT INTO tasks (id, title, status) VALUES ('99', 'Temp target', 'planned');"
+sqlite3 "$DB" "INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason) VALUES ('D-0005', '1.1', '99', 'Temp deferral', 'Test SET NULL', 'Testing FK');"
+sqlite3 "$DB" "PRAGMA foreign_keys = ON; DELETE FROM tasks WHERE id = '99';"
+NULL_TARGET=$(sqlite3 "$DB" "SELECT target_task_id IS NULL FROM deferrals WHERE id = 'D-0005';")
+assert_eq "$NULL_TARGET" "1" "Deferrals: FK SET NULL nullifies target when task deleted"
+
+# 19j: Stale deferral validation (target task is terminal but deferral pending)
+# D-0004 targets 3.2 (planned). Mark 3.2 as done to make D-0004 stale.
+sqlite3 "$DB" "UPDATE tasks SET status = 'done' WHERE id = '3.2';"
+STALE=$(sqlite3 "$DB" "
+SELECT d.id, d.title, d.target_task_id, t.status as target_status
+FROM deferrals d
+JOIN tasks t ON t.id = d.target_task_id
+WHERE d.status = 'pending'
+  AND t.status IN ('done', 'canceled', 'duplicate');
+")
+assert_contains "$STALE" "D-0004" "Deferrals: stale validation finds D-0004 (target 3.2 is done)"
+
+# Restore 3.2 status
+sqlite3 "$DB" "UPDATE tasks SET status = 'blocked' WHERE id = '3.2';"
+
+# 19k: Move integration - update source/target IDs
+# Simulate task move: if 3.1 moves to 4.1, all deferral references should update
+sqlite3 "$DB" "
+UPDATE deferrals SET source_task_id = '4.1', updated_at = datetime('now')
+WHERE source_task_id = '3.1';
+UPDATE deferrals SET target_task_id = '4.1', updated_at = datetime('now')
+WHERE target_task_id = '3.1';
+"
+MOVED_TARGET=$(sqlite3 "$DB" "SELECT target_task_id FROM deferrals WHERE id = 'D-0001';")
+assert_eq "$MOVED_TARGET" "4.1" "Deferrals: move updates target_task_id from 3.1 to 4.1"
+
+# Restore
+sqlite3 "$DB" "
+UPDATE deferrals SET target_task_id = '3.1', updated_at = datetime('now')
+WHERE id = 'D-0001';
+UPDATE deferrals SET source_task_id = '3.1', updated_at = datetime('now')
+WHERE source_task_id = '4.1';
+"
+
+# 19l: Next deferral ID after inserts
+NEXT_ID_AFTER=$(sqlite3 "$DB" "SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1) FROM deferrals;")
+assert_eq "$NEXT_ID_AFTER" "D-0006" "Deferrals: next ID after 5 records is D-0006"
+
+# 19m: Deferral indexes exist
+IDX_TARGET=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_deferrals_target';")
+assert_eq "$IDX_TARGET" "1" "Deferrals: target index exists"
+
+IDX_SOURCE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_deferrals_source';")
+assert_eq "$IDX_SOURCE" "1" "Deferrals: source index exists"
+
+IDX_STATUS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_deferrals_status';")
+assert_eq "$IDX_STATUS" "1" "Deferrals: status index exists"
+
+# Clean up test deferrals
+sqlite3 "$DB" "DELETE FROM deferrals;"
 
 echo ""
 

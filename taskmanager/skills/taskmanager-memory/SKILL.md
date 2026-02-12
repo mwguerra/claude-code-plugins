@@ -60,6 +60,12 @@ The `memories` table has these columns:
 
 ---
 
+## Note on Deferrals
+
+Deferrals (tracked in the `deferrals` table) are **separate from memories**. Deferrals track work deferred from one task to another with source-target linkage and lifecycle management. They are managed by the `run` and `update` commands, not by this memory skill. Do not create memories to track deferred work; use the deferrals system instead.
+
+---
+
 ## Responsibilities
 
 ### 1. Initialize & Validate

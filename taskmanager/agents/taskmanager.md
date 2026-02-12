@@ -4,7 +4,7 @@ description: >
   and rules for .taskmanager/taskmanager.db (SQLite database) and logs.
   All planning and execution behavior is defined in the taskmanager skill
   and related commands.
-version: 3.0.0
+version: 3.1.0
 ---
 
 # MWGuerra Task Manager – Agent Spec
@@ -75,7 +75,7 @@ Project configuration is stored in `.taskmanager/config.json`. Commands should r
 
 ```json
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "defaults": {
     "priority": "medium",
     "type": "feature",
@@ -165,6 +165,7 @@ All data is stored in `.taskmanager/taskmanager.db`, a SQLite database.
 | `tasks` | All tasks (active and archived via `archived_at` column) |
 | `memories` | Project memories with metadata |
 | `memories_fts` | FTS5 virtual table for full-text search on memories |
+| `deferrals` | Deferred work tracking with source/target task linkage |
 | `state` | Single-row execution state |
 | `schema_version` | Migration tracking |
 
@@ -418,11 +419,82 @@ There are two scopes of memory:
 
 ---
 
-## 4. State Table
+## 4. Deferrals Table
+
+Deferrals track work that was explicitly deferred from one task to another. They survive context loss because they live in the SQLite database and are automatically loaded during task execution.
+
+### 4.1 Deferrals Table Schema
+
+```sql
+CREATE TABLE deferrals (
+  id TEXT PRIMARY KEY,                -- Format: D-0001, D-0002, ...
+  source_task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
+  target_task_id TEXT REFERENCES tasks(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'applied', 'reassigned', 'canceled')),
+  applied_at TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+**Status values:**
+- `pending` — Work not yet addressed
+- `applied` — Work was completed in the target task
+- `reassigned` — Deferral moved to a different target (original closed, new one created)
+- `canceled` — Deferred work is no longer needed
+
+**FK behavior:**
+- `source_task_id ON DELETE RESTRICT` — Cannot delete a task that has deferrals originating from it
+- `target_task_id ON DELETE SET NULL` — If target task is deleted, deferral becomes unassigned (not lost)
+
+### 4.2 Deferral Invariants
+
+- IDs are stable (`D-0001`, `D-0002`, ...).
+- Pending deferrals targeting a task MUST be surfaced before executing that task (see `run.md` Step 4).
+- Pending deferrals MUST be resolved before marking a target task as terminal (see `run.md` Step 8a).
+- When tasks are moved/re-IDed, deferral `source_task_id` and `target_task_id` MUST be updated.
+- Deferrals are never deleted; they transition to `applied`, `reassigned`, or `canceled`.
+
+### 4.3 Deferral SQL Examples
+
+```sql
+-- Create a deferral
+INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+VALUES ('D-0001', '1.2', '3.1', 'Add OAuth support', 'Implement OAuth2 with Google and GitHub', 'Too complex for MVP');
+
+-- Get pending deferrals for a task
+SELECT d.id, d.title, d.body, d.reason, d.source_task_id
+FROM deferrals d
+WHERE d.target_task_id = '3.1' AND d.status = 'pending'
+ORDER BY d.created_at;
+
+-- Mark deferral as applied
+UPDATE deferrals SET status = 'applied', applied_at = datetime('now'), updated_at = datetime('now')
+WHERE id = 'D-0001';
+
+-- Get next deferral ID
+SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1)
+FROM deferrals;
+
+-- Dashboard aggregate
+SELECT
+    COUNT(*) as total_pending,
+    SUM(CASE WHEN target_task_id IS NOT NULL THEN 1 ELSE 0 END) as assigned,
+    SUM(CASE WHEN target_task_id IS NULL THEN 1 ELSE 0 END) as unassigned
+FROM deferrals WHERE status = 'pending';
+```
+
+---
+
+## 5. State Table
 
 The `state` table stores execution state as a single row.
 
-### 4.1 State Table Schema
+### 5.1 State Table Schema
 
 ```sql
 CREATE TABLE state (
@@ -436,7 +508,7 @@ CREATE TABLE state (
 );
 ```
 
-### 4.2 State Fields
+### 5.2 State Fields
 
 * `current_task_id` — string or NULL (the task being executed)
 * `task_memory` — JSON array of task-scoped memories
@@ -445,7 +517,7 @@ CREATE TABLE state (
 * `started_at` — ISO 8601 timestamp
 * `last_update` — ISO 8601 timestamp
 
-### 4.3 Task Memory
+### 5.3 Task Memory
 
 `task_memory` JSON column stores temporary, task-scoped memories:
 
@@ -465,7 +537,7 @@ CREATE TABLE state (
 - Cleared for each task at task completion (after promotion review).
 - `"*"` task memories are cleared at batch completion.
 
-### 4.4 SQL Examples
+### 5.4 SQL Examples
 
 ```sql
 -- Get current state
@@ -491,7 +563,7 @@ VALUES (1, datetime('now'));
 
 ---
 
-## 5. Logs Contract
+## 6. Logs Contract
 
 Logs live under:
 
@@ -499,19 +571,19 @@ Logs live under:
 .taskmanager/logs/
 ```
 
-### 5.1 Log File
+### 6.1 Log File
 
 | File | Purpose | When to Write |
 |------|---------|---------------|
 | `activity.log` | All events: errors, decisions, status changes, memory operations | ALWAYS |
 
-### 5.2 Logging Rules
+### 6.2 Logging Rules
 
 * Logs are **append-only**. Never truncate or overwrite.
 * All log entries MUST include an ISO 8601 timestamp.
 * All log entries SHOULD include a command/source name for correlation.
 
-### 5.3 Log Entry Format
+### 6.3 Log Entry Format
 
 ```text
 <timestamp> [<level>] [<command>] <message>
@@ -530,7 +602,7 @@ Logs live under:
 2025-12-11T10:05:00Z [DECISION] [run] Completed task 1.2.3 with status "done"
 ```
 
-### 5.4 What to Log
+### 6.4 What to Log
 
 - SQL errors and constraint violations
 - Database connection failures
@@ -541,10 +613,11 @@ Logs live under:
 - Conflict resolution outcomes
 - Batch start/end summaries
 - Dependency resolution failures
+- Deferral creation, resolution, reassignment
 
 ---
 
-## 6. Schema Version Table
+## 7. Schema Version Table
 
 ```sql
 CREATE TABLE schema_version (
@@ -553,18 +626,18 @@ CREATE TABLE schema_version (
 );
 ```
 
-Current version: `3.0.0`.
+Current version: `3.1.0`.
 
 ---
 
-## 7. Interop Rules (Very Important)
+## 8. Interop Rules (Very Important)
 
 All planning, execution, dashboard, next-task, and other features must:
 
 1. Treat this document as the **contract** for:
 
    * `taskmanager.db` SQLite database
-   * Tables: `tasks`, `memories`, `memories_fts`, `state`, `schema_version`
+   * Tables: `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`
    * Logging rules
 2. Use proper SQL queries to read/write data
 3. Delegate all behavior to the plugin's skills and commands:
@@ -573,7 +646,14 @@ All planning, execution, dashboard, next-task, and other features must:
    * `taskmanager-memory` skill — memory management behavior
    * Plugin commands — command implementations
 
-4. For memory operations:
+4. For deferral operations:
+
+   * Load pending deferrals before executing a target task
+   * Create deferral records when work is explicitly deferred
+   * Resolve all pending deferrals before marking a task as terminal
+   * Update deferral references when tasks are moved/re-IDed
+
+5. For memory operations:
 
    * Use the `taskmanager-memory` skill for all memory management
    * Use FTS5 search via `memories_fts` table for content matching
@@ -586,6 +666,6 @@ Its purpose is to define *what the data must look like*, not how tasks are plann
 
 ---
 
-## 8. Command Reference
+## 9. Command Reference
 
 All commands are documented in their individual `.md` files under `commands/`. See the commands table in section "Plugin Resources" above for the full list.

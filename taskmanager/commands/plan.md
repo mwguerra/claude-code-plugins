@@ -113,14 +113,23 @@ Query created task counts and report to user.
    - If task already has subtasks and `--force` not set: inform user and stop.
    - If `--force` set: warn user, delete existing subtasks.
 
-3. Generate subtasks using the `taskmanager` skill:
+3. Load pending deferrals targeting this task:
+   ```sql
+   SELECT d.id, d.title, d.body, d.reason
+   FROM deferrals d
+   WHERE d.target_task_id = '<task-id>' AND d.status = 'pending'
+   ORDER BY d.created_at;
+   ```
+   Include these as additional scope/requirements when generating subtasks.
+
+4. Generate subtasks using the `taskmanager` skill:
    - Use `complexity_expansion_prompt` if available.
    - Each subtask gets: id, title, description, details, test_strategy, status, type, priority, complexity_scale, estimate_seconds, tags, dependencies.
    - Subtask IDs follow parent pattern (e.g., parent `1.2` gets `1.2.1`, `1.2.2`).
 
-4. Insert subtasks and update parent estimate via SQL transaction.
+5. Insert subtasks and update parent estimate via SQL transaction.
 
-5. Check if any new subtasks need further expansion (recursive check).
+6. Check if any new subtasks need further expansion (recursive check).
 
 ### expand --all — Bulk expansion
 

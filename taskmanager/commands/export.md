@@ -53,12 +53,15 @@ SELECT * FROM memories ORDER BY id;
 
 ```bash
 {
-    echo '{"version": "3.0.0", "exported_at": "'$(date -Iseconds)'",'
+    echo '{"version": "3.1.0", "exported_at": "'$(date -Iseconds)'",'
     echo '"tasks": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM tasks ORDER BY id;"
     echo ','
     echo '"memories": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM memories ORDER BY id;"
+    echo ','
+    echo '"deferrals": '
+    sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM deferrals ORDER BY id;"
     echo ','
     echo '"state": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM state;"

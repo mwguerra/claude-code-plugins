@@ -105,7 +105,35 @@ If unmet dependencies exist:
   - "Mark dependencies as done and continue"
   - "Abort execution"
 
-### 4. Load and apply memories (pre-execution)
+### 4. Load deferrals and memories (pre-execution)
+
+#### 4a. Load pending deferrals targeting this task
+
+```sql
+SELECT d.id, d.title, d.body, d.reason, d.source_task_id,
+       t.title as source_title
+FROM deferrals d
+LEFT JOIN tasks t ON t.id = d.source_task_id
+WHERE d.target_task_id = '<task-id>' AND d.status = 'pending'
+ORDER BY d.created_at;
+```
+
+If deferrals exist, display them prominently:
+
+```
+DEFERRED WORK FOR THIS TASK:
+  D-0001: "Add OAuth support" (from task 1.2: "Auth System")
+    Reason: Too complex for MVP, deferred from sprint 1
+    Details: Implement OAuth2 with Google and GitHub providers...
+
+  D-0003: "Rate limiting edge cases" (from task 2.1: "API Gateway")
+    Reason: Non-critical, deferred to hardening phase
+    Details: Handle burst traffic scenarios...
+```
+
+These deferrals represent **requirements** the agent must incorporate into the task execution. They are not optional.
+
+#### 4b. Load and apply memories
 
 - Use `taskmanager-memory` skill to query relevant memories.
 - Load global memories (`importance >= 3`).
@@ -138,11 +166,42 @@ Propagate in-progress status to ancestors using recursive CTE.
 - Apply loaded memories as constraints.
 - If `test_strategy` exists, follow it to verify implementation.
 
-### 7. Post-execution memory review
+### 7. Post-execution review (memories and deferrals)
+
+#### 7a. Memory review
 
 - Review task-scoped memories for promotion to global.
 - Ask user for promotion decisions.
 - Clear task-specific memories from state.
+
+#### 7b. Deferral creation
+
+After memory review, ask the user: **"Was any work deferred from this task to a later task?"**
+
+If yes, for each deferred item:
+
+1. Generate next deferral ID:
+   ```sql
+   SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1)
+   FROM deferrals;
+   ```
+
+2. Collect deferral details via AskUserQuestion:
+   - **Title**: Short description of the deferred work
+   - **Body**: Detailed description of what was deferred
+   - **Reason**: Why it was deferred
+   - **Target task ID**: Which task should handle it (or NULL if unassigned)
+
+3. Insert the deferral:
+   ```sql
+   INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+   VALUES ('<deferral-id>', '<current-task-id>', '<target-task-id>', '<title>', '<body>', '<reason>');
+   ```
+
+4. Log to `activity.log`:
+   ```
+   <timestamp> [DECISION] [run] Created deferral <id>: "<title>" from task <source> to task <target>
+   ```
 
 ### 8. Complete with status propagation
 
@@ -179,6 +238,36 @@ UPDATE tasks SET
     updated_at = datetime('now')
 WHERE id IN (SELECT id FROM ancestors);
 ```
+
+#### 8a. Resolve pending deferrals before terminal status
+
+Before marking a task as terminal (`done`, `canceled`, `duplicate`), check for unresolved pending deferrals:
+
+```sql
+SELECT d.id, d.title, d.status
+FROM deferrals d
+WHERE d.target_task_id = '<task-id>' AND d.status = 'pending';
+```
+
+If pending deferrals exist, the agent **MUST** resolve each one before proceeding. For each pending deferral, use AskUserQuestion:
+
+- **"Mark as applied"** — The deferred work was completed in this task.
+  ```sql
+  UPDATE deferrals SET status = 'applied', applied_at = datetime('now'), updated_at = datetime('now')
+  WHERE id = '<deferral-id>';
+  ```
+- **"Reassign to another task"** — The work still needs to be done elsewhere.
+  ```sql
+  UPDATE deferrals SET status = 'reassigned', target_task_id = '<new-target>', updated_at = datetime('now')
+  WHERE id = '<deferral-id>';
+  INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason, status)
+  VALUES ('<new-id>', '<original-source>', '<new-target>', '<title>', '<body>', '<reason>', 'pending');
+  ```
+- **"Cancel deferral"** — The deferred work is no longer needed.
+  ```sql
+  UPDATE deferrals SET status = 'canceled', updated_at = datetime('now')
+  WHERE id = '<deferral-id>';
+  ```
 
 Archive if terminal. Clear state current_task_id.
 

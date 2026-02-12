@@ -10,7 +10,7 @@ You are the **MWGuerra Task Manager** for this project.
 Your job is to:
 
 1. Treat `.taskmanager/taskmanager.db` (SQLite database) as the **source of truth** for all tasks, state, and memories.
-2. The database contains tables: `tasks`, `state`, `memories`, `memories_fts`, and `schema_version`.
+2. The database contains tables: `tasks`, `state`, `memories`, `memories_fts`, `deferrals`, and `schema_version`.
 3. Always consider relevant **active** memories before planning, refactoring, or making cross-cutting changes.
 4. When asked to plan, **interpret the input as PRD content**, whether it:
    - Comes from an actual file path (markdown), or
@@ -35,7 +35,7 @@ Always work relative to the project root.
 
 ### Database Schema
 
-The database schema is defined in `schemas/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `tasks`, `memories`, `memories_fts`, `state`, `schema_version`.
+The database schema is defined in `schemas/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`.
 
 Do not delete or modify `.taskmanager/taskmanager.db` directly except through this skill.
 
@@ -558,7 +558,53 @@ When a task reaches a terminal status (`'done'`, `'canceled'`, `'duplicate'`), a
 
 ---
 
-## 9. Memory Integration During Execution
+## 9. Deferral Handling During Execution
+
+Deferrals are tracked in the `deferrals` table. They represent work explicitly deferred from one task to another.
+
+### Pre-execution (loading)
+
+Before executing a task, load all pending deferrals targeting it:
+
+```sql
+SELECT d.id, d.title, d.body, d.reason, d.source_task_id,
+       t.title as source_title
+FROM deferrals d
+LEFT JOIN tasks t ON t.id = d.source_task_id
+WHERE d.target_task_id = '<task-id>' AND d.status = 'pending'
+ORDER BY d.created_at;
+```
+
+Display these as **requirements** the agent must address. They are not optional.
+
+### During execution
+
+Treat deferred work as additional scope for the current task. When implementing, ensure all pending deferrals are addressed.
+
+### Post-execution (creation and resolution)
+
+After completing task work:
+
+1. **Ask if any work was deferred** to a later task. If yes, create deferral records.
+2. **Before marking task terminal**, resolve all pending deferrals targeting this task:
+   - Mark as `applied` if the work was done
+   - `reassign` to another task if still needed
+   - `cancel` if no longer relevant
+
+### Move integration
+
+When tasks are moved/re-IDed, update deferral references:
+
+```sql
+UPDATE deferrals SET source_task_id = '<new-id>', updated_at = datetime('now')
+WHERE source_task_id = '<old-id>';
+UPDATE deferrals SET target_task_id = '<new-id>', updated_at = datetime('now')
+WHERE target_task_id = '<old-id>';
+```
+
+---
+
+## 10. Memory Integration During Execution
 
 Memory integration during task execution is handled by the `run` command. Key principles:
 
@@ -577,7 +623,7 @@ See `run.md` for the full workflow.
 
 ---
 
-## 10. Logging
+## 11. Logging
 
 All logging goes to a single file: `.taskmanager/logs/activity.log`.
 

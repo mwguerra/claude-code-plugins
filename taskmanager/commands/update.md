@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager), Bash
-argument-hint: "<id> [--status <s>] [--title \"...\"] [--prompt \"...\"] [--scope up|down] [--tag add:<t>] [--depends-on <id>] [--move-to <id>] | [--tags] [--validate-deps]"
+argument-hint: "<id> [--status <s>] [--title \"...\"] [--prompt \"...\"] [--scope up|down] [--tag add:<t>] [--depends-on <id>] [--move-to <id>] [--defer \"...\"] | [--tags] [--validate-deps]"
 description: Update task fields, status, scope, tags, dependencies, or position
 ---
 
@@ -52,6 +52,13 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
 - `update <id> --remove-dep <id>` → remove dependency
 - `update --validate-deps` → validate all dependencies
 - `update --validate-deps --fix` → auto-fix invalid dependencies
+
+### Deferral operations
+- `update <source-id> --defer "title" --to <target-id> --reason "why"` → create a deferral
+- `update --defer <deferral-id> --reassign <new-target>` → reassign deferral to different task
+- `update --defer <deferral-id> --cancel "reason"` → cancel a deferral
+- `update --defer <deferral-id> --apply` → mark deferral as applied
+- `update --defer validate` → check for orphaned/stale deferrals
 
 ### Move/reparent
 - `update <id> --move-to <parent-id>` → reparent task under new parent
@@ -221,14 +228,109 @@ UPDATE tasks SET
 WHERE id = '<task-id>';
 ```
 
+### Deferral operations (--defer)
+
+#### Create a deferral:
+`update <source-id> --defer "title" --to <target-id> --reason "why"`
+
+1. Generate next deferral ID:
+   ```sql
+   SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1)
+   FROM deferrals;
+   ```
+2. Validate source task exists. Validate target task exists (if provided).
+3. Insert deferral:
+   ```sql
+   INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+   VALUES ('<id>', '<source-id>', '<target-id>', '<title>', '<body>', '<reason>');
+   ```
+   If `--to` is omitted, `target_task_id` is NULL (unassigned deferral).
+
+#### Reassign a deferral:
+`update --defer <deferral-id> --reassign <new-target>`
+
+```sql
+UPDATE deferrals SET
+    status = 'reassigned',
+    updated_at = datetime('now')
+WHERE id = '<deferral-id>';
+
+INSERT INTO deferrals (id, source_task_id, target_task_id, title, body, reason)
+SELECT
+    (SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1) FROM deferrals),
+    source_task_id, '<new-target>', title, body, reason
+FROM deferrals WHERE id = '<deferral-id>';
+```
+
+#### Cancel a deferral:
+`update --defer <deferral-id> --cancel "reason"`
+
+```sql
+UPDATE deferrals SET
+    status = 'canceled',
+    reason = reason || ' [Canceled: <cancel-reason>]',
+    updated_at = datetime('now')
+WHERE id = '<deferral-id>';
+```
+
+#### Mark deferral as applied:
+`update --defer <deferral-id> --apply`
+
+```sql
+UPDATE deferrals SET
+    status = 'applied',
+    applied_at = datetime('now'),
+    updated_at = datetime('now')
+WHERE id = '<deferral-id>';
+```
+
+#### Validate deferrals:
+`update --defer validate`
+
+Check for:
+- **Orphaned**: Pending deferrals with no target task (`target_task_id IS NULL`)
+- **Stale**: Pending deferrals whose target task is already terminal
+
+```sql
+-- Orphaned
+SELECT d.id, d.title, d.source_task_id
+FROM deferrals d
+WHERE d.status = 'pending' AND d.target_task_id IS NULL;
+
+-- Stale
+SELECT d.id, d.title, d.target_task_id, t.status as target_status
+FROM deferrals d
+JOIN tasks t ON t.id = d.target_task_id
+WHERE d.status = 'pending'
+  AND t.status IN ('done', 'canceled', 'duplicate');
+```
+
+For each issue found, use AskUserQuestion to offer resolution options.
+
+### Scope-down deferral integration (--scope down)
+
+When `--scope down` removes work from a task, after applying the scope change:
+
+1. Use AskUserQuestion: **"Should the removed work be tracked as a deferral?"**
+   - Options: "Yes, create a deferral" / "No, discard it"
+2. If yes, ask for target task ID (or leave unassigned).
+3. Create the deferral record with the removed scope description as the body.
+
 ### Move/reparent (--move-to)
 
 1. Validate target parent exists and is not a descendant of the task being moved.
 2. Calculate new ID: `<parent-id>.<next-child-number>`.
 3. Create new task record with new ID and parent_id.
 4. Update dependency references across all tasks.
-5. Delete old task record.
-6. Recompute parent estimates for both old and new parents.
+5. **Update deferral references** (source and target):
+   ```sql
+   UPDATE deferrals SET source_task_id = '<new-id>', updated_at = datetime('now')
+   WHERE source_task_id = '<old-id>';
+   UPDATE deferrals SET target_task_id = '<new-id>', updated_at = datetime('now')
+   WHERE target_task_id = '<old-id>';
+   ```
+6. Delete old task record.
+7. Recompute parent estimates for both old and new parents.
 
 ### Cleanup
 
@@ -279,6 +381,13 @@ taskmanager:update 1.3 --remove-dep 1.2
 
 # Move
 taskmanager:update 2.1 --move-to 3
+
+# Deferrals
+taskmanager:update 1.2 --defer "Add OAuth support" --to 3.1 --reason "Too complex for MVP"
+taskmanager:update --defer D-0001 --reassign 4.2
+taskmanager:update --defer D-0001 --apply
+taskmanager:update --defer D-0002 --cancel "No longer needed"
+taskmanager:update --defer validate
 ```
 
 ## Related Commands

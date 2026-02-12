@@ -127,6 +127,50 @@
 -- SELECT * FROM memories WHERE status = 'active' AND importance >= 3 ORDER BY importance DESC;
 
 -- ============================================================================
+-- DEFERRAL QUERIES
+-- ============================================================================
+
+-- Get pending deferrals targeting a task (for pre-execution loading)
+-- SELECT d.id, d.title, d.body, d.reason, d.source_task_id,
+--        t.title as source_title
+-- FROM deferrals d
+-- LEFT JOIN tasks t ON t.id = d.source_task_id
+-- WHERE d.target_task_id = ? AND d.status = 'pending'
+-- ORDER BY d.created_at;
+
+-- Get all deferrals originating from a task
+-- SELECT * FROM deferrals WHERE source_task_id = ? ORDER BY created_at;
+
+-- Pending deferral counts for dashboard
+-- SELECT
+--     COUNT(*) as 'Pending',
+--     SUM(CASE WHEN target_task_id IS NOT NULL THEN 1 ELSE 0 END) as 'Assigned',
+--     SUM(CASE WHEN target_task_id IS NULL THEN 1 ELSE 0 END) as 'Unassigned'
+-- FROM deferrals WHERE status = 'pending';
+
+-- Generate next deferral ID
+-- SELECT 'D-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1)
+-- FROM deferrals;
+
+-- Validate: orphaned deferrals (target task deleted, deferral unassigned)
+-- SELECT d.id, d.title, d.source_task_id, d.target_task_id
+-- FROM deferrals d
+-- WHERE d.status = 'pending' AND d.target_task_id IS NULL;
+
+-- Validate: stale deferrals (target task is terminal but deferral still pending)
+-- SELECT d.id, d.title, d.target_task_id, t.status as target_status
+-- FROM deferrals d
+-- JOIN tasks t ON t.id = d.target_task_id
+-- WHERE d.status = 'pending'
+--   AND t.status IN ('done', 'canceled', 'duplicate');
+
+-- Update deferral source/target on task move
+-- UPDATE deferrals SET source_task_id = '<new-id>', updated_at = datetime('now')
+-- WHERE source_task_id = '<old-id>';
+-- UPDATE deferrals SET target_task_id = '<new-id>', updated_at = datetime('now')
+-- WHERE target_task_id = '<old-id>';
+
+-- ============================================================================
 -- ARCHIVAL
 -- ============================================================================
 
