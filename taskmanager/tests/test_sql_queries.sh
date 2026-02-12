@@ -131,13 +131,13 @@ echo ""
 # ====================================================================
 echo "--- Test 1: Schema / Init ---"
 
-# Check 6 tables exist
-TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','schema_version','deferrals');")
-assert_eq "$TABLE_COUNT" "6" "All 6 tables exist"
+# Check 8 tables exist (tasks, memories, memories_fts, state, schema_version, deferrals, milestones, plan_analyses)
+TABLE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('tasks','memories','memories_fts','state','schema_version','deferrals','milestones','plan_analyses');")
+assert_eq "$TABLE_COUNT" "8" "All 8 tables exist"
 
 # Check schema version
 VERSION=$(sqlite3 "$DB" "SELECT version FROM schema_version LIMIT 1;")
-assert_eq "$VERSION" "3.1.0" "Schema version is 3.1.0"
+assert_eq "$VERSION" "4.0.0" "Schema version is 4.0.0"
 
 # Negative test: sync_log table must NOT exist
 SYNC_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sync_log';")
@@ -746,16 +746,21 @@ assert_contains "$CONFIG_KEYS" "version" "Config: has 'version' key"
 assert_contains "$CONFIG_KEYS" "defaults" "Config: has 'defaults' key"
 assert_contains "$CONFIG_KEYS" "dashboard" "Config: has 'dashboard' key"
 
-# Verify simplified config has no deprecated sections
+# Verify config has expected v4.0.0 sections and no deprecated ones
 if echo "$CONFIG_KEYS" | grep -qF "execution"; then
     fail "Config: should not have 'execution' key (deprecated)"
 else
     pass "Config: no deprecated 'execution' key"
 fi
 if echo "$CONFIG_KEYS" | grep -qF "planning"; then
-    fail "Config: should not have 'planning' key (deprecated)"
+    pass "Config: has 'planning' key"
 else
-    pass "Config: no deprecated 'planning' key"
+    fail "Config: missing 'planning' key"
+fi
+if echo "$CONFIG_KEYS" | grep -qF "milestones"; then
+    pass "Config: has 'milestones' key"
+else
+    fail "Config: missing 'milestones' key"
 fi
 
 echo ""
@@ -1288,6 +1293,537 @@ assert_eq "$IDX_STATUS" "1" "Deferrals: status index exists"
 
 # Clean up test deferrals
 sqlite3 "$DB" "DELETE FROM deferrals;"
+
+echo ""
+
+# ====================================================================
+# TEST 20: Milestones (v4.0.0)
+# ====================================================================
+echo "--- Test 20: Milestones ---"
+
+# 20a: Milestones table exists
+MS_TABLE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='milestones';")
+assert_eq "$MS_TABLE" "1" "Milestones: table exists"
+
+# 20b: Insert milestones
+sqlite3 "$DB" "
+INSERT INTO milestones (id, title, description, phase_order, status)
+VALUES ('MS-001', 'MVP - Core Features', 'Authentication and infrastructure', 1, 'active');
+INSERT INTO milestones (id, title, description, phase_order, status)
+VALUES ('MS-002', 'Enhancement Phase', 'Dashboard and monitoring', 2, 'planned');
+INSERT INTO milestones (id, title, description, phase_order, status)
+VALUES ('MS-003', 'Nice-to-have', 'Polish and optimization', 3, 'planned');
+"
+MS_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM milestones;")
+assert_eq "$MS_COUNT" "3" "Milestones: 3 records inserted"
+
+# 20c: Read milestone by ID
+MS_TITLE=$(sqlite3 "$DB" "SELECT title FROM milestones WHERE id = 'MS-001';")
+assert_eq "$MS_TITLE" "MVP - Core Features" "Milestones: read by ID works"
+
+# 20d: Phase order ordering
+FIRST_MS=$(sqlite3 "$DB" "SELECT id FROM milestones ORDER BY phase_order LIMIT 1;")
+assert_eq "$FIRST_MS" "MS-001" "Milestones: phase_order ordering works"
+
+# 20e: Active milestone query
+ACTIVE_MS=$(sqlite3 "$DB" "SELECT id FROM milestones WHERE status IN ('active', 'planned') ORDER BY phase_order LIMIT 1;")
+assert_eq "$ACTIVE_MS" "MS-001" "Milestones: active milestone is MS-001"
+
+# 20f: Status CHECK constraint
+INVALID_MS=$(sqlite3 "$DB" "INSERT INTO milestones (id, title, phase_order, status) VALUES ('MS-BAD', 'Bad', 99, 'invalid');" 2>&1 || true)
+if echo "$INVALID_MS" | grep -qi "constraint\|check"; then
+    pass "Milestones: CHECK constraint rejects invalid status"
+else
+    BAD_EXISTS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM milestones WHERE id = 'MS-BAD';")
+    if [[ "$BAD_EXISTS" == "0" ]]; then
+        pass "Milestones: CHECK constraint rejects invalid status"
+    else
+        fail "Milestones: CHECK constraint did NOT reject invalid status"
+        sqlite3 "$DB" "DELETE FROM milestones WHERE id = 'MS-BAD';"
+    fi
+fi
+
+# 20g: Status transitions
+sqlite3 "$DB" "UPDATE milestones SET status = 'completed', updated_at = datetime('now') WHERE id = 'MS-001';"
+COMPLETED_STATUS=$(sqlite3 "$DB" "SELECT status FROM milestones WHERE id = 'MS-001';")
+assert_eq "$COMPLETED_STATUS" "completed" "Milestones: status -> completed"
+sqlite3 "$DB" "UPDATE milestones SET status = 'active' WHERE id = 'MS-001';"
+
+# 20h: FK constraint - tasks.milestone_id references milestones
+sqlite3 "$DB" "UPDATE tasks SET milestone_id = 'MS-001' WHERE id = '1';"
+FK_VALUE=$(sqlite3 "$DB" "SELECT milestone_id FROM tasks WHERE id = '1';")
+assert_eq "$FK_VALUE" "MS-001" "Milestones: FK assignment works"
+
+# 20i: Milestone with task counts
+MS_STATS=$(sqlite3 "$DB" "
+SELECT m.id, m.title,
+    COUNT(t.id) as total_tasks,
+    SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done_tasks
+FROM milestones m
+LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+GROUP BY m.id
+ORDER BY m.phase_order;
+")
+assert_not_empty "$MS_STATS" "Milestones: task count query works"
+assert_contains "$MS_STATS" "MS-001" "Milestones: task count includes MS-001"
+
+# 20j: Indexes exist
+IDX_MS_STATUS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_milestones_status';")
+assert_eq "$IDX_MS_STATUS" "1" "Milestones: status index exists"
+
+IDX_MS_ORDER=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_milestones_order';")
+assert_eq "$IDX_MS_ORDER" "1" "Milestones: order index exists"
+
+IDX_TASKS_MS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_tasks_milestone';")
+assert_eq "$IDX_TASKS_MS" "1" "Milestones: tasks milestone index exists"
+
+# 20k: Generate next milestone ID
+NEXT_MS_ID=$(sqlite3 "$DB" "SELECT 'MS-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1) FROM milestones;")
+assert_eq "$NEXT_MS_ID" "MS-004" "Milestones: next ID is MS-004"
+
+# Clean up: remove milestone assignment from task but keep milestones for later tests
+sqlite3 "$DB" "UPDATE tasks SET milestone_id = NULL WHERE id = '1';"
+
+echo ""
+
+# ====================================================================
+# TEST 21: Plan Analyses (v4.0.0)
+# ====================================================================
+echo "--- Test 21: Plan Analyses ---"
+
+# 21a: Table exists
+PA_TABLE=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='plan_analyses';")
+assert_eq "$PA_TABLE" "1" "Plan Analyses: table exists"
+
+# 21b: Insert analysis
+sqlite3 "$DB" "
+INSERT INTO plan_analyses (id, prd_source, prd_hash, tech_stack, assumptions, risks, ambiguities, nfrs, scope_in, scope_out, cross_cutting)
+VALUES (
+    'PA-001',
+    '.taskmanager/docs/prd.md',
+    'abc123def456',
+    '[\"laravel\", \"redis\", \"react\", \"chartjs\"]',
+    '[{\"description\": \"Telemetry source is available\", \"confidence\": \"high\", \"impact\": \"critical\"}]',
+    '[{\"description\": \"WebSocket scalability\", \"severity\": \"medium\", \"likelihood\": \"low\", \"mitigation\": \"Use Redis pub/sub\"}]',
+    '[{\"requirement\": \"Update frequency\", \"question\": \"Is 5 seconds the minimum or target?\", \"resolution\": null}]',
+    '[{\"category\": \"performance\", \"requirement\": \"API response < 200ms\", \"priority\": \"high\"}]',
+    'Real-time bandwidth widget with chart and warnings',
+    'Authentication changes, UI theming',
+    '[{\"concern\": \"Error handling\", \"affected_epics\": [\"1\"], \"strategy\": \"Global error boundary\"}]'
+);
+"
+PA_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM plan_analyses;")
+assert_eq "$PA_COUNT" "1" "Plan Analyses: record inserted"
+
+# 21c: Read analysis by ID
+PA_SOURCE=$(sqlite3 "$DB" "SELECT prd_source FROM plan_analyses WHERE id = 'PA-001';")
+assert_eq "$PA_SOURCE" ".taskmanager/docs/prd.md" "Plan Analyses: read by ID works"
+
+# 21d: PRD hash lookup
+HASH_LOOKUP=$(sqlite3 "$DB" "SELECT id FROM plan_analyses WHERE prd_hash = 'abc123def456' ORDER BY created_at DESC LIMIT 1;")
+assert_eq "$HASH_LOOKUP" "PA-001" "Plan Analyses: hash lookup works"
+
+# 21e: JSON column access
+TECH_STACK=$(sqlite3 "$DB" "SELECT json_extract(tech_stack, '\$[0]') FROM plan_analyses WHERE id = 'PA-001';")
+assert_eq "$TECH_STACK" "laravel" "Plan Analyses: JSON tech_stack accessible"
+
+RISK_DESC=$(sqlite3 "$DB" "SELECT json_extract(risks, '\$[0].description') FROM plan_analyses WHERE id = 'PA-001';")
+assert_eq "$RISK_DESC" "WebSocket scalability" "Plan Analyses: JSON risks accessible"
+
+# 21f: Update decisions array
+sqlite3 "$DB" "
+UPDATE plan_analyses SET
+    decisions = json_insert(decisions, '\$[#]', json_object('question', 'Queue driver?', 'answer', 'Redis', 'rationale', 'Already in stack', 'memory_id', 'M-0010')),
+    updated_at = datetime('now')
+WHERE id = 'PA-001';
+"
+DECISION_COUNT=$(sqlite3 "$DB" "SELECT json_array_length(decisions) FROM plan_analyses WHERE id = 'PA-001';")
+assert_eq "$DECISION_COUNT" "1" "Plan Analyses: decision appended"
+
+# 21g: Cross-cutting concern query
+CROSS_CUT=$(sqlite3 "$DB" "SELECT json_each.value FROM plan_analyses pa, json_each(pa.cross_cutting) WHERE pa.id = 'PA-001';")
+assert_contains "$CROSS_CUT" "Error handling" "Plan Analyses: cross-cutting concern accessible"
+
+# 21h: Index exists
+IDX_PA_HASH=$(sqlite3 "$DB" "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_plan_analyses_hash';")
+assert_eq "$IDX_PA_HASH" "1" "Plan Analyses: hash index exists"
+
+# 21i: Generate next analysis ID
+NEXT_PA_ID=$(sqlite3 "$DB" "SELECT 'PA-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1) FROM plan_analyses;")
+assert_eq "$NEXT_PA_ID" "PA-002" "Plan Analyses: next ID is PA-002"
+
+# Clean up
+sqlite3 "$DB" "DELETE FROM plan_analyses;"
+
+echo ""
+
+# ====================================================================
+# TEST 22: MoSCoW + Business Value (v4.0.0)
+# ====================================================================
+echo "--- Test 22: MoSCoW + Business Value ---"
+
+# 22a: moscow column exists
+MOSCOW_COL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM pragma_table_info('tasks') WHERE name = 'moscow';")
+assert_eq "$MOSCOW_COL" "1" "MoSCoW: column exists"
+
+# 22b: business_value column exists
+BV_COL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM pragma_table_info('tasks') WHERE name = 'business_value';")
+assert_eq "$BV_COL" "1" "Business Value: column exists"
+
+# 22c: Set moscow on tasks
+sqlite3 "$DB" "
+UPDATE tasks SET moscow = 'must', business_value = 5 WHERE id = '1';
+UPDATE tasks SET moscow = 'must', business_value = 5 WHERE id = '1.1';
+UPDATE tasks SET moscow = 'must', business_value = 4 WHERE id = '1.2';
+UPDATE tasks SET moscow = 'should', business_value = 3 WHERE id = '2';
+UPDATE tasks SET moscow = 'could', business_value = 2 WHERE id = '2.1';
+UPDATE tasks SET moscow = 'must', business_value = 5 WHERE id = '3';
+UPDATE tasks SET moscow = 'must', business_value = 5 WHERE id = '3.1';
+"
+
+# 22d: MoSCoW CHECK constraint
+INVALID_MOSCOW=$(sqlite3 "$DB" "UPDATE tasks SET moscow = 'invalid' WHERE id = '1';" 2>&1 || true)
+if echo "$INVALID_MOSCOW" | grep -qi "constraint\|check"; then
+    pass "MoSCoW: CHECK constraint rejects invalid value"
+else
+    CURRENT_MOSCOW=$(sqlite3 "$DB" "SELECT moscow FROM tasks WHERE id = '1';")
+    if [[ "$CURRENT_MOSCOW" == "must" ]]; then
+        pass "MoSCoW: CHECK constraint rejects invalid value"
+    else
+        fail "MoSCoW: CHECK constraint did NOT reject invalid value"
+        sqlite3 "$DB" "UPDATE tasks SET moscow = 'must' WHERE id = '1';"
+    fi
+fi
+
+# 22e: Business Value CHECK constraint (range 1-5)
+INVALID_BV=$(sqlite3 "$DB" "UPDATE tasks SET business_value = 6 WHERE id = '1';" 2>&1 || true)
+if echo "$INVALID_BV" | grep -qi "constraint\|check"; then
+    pass "Business Value: CHECK constraint rejects value > 5"
+else
+    CURRENT_BV=$(sqlite3 "$DB" "SELECT business_value FROM tasks WHERE id = '1';")
+    if [[ "$CURRENT_BV" == "5" ]]; then
+        pass "Business Value: CHECK constraint rejects value > 5"
+    else
+        fail "Business Value: CHECK constraint did NOT reject value > 5"
+        sqlite3 "$DB" "UPDATE tasks SET business_value = 5 WHERE id = '1';"
+    fi
+fi
+
+INVALID_BV_LOW=$(sqlite3 "$DB" "UPDATE tasks SET business_value = 0 WHERE id = '1';" 2>&1 || true)
+if echo "$INVALID_BV_LOW" | grep -qi "constraint\|check"; then
+    pass "Business Value: CHECK constraint rejects value < 1"
+else
+    CURRENT_BV_LOW=$(sqlite3 "$DB" "SELECT business_value FROM tasks WHERE id = '1';")
+    if [[ "$CURRENT_BV_LOW" == "5" ]]; then
+        pass "Business Value: CHECK constraint rejects value < 1"
+    else
+        fail "Business Value: CHECK constraint did NOT reject value < 1"
+        sqlite3 "$DB" "UPDATE tasks SET business_value = 5 WHERE id = '1';"
+    fi
+fi
+
+# 22f: MoSCoW distribution query
+MOSCOW_DIST=$(sqlite3 "$DB" "
+SELECT COALESCE(moscow, 'unset') as moscow, COUNT(*) as count
+FROM tasks WHERE archived_at IS NULL
+GROUP BY moscow
+ORDER BY CASE moscow WHEN 'must' THEN 0 WHEN 'should' THEN 1 WHEN 'could' THEN 2 WHEN 'wont' THEN 3 ELSE 4 END;
+")
+assert_not_empty "$MOSCOW_DIST" "MoSCoW: distribution query returns data"
+assert_contains "$MOSCOW_DIST" "must" "MoSCoW: distribution includes 'must'"
+
+# 22g: Business value distribution query
+BV_DIST=$(sqlite3 "$DB" "
+SELECT business_value, COUNT(*) as count
+FROM tasks WHERE archived_at IS NULL AND business_value IS NOT NULL
+GROUP BY business_value ORDER BY business_value DESC;
+")
+assert_not_empty "$BV_DIST" "Business Value: distribution query returns data"
+
+# Clean up
+sqlite3 "$DB" "UPDATE tasks SET moscow = NULL, business_value = NULL;"
+
+echo ""
+
+# ====================================================================
+# TEST 23: Acceptance Criteria (v4.0.0)
+# ====================================================================
+echo "--- Test 23: Acceptance Criteria ---"
+
+# 23a: Column exists
+AC_COL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM pragma_table_info('tasks') WHERE name = 'acceptance_criteria';")
+assert_eq "$AC_COL" "1" "Acceptance Criteria: column exists"
+
+# 23b: Default value is empty JSON array
+AC_DEFAULT=$(sqlite3 "$DB" "SELECT acceptance_criteria FROM tasks WHERE id = '1';")
+assert_eq "$AC_DEFAULT" "[]" "Acceptance Criteria: default is '[]'"
+
+# 23c: Set acceptance criteria
+sqlite3 "$DB" "
+UPDATE tasks SET acceptance_criteria = json_array(
+    'Users can log in with valid credentials',
+    'Invalid credentials show error message',
+    'JWT token expires after configured TTL'
+) WHERE id = '1.1';
+"
+AC_VALUE=$(sqlite3 "$DB" "SELECT acceptance_criteria FROM tasks WHERE id = '1.1';")
+assert_contains "$AC_VALUE" "JWT token expires" "Acceptance Criteria: stored correctly"
+
+# 23d: JSON array length
+AC_LENGTH=$(sqlite3 "$DB" "SELECT json_array_length(acceptance_criteria) FROM tasks WHERE id = '1.1';")
+assert_eq "$AC_LENGTH" "3" "Acceptance Criteria: has 3 criteria"
+
+# 23e: Access individual criterion
+FIRST_AC=$(sqlite3 "$DB" "SELECT json_extract(acceptance_criteria, '\$[0]') FROM tasks WHERE id = '1.1';")
+assert_eq "$FIRST_AC" "Users can log in with valid credentials" "Acceptance Criteria: first criterion accessible"
+
+# 23f: Add a criterion
+sqlite3 "$DB" "
+UPDATE tasks SET
+    acceptance_criteria = json_insert(acceptance_criteria, '\$[#]', 'Rate limiting enforced on login endpoint'),
+    updated_at = datetime('now')
+WHERE id = '1.1';
+"
+AC_LENGTH_AFTER=$(sqlite3 "$DB" "SELECT json_array_length(acceptance_criteria) FROM tasks WHERE id = '1.1';")
+assert_eq "$AC_LENGTH_AFTER" "4" "Acceptance Criteria: criterion appended"
+
+# 23g: Query tasks with acceptance criteria
+TASKS_WITH_AC=$(sqlite3 "$DB" "
+SELECT id, title FROM tasks
+WHERE json_array_length(acceptance_criteria) > 0 AND archived_at IS NULL;
+")
+assert_contains "$TASKS_WITH_AC" "1.1" "Acceptance Criteria: query finds tasks with criteria"
+
+# Clean up
+sqlite3 "$DB" "UPDATE tasks SET acceptance_criteria = '[]' WHERE id = '1.1';"
+
+echo ""
+
+# ====================================================================
+# TEST 24: Dependency Types (v4.0.0)
+# ====================================================================
+echo "--- Test 24: Dependency Types ---"
+
+# 24a: Column exists
+DT_COL=$(sqlite3 "$DB" "SELECT COUNT(*) FROM pragma_table_info('tasks') WHERE name = 'dependency_types';")
+assert_eq "$DT_COL" "1" "Dependency Types: column exists"
+
+# 24b: Default value is empty JSON object
+DT_DEFAULT=$(sqlite3 "$DB" "SELECT dependency_types FROM tasks WHERE id = '1';")
+assert_eq "$DT_DEFAULT" "{}" "Dependency Types: default is '{}'"
+
+# 24c: Set dependency types
+sqlite3 "$DB" "
+UPDATE tasks SET
+    dependencies = '[\"1.1\", \"2.1\"]',
+    dependency_types = json_object('1.1', 'hard', '2.1', 'soft')
+WHERE id = '1.2';
+"
+DT_VALUE=$(sqlite3 "$DB" "SELECT dependency_types FROM tasks WHERE id = '1.2';")
+assert_contains "$DT_VALUE" "hard" "Dependency Types: stored correctly"
+
+# 24d: Access specific dependency type (use json_each for dotted keys)
+DEP_TYPE_11=$(sqlite3 "$DB" "SELECT je.value FROM json_each((SELECT dependency_types FROM tasks WHERE id = '1.2')) je WHERE je.key = '1.1';")
+assert_eq "$DEP_TYPE_11" "hard" "Dependency Types: 1.1 is hard"
+
+DEP_TYPE_21=$(sqlite3 "$DB" "SELECT je.value FROM json_each((SELECT dependency_types FROM tasks WHERE id = '1.2')) je WHERE je.key = '2.1';")
+assert_eq "$DEP_TYPE_21" "soft" "Dependency Types: 2.1 is soft"
+
+# 24e: Hard dependency blocks (unmet hard dep = task not available)
+# Task 1.1 is 'done', so its hard dep is met. Task 2.1 is 'planned', so soft dep is unmet but allowed.
+HARD_BLOCK_QUERY=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT NOT EXISTS (
+    SELECT 1 FROM json_each(t.dependencies) d
+    WHERE d.value NOT IN (SELECT id FROM done_ids)
+      AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+) as deps_met
+FROM tasks t WHERE t.id = '1.2';
+")
+assert_eq "$HARD_BLOCK_QUERY" "1" "Dependency Types: hard deps met (1.1 is done)"
+
+# 24f: Backward compatibility (missing type defaults to hard)
+sqlite3 "$DB" "
+UPDATE tasks SET
+    dependencies = '[\"3.1\"]',
+    dependency_types = '{}'
+WHERE id = '1.2';
+"
+# 3.1 is 'planned' (not done), and its type defaults to 'hard', so task should be blocked
+COMPAT_QUERY=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT NOT EXISTS (
+    SELECT 1 FROM json_each(t.dependencies) d
+    WHERE d.value NOT IN (SELECT id FROM done_ids)
+      AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+) as deps_met
+FROM tasks t WHERE t.id = '1.2';
+")
+assert_eq "$COMPAT_QUERY" "0" "Dependency Types: missing type defaults to hard (blocks)"
+
+# 24g: Soft dependency does not block
+sqlite3 "$DB" "
+UPDATE tasks SET
+    dependencies = '[\"3.1\"]',
+    dependency_types = json_object('3.1', 'soft')
+WHERE id = '1.2';
+"
+SOFT_QUERY=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT NOT EXISTS (
+    SELECT 1 FROM json_each(t.dependencies) d
+    WHERE d.value NOT IN (SELECT id FROM done_ids)
+      AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+) as deps_met
+FROM tasks t WHERE t.id = '1.2';
+")
+assert_eq "$SOFT_QUERY" "1" "Dependency Types: soft dep does not block"
+
+# 24h: Informational dependency does not block
+sqlite3 "$DB" "
+UPDATE tasks SET
+    dependencies = '[\"3.1\"]',
+    dependency_types = json_object('3.1', 'informational')
+WHERE id = '1.2';
+"
+INFO_QUERY=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT NOT EXISTS (
+    SELECT 1 FROM json_each(t.dependencies) d
+    WHERE d.value NOT IN (SELECT id FROM done_ids)
+      AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+) as deps_met
+FROM tasks t WHERE t.id = '1.2';
+")
+assert_eq "$INFO_QUERY" "1" "Dependency Types: informational dep does not block"
+
+# Restore original dependencies
+sqlite3 "$DB" "UPDATE tasks SET dependencies = '[\"1.1\"]', dependency_types = '{}' WHERE id = '1.2';"
+
+echo ""
+
+# ====================================================================
+# TEST 25: Milestone-scoped next task (v4.0.0)
+# ====================================================================
+echo "--- Test 25: Milestone-scoped next task ---"
+
+# Setup: Assign milestones to specific leaf tasks
+# MS-001 (active): Infrastructure tasks (critical priority)
+# MS-002 (planned): Dashboard tasks (medium priority)
+sqlite3 "$DB" "
+UPDATE tasks SET milestone_id = 'MS-001', moscow = 'must', business_value = 5 WHERE id = '3.1';
+UPDATE tasks SET milestone_id = 'MS-001', moscow = 'must', business_value = 4 WHERE id = '1.3.1';
+UPDATE tasks SET milestone_id = 'MS-002', moscow = 'should', business_value = 3 WHERE id = '2.1';
+UPDATE tasks SET milestone_id = 'MS-002', moscow = 'should', business_value = 5 WHERE id = '2.3';
+"
+
+# 25a: Milestone-scoped next task prefers active milestone
+NEXT_MS=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+),
+active_milestone AS (
+    SELECT id FROM milestones WHERE status IN ('active', 'planned') ORDER BY phase_order LIMIT 1
+)
+SELECT t.id, t.title, t.milestone_id FROM tasks t
+WHERE t.archived_at IS NULL
+  AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+  AND NOT EXISTS (
+      SELECT 1 FROM json_each(t.dependencies) d
+      WHERE d.value NOT IN (SELECT id FROM done_ids)
+        AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+  )
+ORDER BY
+  CASE WHEN t.milestone_id = (SELECT id FROM active_milestone) THEN 0
+       WHEN t.milestone_id IS NOT NULL THEN 1
+       ELSE 2 END,
+  CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+  COALESCE(t.business_value, 3) DESC,
+  CASE t.complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
+  t.id
+LIMIT 1;
+")
+NEXT_MS_ID=$(echo "$NEXT_MS" | cut -d'|' -f1)
+NEXT_MS_MILESTONE=$(echo "$NEXT_MS" | cut -d'|' -f3)
+assert_eq "$NEXT_MS_MILESTONE" "MS-001" "Milestone-scoped: next task is from active milestone"
+assert_eq "$NEXT_MS_ID" "3.1" "Milestone-scoped: 3.1 (MS-001, critical) preferred over 2.1 (MS-002)"
+
+# 25b: With MS-001 leaf tasks done, falls back to MS-002
+sqlite3 "$DB" "UPDATE tasks SET status = 'done' WHERE id IN ('3.1', '1.3.1');"
+
+FALLBACK_MS=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+),
+active_milestone AS (
+    SELECT id FROM milestones WHERE status IN ('active', 'planned') ORDER BY phase_order LIMIT 1
+)
+SELECT t.id, t.milestone_id FROM tasks t
+WHERE t.archived_at IS NULL
+  AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+  AND NOT EXISTS (
+      SELECT 1 FROM json_each(t.dependencies) d
+      WHERE d.value NOT IN (SELECT id FROM done_ids)
+        AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+  )
+ORDER BY
+  CASE WHEN t.milestone_id = (SELECT id FROM active_milestone) THEN 0
+       WHEN t.milestone_id IS NOT NULL THEN 1
+       ELSE 2 END,
+  CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+  COALESCE(t.business_value, 3) DESC,
+  CASE t.complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
+  t.id
+LIMIT 1;
+")
+FALLBACK_MS_MILESTONE=$(echo "$FALLBACK_MS" | cut -d'|' -f2)
+assert_eq "$FALLBACK_MS_MILESTONE" "MS-002" "Milestone-scoped: falls back to MS-002 when MS-001 tasks done"
+
+# 25c: Business value tiebreaker within same milestone
+# 2.1 (bv=3) vs 2.3 (bv=5) - both MS-002, same priority, 2.3 should win on bv
+# Make 2.3's dep on 2.1 soft so it doesn't block
+sqlite3 "$DB" "UPDATE tasks SET dependency_types = json_object('2.1', 'soft') WHERE id = '2.3';"
+
+BV_TIEBREAK=$(sqlite3 "$DB" "
+WITH done_ids AS (
+    SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+)
+SELECT t.id FROM tasks t
+WHERE t.archived_at IS NULL
+  AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+  AND NOT EXISTS (
+      SELECT 1 FROM json_each(t.dependencies) d
+      WHERE d.value NOT IN (SELECT id FROM done_ids)
+        AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+  )
+  AND t.milestone_id = 'MS-002'
+ORDER BY
+  COALESCE(t.business_value, 3) DESC,
+  t.id
+LIMIT 1;
+")
+assert_eq "$BV_TIEBREAK" "2.3" "Milestone-scoped: business_value=5 wins over business_value=3"
+
+# Restore original statuses and values
+sqlite3 "$DB" "
+UPDATE tasks SET status = 'done' WHERE id = '1.1';
+UPDATE tasks SET status = 'planned' WHERE id IN ('3.1', '1.3.1');
+UPDATE tasks SET milestone_id = NULL, moscow = NULL, business_value = NULL, dependency_types = '{}';
+"
+
+# Clean up milestones
+sqlite3 "$DB" "DELETE FROM milestones;"
 
 echo ""
 

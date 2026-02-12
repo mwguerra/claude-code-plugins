@@ -1,8 +1,46 @@
--- Taskmanager SQLite Schema v3.1.0
+-- Taskmanager SQLite Schema v4.0.0
 -- This file defines the complete database structure
 
 PRAGMA foreign_keys = ON;
 PRAGMA journal_mode = WAL;
+
+-- Milestones table
+CREATE TABLE IF NOT EXISTS milestones (
+    id TEXT PRIMARY KEY,                -- "MS-001", "MS-002"
+    title TEXT NOT NULL,
+    description TEXT,
+    acceptance_criteria TEXT DEFAULT '[]',  -- JSON: what "done" means for this milestone
+    target_date TEXT,                   -- ISO 8601 (optional)
+    status TEXT NOT NULL DEFAULT 'planned'
+        CHECK (status IN ('planned', 'active', 'completed', 'canceled')),
+    phase_order INTEGER NOT NULL,       -- 1, 2, 3... determines execution sequence
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_milestones_status ON milestones(status);
+CREATE INDEX IF NOT EXISTS idx_milestones_order ON milestones(phase_order);
+
+-- Plan analyses table
+CREATE TABLE IF NOT EXISTS plan_analyses (
+    id TEXT PRIMARY KEY,                -- "PA-001", "PA-002"
+    prd_source TEXT NOT NULL,           -- file path, folder path, or "prompt"
+    prd_hash TEXT,                      -- SHA-256 for change detection
+    tech_stack TEXT DEFAULT '[]',       -- JSON: detected technologies
+    assumptions TEXT DEFAULT '[]',      -- JSON: [{description, confidence, impact}]
+    risks TEXT DEFAULT '[]',            -- JSON: [{description, severity, likelihood, mitigation}]
+    ambiguities TEXT DEFAULT '[]',      -- JSON: [{requirement, question, resolution}]
+    nfrs TEXT DEFAULT '[]',             -- JSON: [{category, requirement, priority}]
+    scope_in TEXT,
+    scope_out TEXT,
+    cross_cutting TEXT DEFAULT '[]',    -- JSON: [{concern, affected_epics, strategy}]
+    decisions TEXT DEFAULT '[]',        -- JSON: [{question, answer, rationale, memory_id}]
+    milestone_ids TEXT DEFAULT '[]',    -- JSON: milestone IDs created from this analysis
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_plan_analyses_hash ON plan_analyses(prd_hash);
 
 -- Tasks table
 CREATE TABLE IF NOT EXISTS tasks (
@@ -36,13 +74,21 @@ CREATE TABLE IF NOT EXISTS tasks (
     tags TEXT DEFAULT '[]',
     dependencies TEXT DEFAULT '[]',
     dependency_analysis TEXT,
-    meta TEXT DEFAULT '{}'
+    meta TEXT DEFAULT '{}',
+
+    -- v4.0.0 additions
+    milestone_id TEXT REFERENCES milestones(id),
+    acceptance_criteria TEXT DEFAULT '[]',   -- JSON: what "done" means (product perspective)
+    moscow TEXT CHECK (moscow IN ('must', 'should', 'could', 'wont')),
+    business_value INTEGER CHECK (business_value BETWEEN 1 AND 5),
+    dependency_types TEXT DEFAULT '{}'       -- JSON: {"1.1": "hard", "1.2": "soft"}
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_archived ON tasks(archived_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_tasks_milestone ON tasks(milestone_id);
 
 -- Memories table
 CREATE TABLE IF NOT EXISTS memories (
@@ -145,4 +191,4 @@ CREATE TABLE IF NOT EXISTS schema_version (
     applied_at TEXT DEFAULT (datetime('now'))
 );
 
-INSERT OR IGNORE INTO schema_version (version) VALUES ('3.1.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('4.0.0');

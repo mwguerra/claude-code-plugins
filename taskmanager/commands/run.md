@@ -65,21 +65,34 @@ If task ID provided, load it:
 SELECT * FROM tasks WHERE id = '<task-id>' AND archived_at IS NULL;
 ```
 
-If no task ID, find next available:
+If no task ID, find next available (milestone-aware, dependency-type-aware):
 ```sql
 WITH done_ids AS (
     SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+),
+active_milestone AS (
+    SELECT id FROM milestones
+    WHERE status IN ('active', 'planned')
+    ORDER BY phase_order
+    LIMIT 1
 )
 SELECT * FROM tasks t
 WHERE t.archived_at IS NULL
   AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
   AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
-  AND (t.dependencies = '[]' OR NOT EXISTS (
+  -- Only check hard dependencies (soft/informational don't block)
+  AND NOT EXISTS (
       SELECT 1 FROM json_each(t.dependencies) d
       WHERE d.value NOT IN (SELECT id FROM done_ids)
-  ))
+        AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+  )
 ORDER BY
+    -- Prefer tasks from active milestone
+    CASE WHEN t.milestone_id = (SELECT id FROM active_milestone) THEN 0
+         WHEN t.milestone_id IS NOT NULL THEN 1
+         ELSE 2 END,
     CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+    COALESCE(t.business_value, 3) DESC,
     CASE t.complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
     t.id
 LIMIT 1;
@@ -91,19 +104,30 @@ Loop up to N times, each iteration finding the next available task using the sam
 
 ### 3. Check dependencies (single task mode with explicit ID)
 
+Check dependencies with type awareness:
+
 ```sql
-SELECT d.value FROM tasks t, json_each(t.dependencies) d
+-- Hard dependencies (block execution)
+SELECT d.value as dep_id,
+    COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') as dep_type,
+    dep_t.status as dep_status
+FROM tasks t, json_each(t.dependencies) d
+LEFT JOIN tasks dep_t ON dep_t.id = d.value
 WHERE t.id = '<task-id>'
   AND d.value NOT IN (
       SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
   );
 ```
 
-If unmet dependencies exist:
-- Use AskUserQuestion to ask how to proceed:
+Handle by dependency type:
+- **hard** (or unspecified): Block execution. Use AskUserQuestion to ask how to proceed:
   - "Execute a dependency task first"
   - "Mark dependencies as done and continue"
   - "Abort execution"
+- **soft**: Warn the user but allow execution to proceed:
+  - Display: "Soft dependency <id> (<title>) is not yet complete. Proceeding with warning."
+- **informational**: No blocking, display for context only:
+  - Display: "FYI: Related task <id> (<title>) is still in progress."
 
 ### 4. Load deferrals and memories (pre-execution)
 
@@ -133,11 +157,34 @@ DEFERRED WORK FOR THIS TASK:
 
 These deferrals represent **requirements** the agent must incorporate into the task execution. They are not optional.
 
-#### 4b. Load and apply memories
+#### 4b. Display acceptance criteria
+
+If the task has `acceptance_criteria` (non-empty JSON array), display them prominently:
+
+```
+ACCEPTANCE CRITERIA:
+  1. User can log in with email and password
+  2. Login page shows error for invalid credentials
+  3. Session persists across browser refresh
+```
+
+These are the product-level "done" conditions that the implementation must satisfy.
+
+#### 4c. Load and apply memories
 
 - Use `taskmanager-memory` skill to query relevant memories.
 - Load global memories (`importance >= 3`).
 - Load task-scoped memories from `state.task_memory`.
+- Load research memories linked to this task via `scope.tasks`:
+  ```sql
+  SELECT id, title, body, importance FROM memories
+  WHERE status = 'active'
+    AND EXISTS (
+      SELECT 1 FROM json_each(json_extract(scope, '$.tasks')) t
+      WHERE t.value = '<task-id>'
+    )
+  ORDER BY importance DESC;
+  ```
 - Display summary of applicable memories.
 - Increment `use_count` and update `last_used_at` for applied memories.
 
@@ -165,6 +212,9 @@ Propagate in-progress status to ancestors using recursive CTE.
 - Perform code changes, file edits, or other work implied by the task.
 - Apply loaded memories as constraints.
 - If `test_strategy` exists, follow it to verify implementation.
+- Before marking task as complete, verify all `acceptance_criteria` are met:
+  - Check each criterion from the JSON array.
+  - If any criterion is not satisfied, note what's missing before asking to complete.
 
 ### 7. Post-execution review (memories and deferrals)
 

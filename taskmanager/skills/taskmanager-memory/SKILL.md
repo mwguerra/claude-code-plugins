@@ -48,7 +48,7 @@ The `memories` table has these columns:
 | `confidence` | REAL | 0-1 (how sure we are), default 0.8 |
 | `status` | TEXT | One of: `active`, `deprecated`, `superseded`, `draft` |
 | `superseded_by` | TEXT | ID of newer memory (if superseded) |
-| `scope` | TEXT (JSON) | Object with: `project`, `files`, `tasks`, `commands`, `agents`, `domains` |
+| `scope` | TEXT (JSON) | Object with: `project`, `files`, `tasks`, `commands`, `agents`, `domains`. The `tasks` field links memories to specific task IDs for auto-loading during execution. |
 | `tags` | TEXT (JSON) | Array of free-form tags, e.g. `["testing", "laravel"]` |
 | `links` | TEXT (JSON) | Array of links to docs/PRs/etc |
 | `use_count` | INTEGER | Usage counter, default 0 |
@@ -194,6 +194,31 @@ When a user or another skill makes a decision that should persist for future wor
    ```
 
 When in doubt whether something deserves a memory, ask: **"Will this decision/convention matter for future tasks?"** If yes, create a memory.
+
+#### Macro Decision Memory Example
+
+When the plan command's macro architectural questions (Phase 3) capture a user decision:
+
+```sql
+INSERT INTO memories (
+  id, title, kind, why_important, body,
+  source_type, source_name, source_via, auto_updatable,
+  importance, confidence, status,
+  scope, tags
+) VALUES (
+  'M-0012',
+  'Use Redis for queue driver',
+  'architecture',
+  'Affects all background job processing',
+  'User chose Redis as the queue driver during macro analysis. Rationale: existing Redis infrastructure, supports priorities and delayed jobs.',
+  'user', 'developer', 'taskmanager:plan:macro-questions', 0,
+  4, 1.0, 'active',
+  '{"domains": ["infrastructure", "queues"], "tasks": ["1.3", "2.1"]}',
+  '["redis", "queue", "architecture"]'
+);
+```
+
+Note the `scope.tasks` field linking this memory to relevant task IDs. During task execution, the `run` command auto-loads memories where the current task ID appears in `scope.tasks`.
 
 ### 4. Update or Supersede an Existing Memory
 

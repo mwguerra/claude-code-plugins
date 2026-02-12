@@ -4,7 +4,7 @@ description: >
   and rules for .taskmanager/taskmanager.db (SQLite database) and logs.
   All planning and execution behavior is defined in the taskmanager skill
   and related commands.
-version: 3.1.0
+version: 4.0.0
 ---
 
 # MWGuerra Task Manager – Agent Spec
@@ -75,15 +75,23 @@ Project configuration is stored in `.taskmanager/config.json`. Commands should r
 
 ```json
 {
-  "version": "3.1.0",
+  "version": "4.0.0",
   "defaults": {
     "priority": "medium",
     "type": "feature",
     "complexity_threshold_for_expansion": "M",
-    "max_subtask_depth": 3
+    "max_subtask_depth": 3,
+    "moscow": "must"
   },
   "dashboard": {
     "next_tasks_count": 5
+  },
+  "planning": {
+    "require_prd_analysis": true,
+    "ask_macro_questions": true
+  },
+  "milestones": {
+    "execution_mode": "flexible"
   }
 }
 ```
@@ -162,6 +170,8 @@ All data is stored in `.taskmanager/taskmanager.db`, a SQLite database.
 
 | Table | Purpose |
 |-------|---------|
+| `milestones` | Delivery phases (MVP, Enhancement, Nice-to-have) with MoSCoW grouping |
+| `plan_analyses` | PRD analysis artifacts (assumptions, risks, decisions, tech stack) |
 | `tasks` | All tasks (active and archived via `archived_at` column) |
 | `memories` | Project memories with metadata |
 | `memories_fts` | FTS5 virtual table for full-text search on memories |
@@ -195,9 +205,17 @@ CREATE TABLE tasks (
   dependencies TEXT DEFAULT '[]',   -- JSON array of task IDs
   dependency_analysis TEXT,
   meta TEXT DEFAULT '{}',           -- JSON object for extensibility
+  milestone_id TEXT,                -- FK to milestones(id), phase assignment
+  acceptance_criteria TEXT DEFAULT '[]',  -- JSON array: what "done" means (product perspective)
+  moscow TEXT,                      -- must / should / could / wont
+  business_value INTEGER,           -- 1-5 scale (1=low, 5=critical)
+  dependency_types TEXT DEFAULT '{}',    -- JSON: {"1.1": "hard", "1.2": "soft"}
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+  FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  FOREIGN KEY (milestone_id) REFERENCES milestones(id),
+  CHECK (moscow IN ('must', 'should', 'could', 'wont') OR moscow IS NULL),
+  CHECK (business_value BETWEEN 1 AND 5 OR business_value IS NULL)
 );
 ```
 
@@ -490,7 +508,113 @@ FROM deferrals WHERE status = 'pending';
 
 ---
 
-## 5. State Table
+## 5. Milestones Table
+
+Milestones represent delivery phases (MVP, Enhancement, Nice-to-have) that group tasks by MoSCoW classification.
+
+### 5.1 Milestones Table Schema
+
+```sql
+CREATE TABLE milestones (
+  id TEXT PRIMARY KEY,              -- Format: "MS-001", "MS-002", etc.
+  title TEXT NOT NULL,
+  description TEXT,
+  acceptance_criteria TEXT DEFAULT '[]',  -- JSON: what "done" means for this milestone
+  target_date TEXT,                 -- ISO 8601 (optional)
+  status TEXT NOT NULL DEFAULT 'planned'
+    CHECK (status IN ('planned', 'active', 'completed', 'canceled')),
+  phase_order INTEGER NOT NULL,     -- 1, 2, 3... determines execution sequence
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+**Status values:**
+- `planned` — Milestone defined but not yet started
+- `active` — Currently being worked on
+- `completed` — All tasks within milestone are done
+- `canceled` — Milestone abandoned
+
+**Invariants:**
+- `phase_order` determines execution sequence (1 = first, 2 = second, etc.)
+- MoSCoW mapping: `must` -> MS-001 (MVP), `should` -> MS-002 (Enhancement), `could` -> MS-003 (Nice-to-have)
+- Tasks with `wont` MoSCoW get no milestone (backlog, status: draft)
+- A milestone can only be `completed` when all its tasks are terminal
+
+### 5.2 Milestone SQL Examples
+
+```sql
+-- Create a milestone
+INSERT INTO milestones (id, title, description, phase_order, status)
+VALUES ('MS-001', 'MVP / Core', 'Must-have features for initial release', 1, 'planned');
+
+-- Get milestones with task counts
+SELECT m.id, m.title, m.status, m.phase_order,
+    COUNT(t.id) as total_tasks,
+    SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done_tasks
+FROM milestones m
+LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+GROUP BY m.id
+ORDER BY m.phase_order;
+
+-- Get active milestone
+SELECT * FROM milestones WHERE status = 'active' ORDER BY phase_order LIMIT 1;
+```
+
+---
+
+## 6. Plan Analyses Table
+
+Plan analyses store PRD analysis artifacts including assumptions, risks, decisions, and detected ambiguities.
+
+### 6.1 Plan Analyses Table Schema
+
+```sql
+CREATE TABLE plan_analyses (
+  id TEXT PRIMARY KEY,              -- Format: "PA-001", "PA-002", etc.
+  prd_source TEXT NOT NULL,         -- file path, folder path, or "prompt"
+  prd_hash TEXT,                    -- SHA-256 for change detection
+  tech_stack TEXT DEFAULT '[]',     -- JSON: detected technologies
+  assumptions TEXT DEFAULT '[]',    -- JSON: [{description, confidence, impact}]
+  risks TEXT DEFAULT '[]',          -- JSON: [{description, severity, likelihood, mitigation}]
+  ambiguities TEXT DEFAULT '[]',    -- JSON: [{requirement, question, resolution}]
+  nfrs TEXT DEFAULT '[]',           -- JSON: [{category, requirement, priority}]
+  scope_in TEXT,
+  scope_out TEXT,
+  cross_cutting TEXT DEFAULT '[]',  -- JSON: [{concern, affected_epics, strategy}]
+  decisions TEXT DEFAULT '[]',      -- JSON: [{question, answer, rationale, memory_id}]
+  milestone_ids TEXT DEFAULT '[]',  -- JSON: milestone IDs created from this analysis
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+**Invariants:**
+- `prd_hash` enables reuse detection — same hash means same PRD content
+- `decisions` array links to memory IDs for persistent decision storage
+- `milestone_ids` tracks which milestones were created from this analysis
+- All JSON columns default to empty arrays `'[]'`
+
+### 6.2 Plan Analyses SQL Examples
+
+```sql
+-- Check for existing analysis by PRD hash
+SELECT * FROM plan_analyses WHERE prd_hash = '<hash>' ORDER BY created_at DESC LIMIT 1;
+
+-- Insert a new analysis
+INSERT INTO plan_analyses (id, prd_source, prd_hash, tech_stack, assumptions, risks)
+VALUES ('PA-001', 'docs/prd.md', '<sha256>', '["laravel","react","redis"]',
+        '[{"description": "Users have modern browsers", "confidence": "high", "impact": "low"}]',
+        '[{"description": "Redis downtime", "severity": "medium", "likelihood": "low", "mitigation": "Add fallback cache"}]');
+
+-- Get next analysis ID
+SELECT 'PA-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1)
+FROM plan_analyses;
+```
+
+---
+
+## 7. State Table
 
 The `state` table stores execution state as a single row.
 
@@ -626,7 +750,7 @@ CREATE TABLE schema_version (
 );
 ```
 
-Current version: `3.1.0`.
+Current version: `4.0.0`.
 
 ---
 
@@ -637,7 +761,7 @@ All planning, execution, dashboard, next-task, and other features must:
 1. Treat this document as the **contract** for:
 
    * `taskmanager.db` SQLite database
-   * Tables: `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`
+   * Tables: `milestones`, `plan_analyses`, `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`
    * Logging rules
 2. Use proper SQL queries to read/write data
 3. Delegate all behavior to the plugin's skills and commands:
@@ -653,7 +777,21 @@ All planning, execution, dashboard, next-task, and other features must:
    * Resolve all pending deferrals before marking a task as terminal
    * Update deferral references when tasks are moved/re-IDed
 
-5. For memory operations:
+5. For milestone operations:
+
+   * Tasks are grouped into milestones via `milestone_id` FK
+   * Milestone status is derived from contained tasks (similar to parent-child status propagation)
+   * `execution_mode` in config controls behavior: `flexible` (prefer active milestone) or `sequential` (gate on milestone order)
+   * MoSCoW classification on tasks drives milestone assignment
+
+6. For plan analysis operations:
+
+   * Store PRD analysis results in `plan_analyses` table
+   * Use `prd_hash` for change detection (skip re-analysis for unchanged PRDs)
+   * Decisions from analysis are stored both in `plan_analyses.decisions` and as memories
+   * Cross-cutting concerns generate dedicated task epics
+
+7. For memory operations:
 
    * Use the `taskmanager-memory` skill for all memory management
    * Use FTS5 search via `memories_fts` table for content matching

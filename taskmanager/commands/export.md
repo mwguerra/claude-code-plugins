@@ -53,7 +53,7 @@ SELECT * FROM memories ORDER BY id;
 
 ```bash
 {
-    echo '{"version": "3.1.0", "exported_at": "'$(date -Iseconds)'",'
+    echo '{"version": "4.0.0", "exported_at": "'$(date -Iseconds)'",'
     echo '"tasks": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM tasks ORDER BY id;"
     echo ','
@@ -62,6 +62,12 @@ SELECT * FROM memories ORDER BY id;
     echo ','
     echo '"deferrals": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM deferrals ORDER BY id;"
+    echo ','
+    echo '"milestones": '
+    sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM milestones ORDER BY phase_order;"
+    echo ','
+    echo '"plan_analyses": '
+    sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM plan_analyses ORDER BY id;"
     echo ','
     echo '"state": '
     sqlite3 -json .taskmanager/taskmanager.db "SELECT * FROM state;"
@@ -85,7 +91,8 @@ Generate one markdown file per task in `.taskmanager/docs/tasks/`.
           complexity_scale, complexity_reasoning,
           estimate_seconds, duration_seconds,
           started_at, completed_at,
-          tags, dependencies
+          tags, dependencies,
+          milestone_id, acceptance_criteria, moscow, business_value, dependency_types
    FROM tasks
    WHERE archived_at IS NULL
    ORDER BY id;
@@ -107,6 +114,15 @@ Generate one markdown file per task in `.taskmanager/docs/tasks/`.
    | **Estimate** | <estimate formatted as hours> |
    | **Dependencies** | <comma-separated list or "None"> |
    | **Tags** | <comma-separated list or "None"> |
+   | **Milestone** | <milestone_id or "None"> |
+   | **MoSCoW** | <moscow or "Unset"> |
+   | **Business Value** | <business_value or "Unset"> |
+
+   ## Acceptance Criteria
+
+   <For each criterion in acceptance_criteria JSON array:>
+   - [ ] <criterion>
+   <Or "No acceptance criteria defined" if empty>
 
    ## Description
 

@@ -151,12 +151,14 @@ Create one or more memories from the research findings:
        '<full research report>',
        'agent', 'research-command', 'taskmanager:research', 1,
        <importance>, <confidence>, 'active',
-       '<scope-json>',
+       '<scope-json>',  -- MUST include scope.tasks with relevant task IDs: {"tasks": ["1.2", "3.1"]}
        '<tags-json>',
        '<links-json>',
        datetime('now'), datetime('now')
    );
    ```
+
+   **Important:** The `scope` JSON MUST populate `scope.tasks` with relevant task IDs so that research memories are automatically loaded during task execution (see `run.md` Step 4c).
 
 2. **If task-scoped** (`--task <id>`): Also add to task memory:
    ```sql
@@ -179,6 +181,8 @@ Create one or more memories from the research findings:
    - Architectural decisions -> `kind = 'architecture'`
    - Coding conventions -> `kind = 'convention'`
    - Known pitfalls -> `kind = 'anti-pattern'`
+
+   All research memories MUST set `source_via = 'taskmanager:research'` consistently for traceability.
 
 ### 6. Present to the user
 

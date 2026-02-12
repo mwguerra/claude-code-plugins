@@ -1,6 +1,6 @@
 ---
 allowed-tools: Skill(taskmanager), Bash
-argument-hint: "<id> [--status <s>] [--title \"...\"] [--prompt \"...\"] [--scope up|down] [--tag add:<t>] [--depends-on <id>] [--move-to <id>] [--defer \"...\"] | [--tags] [--validate-deps]"
+argument-hint: "<id> [--status <s>] [--title \"...\"] [--prompt \"...\"] [--scope up|down] [--tag add:<t>] [--depends-on <id>] [--move-to <id>] [--defer \"...\"] [--moscow <m>] [--business-value <n>] [--milestone <id>] [--acceptance-criteria \"...\"] [--dep-type <dep-id> <type>] | [--tags] [--validate-deps] [--milestone-create \"...\"] [--milestone-status <id> <status>]"
 description: Update task fields, status, scope, tags, dependencies, or position
 ---
 
@@ -30,6 +30,17 @@ All operations use the SQLite database at `.taskmanager/taskmanager.db`.
 - `update <id> --priority <critical|high|medium|low>` → update priority
 - `update <id> --type <feature|bug|chore|analysis|spike>` → update type
 - `update <id> --complexity <XS|S|M|L|XL>` → update complexity scale
+
+### v4.0.0 field updates
+- `update <id> --moscow <must|should|could|wont>` → set MoSCoW classification
+- `update <id> --business-value <1-5>` → set business value
+- `update <id> --milestone <milestone-id>` → assign to milestone
+- `update <id> --acceptance-criteria "criterion text"` → add acceptance criterion to JSON array
+- `update <id> --dep-type <dep-id> <hard|soft|informational>` → set dependency type
+
+### Milestone management
+- `update --milestone-create "title" --order N` → create a new milestone
+- `update --milestone-status <milestone-id> <planned|active|completed|canceled>` → update milestone status
 
 ### AI-assisted updates
 - `update <id> --prompt "..."` → AI rewrites the task based on prompt
@@ -114,6 +125,70 @@ WHERE id = '<task-id>';
 
 If `--complexity` is provided, re-estimate `estimate_seconds` based on new scale.
 
+### v4.0.0 field updates
+
+#### MoSCoW (--moscow):
+```sql
+UPDATE tasks SET
+    moscow = '<must|should|could|wont>',
+    updated_at = datetime('now')
+WHERE id = '<task-id>';
+```
+
+#### Business value (--business-value):
+```sql
+UPDATE tasks SET
+    business_value = <1-5>,
+    updated_at = datetime('now')
+WHERE id = '<task-id>';
+```
+
+#### Milestone assignment (--milestone):
+```sql
+-- Validate milestone exists
+SELECT COUNT(*) FROM milestones WHERE id = '<milestone-id>';
+
+UPDATE tasks SET
+    milestone_id = '<milestone-id>',
+    updated_at = datetime('now')
+WHERE id = '<task-id>';
+```
+
+#### Acceptance criteria (--acceptance-criteria):
+```sql
+UPDATE tasks SET
+    acceptance_criteria = json_insert(acceptance_criteria, '$[#]', '<criterion>'),
+    updated_at = datetime('now')
+WHERE id = '<task-id>';
+```
+
+#### Dependency type (--dep-type):
+```sql
+UPDATE tasks SET
+    dependency_types = json_set(dependency_types, '$.<dep-id>', '<hard|soft|informational>'),
+    updated_at = datetime('now')
+WHERE id = '<task-id>';
+```
+
+### Milestone management
+
+#### Create milestone (--milestone-create):
+```sql
+SELECT 'MS-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1)
+FROM milestones;
+
+INSERT INTO milestones (id, title, phase_order, status)
+VALUES ('<next-id>', '<title>', <order>, 'planned');
+```
+
+#### Update milestone status (--milestone-status):
+```sql
+UPDATE milestones SET
+    status = '<new-status>',
+    updated_at = datetime('now')
+WHERE id = '<milestone-id>';
+```
+
 ### AI-assisted update (--prompt)
 
 1. Load full task context from database.
@@ -190,7 +265,18 @@ ORDER BY CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium'
 ### Dependency operations
 
 #### validate (--validate-deps):
-Check for: missing references, self-references, circular dependencies, archived non-terminal references.
+Check for: missing references, self-references, circular dependencies, archived non-terminal references, dependency_types consistency.
+
+**Dependency types consistency check:**
+```sql
+-- Find entries in dependency_types that are not in dependencies array
+SELECT t.id, key as orphaned_dep_type
+FROM tasks t, json_each(t.dependency_types) dt
+WHERE t.archived_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM json_each(t.dependencies) d WHERE d.value = dt.key
+  );
+```
 
 ```sql
 -- Missing references
@@ -381,6 +467,24 @@ taskmanager:update 1.3 --remove-dep 1.2
 
 # Move
 taskmanager:update 2.1 --move-to 3
+
+# MoSCoW and business value
+taskmanager:update 1.2 --moscow must --business-value 5
+taskmanager:update 2.1 --moscow should
+
+# Milestone assignment
+taskmanager:update 1.2 --milestone MS-001
+
+# Acceptance criteria
+taskmanager:update 1.2 --acceptance-criteria "User can log in with email and password"
+
+# Dependency types
+taskmanager:update 1.3 --dep-type 1.2 soft
+taskmanager:update 2.1 --dep-type 1.1 informational
+
+# Milestone management
+taskmanager:update --milestone-create "Sprint 4" --order 4
+taskmanager:update --milestone-status MS-001 active
 
 # Deferrals
 taskmanager:update 1.2 --defer "Add OAuth support" --to 3.1 --reason "Too complex for MVP"

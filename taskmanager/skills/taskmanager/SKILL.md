@@ -10,7 +10,7 @@ You are the **MWGuerra Task Manager** for this project.
 Your job is to:
 
 1. Treat `.taskmanager/taskmanager.db` (SQLite database) as the **source of truth** for all tasks, state, and memories.
-2. The database contains tables: `tasks`, `state`, `memories`, `memories_fts`, `deferrals`, and `schema_version`.
+2. The database contains tables: `milestones`, `plan_analyses`, `tasks`, `state`, `memories`, `memories_fts`, `deferrals`, and `schema_version`.
 3. Always consider relevant **active** memories before planning, refactoring, or making cross-cutting changes.
 4. When asked to plan, **interpret the input as PRD content**, whether it:
    - Comes from an actual file path (markdown), or
@@ -35,7 +35,7 @@ Always work relative to the project root.
 
 ### Database Schema
 
-The database schema is defined in `schemas/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`.
+The database schema is defined in `schemas/schema.sql` and documented in the agent spec (`agents/taskmanager.md`). Key tables: `milestones`, `plan_analyses`, `tasks`, `memories`, `memories_fts`, `deferrals`, `state`, `schema_version`.
 
 Do not delete or modify `.taskmanager/taskmanager.db` directly except through this skill.
 
@@ -178,7 +178,7 @@ For each, decide:
 
 ---
 
-## 3. Automated priority & complexity analysis
+## 3. Automated priority, complexity, MoSCoW & business value analysis
 
 For each generated task:
 
@@ -194,6 +194,19 @@ For each generated task:
 - **M** → moderate, multiple components
 - **L** → complex, multi-step work
 - **XL** → large, risky, or multi-phase
+
+### MoSCoW classification
+- **must** → Required for the product to function; MVP scope
+- **should** → Important but not essential; second phase
+- **could** → Desirable if time permits; nice-to-have
+- **wont** → Explicitly out of scope for now; backlog
+
+### Business value (1-5 scale)
+- **5** → Critical business capability, revenue-impacting
+- **4** → High value, core user-facing feature
+- **3** → Moderate value, internal efficiency or quality
+- **2** → Low value, minor improvement
+- **1** → Minimal value, cosmetic or optional
 
 ### Rule:
 If complexity is **M, L, or XL**, you MUST:
@@ -214,6 +227,17 @@ Every task/subtask must be:
 - **Accurate** — from the PRD, not invented
 - **Implementation-ready** — clear inputs/outputs where possible
 - **Testable** — includes a `test_strategy` describing how to verify completion (e.g., unit tests, integration tests, manual verification steps)
+- **Acceptance-defined** — includes `acceptance_criteria` (JSON array) describing what "done" means from a product perspective
+
+### 4.2 Acceptance Criteria vs Test Strategy
+
+These are complementary but distinct:
+
+- **`acceptance_criteria`** (product view): What must be true for the feature to be considered complete. Written from the user/stakeholder perspective. Example: `["User can log in with email and password", "Login page shows error for invalid credentials", "Session persists across browser refresh"]`
+
+- **`test_strategy`** (engineering view): How to technically verify the implementation. Written from the developer perspective. Example: `"Pest tests for login endpoint (valid creds, invalid creds, expired token). Browser test for session persistence."`
+
+Every task MUST have both. Acceptance criteria define the *what*, test strategy defines the *how*.
 
 Bad examples:
 
@@ -316,42 +340,110 @@ This ensures that parent tasks reflect the state of their children both in **sta
 
 ---
 
-## 5. Level-by-Level Task Generation Workflow (explicit)
+## 5. Planning Workflow (6 Phases)
 
-After parsing PRD content:
+The planning workflow has 6 phases. Phases 2-4 are new and run before task generation.
 
-### **Level 1: Create top-level tasks (Epics)**  
+### Phase 1: Input & Memory Load (existing)
+
+Parse PRD input (file, folder, or prompt) and load relevant active memories. See "Planning from file, folder, OR text input" above.
+
+### Phase 2: PRD Analysis (NEW)
+
+Before generating any tasks, analyze the PRD:
+
+1. **Compute PRD content hash** (SHA-256) for reuse detection.
+2. **Check `plan_analyses`** for existing analysis with same hash. If found, reuse it.
+3. If new, analyze:
+   - **Tech stack detection** — scan PRD + codebase (composer.json, package.json, etc.)
+   - **Assumptions** — what's implied but not stated (stored as JSON: `[{description, confidence, impact}]`)
+   - **Risks** — technical, integration, scope risks with severity (JSON: `[{description, severity, likelihood, mitigation}]`)
+   - **Ambiguities** — unclear requirements (fed to Phase 3) (JSON: `[{requirement, question, resolution}]`)
+   - **NFRs** — performance, security, accessibility, monitoring (JSON: `[{category, requirement, priority}]`)
+   - **Scope boundaries** — explicit in/out of scope
+   - **Cross-cutting concerns** — what spans multiple features (JSON: `[{concern, affected_epics, strategy}]`)
+4. Store analysis in `plan_analyses` table.
+5. Create memories for confirmed decisions (kind: decision/architecture, importance: 4-5).
+
+### Phase 3: Macro Architectural Questions (NEW)
+
+For each detected technology in the stack:
+
+1. Consult the **Macro Question Bank** (see `references/MACRO-QUESTIONS.md`).
+2. Filter out questions already answered by the PRD or existing memories.
+3. Present remaining questions to user via **AskUserQuestion** (batched, 1-4 per call).
+4. Store each answer as a memory (kind per question bank, importance per table, confidence: 1.0).
+5. Update `plan_analyses.decisions` array with each answered question.
+
+This phase can be skipped with `--skip-analysis` flag.
+
+### Phase 4: Milestone Definition (NEW)
+
+After analysis and macro questions:
+
+1. Assign MoSCoW classification to each identified epic/feature.
+2. Create milestones based on MoSCoW grouping:
+   - `must` → MS-001 (MVP / Core), phase_order: 1
+   - `should` → MS-002 (Enhancement), phase_order: 2
+   - `could` → MS-003 (Nice-to-have), phase_order: 3
+   - `wont` → no milestone (tasks get status: `draft`)
+3. Set milestone `phase_order` and optional `target_date`.
+4. Insert milestones into DB.
+5. Update `plan_analyses.milestone_ids` with created milestone IDs.
+
+### Phase 5: Task Generation (ENHANCED)
+
+Level-by-level expansion with enhancements:
+
+#### **Level 1: Create top-level tasks (Epics)**
 These are broad, high-level units of work.
 
-### **Level 2: Expand each top-level task into subtasks**  
+#### **Level 2: Expand each top-level task into subtasks**
 For each top-level task:
 
-- Assess complexity & scope  
-- Create subtasks needed to fulfill the epic  
+- Assess complexity & scope
+- Create subtasks needed to fulfill the epic
 - Subtasks must be:
+  - Specific
+  - Actionable
+  - Within a single concern
 
-  - Specific  
-  - Actionable  
-  - Within a single concern  
-
-### **Level 3: Expand subtasks if necessary**  
+#### **Level 3: Expand subtasks if necessary**
 For each Level 2 subtask:
 
-- If complexity ≥ M or unclear:
-  - Create Level 3 subtasks  
-  - Ensure clarity & manageability  
+- If complexity >= M or unclear:
+  - Create Level 3 subtasks
+  - Ensure clarity & manageability
 
-### **Level N: Repeat until no task is too large**  
+#### **Level N: Repeat until no task is too large**
 You MUST continue expanding level-by-level **until:**
 
-- Each task expresses exactly one clear intent  
-- Each task can be completed in one focused unit of work  
-- Nothing is vague, ambiguous, or oversized  
+- Each task expresses exactly one clear intent
+- Each task can be completed in one focused unit of work
+- Nothing is vague, ambiguous, or oversized
 
-### Then:
+#### Enhanced task fields (v4.0.0):
 
-1. Insert the final task tree into the `tasks` table
-2. Log decisions to `.taskmanager/logs/activity.log`
+Every task generated in Phase 5 MUST include:
+- **`acceptance_criteria`** — JSON array of what "done" means (product view)
+- **`moscow`** — must / should / could / wont classification
+- **`business_value`** — 1-5 scale
+- **`milestone_id`** — inherited from epic unless overridden
+- **`dependency_types`** — JSON object classifying each dependency as hard/soft/informational
+
+#### Cross-cutting concerns epic:
+
+If Phase 2 identified cross-cutting concerns, generate a dedicated epic with subtasks for each concern (security, error handling, monitoring, logging, etc.). These tasks span multiple features and should reference the relevant epics in their descriptions.
+
+### Phase 6: Insert & Summary (ENHANCED)
+
+1. Insert the final task tree into the `tasks` table.
+2. Log decisions to `.taskmanager/logs/activity.log`.
+3. Show enhanced summary:
+   - Milestone breakdown (tasks per milestone)
+   - MoSCoW distribution
+   - Critical path highlights
+   - Analysis summary (key risks, assumptions, decisions made)
 
 ### Post-Planning Expansion
 
@@ -406,31 +498,61 @@ A **task is considered "available"** if:
 
 1. Its `status` is NOT one of: `'done'`, `'canceled'`, `'duplicate'`.
 2. It is not archived (`archived_at IS NULL`).
-3. All `dependencies` (if any) refer to tasks whose `status` is `'done'` or `'canceled'` or `'duplicate'`.
+3. All **hard** dependencies are satisfied (task status is terminal). Soft and informational dependencies do not block.
 4. It is a **leaf task**, meaning:
    - It has no children in the `tasks` table, or
    - All of its children are in one of: `'done'`, `'canceled'`, `'duplicate'`.
 
-SQL query for finding the next available task:
+#### Dependency type handling:
+
+- **hard** (default) — Blocks task start. Task cannot begin until dependency is terminal.
+- **soft** — Should complete first but task can proceed with a warning.
+- **informational** — FYI context only, never blocks.
+
+Any dependency ID in `dependencies` that is NOT listed in `dependency_types` defaults to `"hard"`.
+
+#### Milestone-scoped selection:
+
+When milestones exist, the next-task query prefers tasks from the active milestone:
+
+- **flexible mode** (default): Prefer active milestone tasks, fall back to any available task.
+- **sequential mode**: Only return tasks from the active (or first planned) milestone.
+
+SQL query for finding the next available task (milestone-aware, dependency-type-aware):
 
 ```sql
 WITH done_ids AS (
   SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
 ),
+active_milestone AS (
+  SELECT id FROM milestones
+  WHERE status IN ('active', 'planned')
+  ORDER BY phase_order
+  LIMIT 1
+),
 leaf_tasks AS (
-  SELECT * FROM tasks t
-  WHERE archived_at IS NULL
-    AND status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+  SELECT t.* FROM tasks t
+  WHERE t.archived_at IS NULL
+    AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
     AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+    -- Only check hard dependencies (soft/informational don't block)
+    AND NOT EXISTS (
+      SELECT 1 FROM json_each(t.dependencies) d
+      WHERE d.value NOT IN (SELECT id FROM done_ids)
+        AND COALESCE(
+          (SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value),
+          'hard'
+        ) = 'hard'
+    )
 )
 SELECT * FROM leaf_tasks
-WHERE dependencies IS NULL
-   OR NOT EXISTS (
-     SELECT 1 FROM json_each(leaf_tasks.dependencies) d
-     WHERE d.value NOT IN (SELECT id FROM done_ids)
-   )
 ORDER BY
+  -- Prefer tasks from active milestone (flexible mode)
+  CASE WHEN milestone_id = (SELECT id FROM active_milestone) THEN 0
+       WHEN milestone_id IS NOT NULL THEN 1
+       ELSE 2 END,
   CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+  COALESCE(business_value, 3) DESC,
   CASE complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
   id
 LIMIT 1;
@@ -438,7 +560,7 @@ LIMIT 1;
 
 Use this same logic for:
 - Auto-run
-- “Next task” command
+- "Next task" command
 - Single-task execution when no explicit ID is provided.
 
 ### 8.2 Updating task status at start and end
@@ -637,4 +759,86 @@ All logging goes to a single file: `.taskmanager/logs/activity.log`.
 Levels: `ERROR`, `DECISION`. Logs are append-only.
 
 Key state columns for session tracking: `session_id` in the state table.
+
+---
+
+## 12. Macro Architectural Analysis
+
+During Phase 2 of planning, the AI performs a structured analysis of the PRD:
+
+### 12.1 Tech Stack Detection
+
+Scan the PRD content and codebase for technology indicators:
+- Check `composer.json`, `package.json`, `requirements.txt`, `Gemfile`, etc.
+- Look for framework-specific files (e.g., `artisan`, `next.config.js`, `nuxt.config.ts`)
+- Identify mentions of specific technologies in the PRD text
+
+Store detected stack as JSON array in `plan_analyses.tech_stack`.
+
+### 12.2 Ambiguity Detection
+
+For each requirement in the PRD, assess:
+- Is the requirement specific enough to implement without assumptions?
+- Are there multiple valid interpretations?
+- Are acceptance criteria implied but not stated?
+
+Detected ambiguities feed into Phase 3 (Macro Architectural Questions).
+
+### 12.3 Decision Storage
+
+Decisions from Phase 3 are stored in two places:
+1. **`plan_analyses.decisions`** — JSON array: `[{question, answer, rationale, memory_id}]`
+2. **`memories` table** — Each decision becomes a memory with:
+   - `kind`: as specified in the Macro Question Bank
+   - `importance`: as specified in the Macro Question Bank
+   - `source_type`: `'user'`
+   - `source_via`: `'taskmanager:plan:macro-questions'`
+   - `confidence`: `1.0`
+   - `auto_updatable`: `0`
+
+---
+
+## 13. Cross-Cutting Concern Detection
+
+During Phase 2, identify concerns that span multiple features:
+
+### Categories:
+- **Security** — auth, input validation, CSRF, rate limiting, encryption
+- **Error handling** — error boundaries, global exception handler, error reporting
+- **Monitoring** — logging, metrics, health checks, alerting
+- **Performance** — caching, lazy loading, pagination, query optimization
+- **Accessibility** — ARIA, keyboard navigation, screen reader support
+- **Testing** — test infrastructure, CI integration, coverage setup
+- **Documentation** — API docs, developer guides, deployment docs
+
+### Task generation:
+For each cross-cutting concern identified, generate a subtask under a dedicated "Cross-Cutting Concerns" epic. Each subtask should:
+- Reference the epics it affects
+- Have `moscow` = 'must' or 'should' (concerns are rarely optional)
+- Have appropriate `business_value` based on impact
+- Include `acceptance_criteria` specific to the concern
+
+---
+
+## 14. Milestone Assignment Logic
+
+### MoSCoW to Milestone Mapping:
+
+| MoSCoW | Milestone | phase_order | Description |
+|--------|-----------|-------------|-------------|
+| `must` | MS-001 | 1 | MVP / Core — required for launch |
+| `should` | MS-002 | 2 | Enhancement — important, post-MVP |
+| `could` | MS-003 | 3 | Nice-to-have — if time permits |
+| `wont` | (none) | — | Backlog — tasks created with status `draft` |
+
+### Inheritance rules:
+- Epic-level tasks set the MoSCoW baseline for their subtasks
+- Subtasks inherit `milestone_id` from their parent unless explicitly overridden
+- A subtask can have a different MoSCoW than its parent (e.g., a `could` subtask under a `must` epic)
+
+### Milestone status derivation:
+- `planned` — default, no tasks started
+- `active` — at least one task is `in-progress`
+- `completed` — all tasks are terminal (`done`, `canceled`, `duplicate`)
+- `canceled` — explicitly canceled by user
 

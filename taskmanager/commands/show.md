@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash
-argument-hint: "[<id> [field]] | [--next [N]] | [--stats [...]] | [--deferrals [<task-id>]]"
+argument-hint: "[<id> [field]] | [--next [N]] | [--stats [...]] | [--deferrals [<task-id>]] | [--milestones] | [--analysis [id]]"
 description: View dashboard, task details, next tasks, or statistics
 ---
 
@@ -18,9 +18,11 @@ Unified read-only view into the task database. Replaces: `dashboard`, `get-task`
 - `show <id>` → full task JSON
 - `show <id> <field>` → single field value
 - `show --next [N]` → next N available tasks (default: 1)
-- `show --stats [--summary|--json|--status|--priority|--levels|--remaining|--time|--completion|--tags]`
+- `show --stats [--summary|--json|--status|--priority|--levels|--remaining|--time|--completion|--tags|--moscow|--milestones]`
 - `show --deferrals` → all pending deferrals
 - `show --deferrals <task-id>` → deferrals targeting a specific task
+- `show --milestones` → milestone progress table
+- `show --analysis [id]` → view plan analyses
 
 ## Database Location
 
@@ -58,7 +60,49 @@ FROM tasks WHERE archived_at IS NULL;
 "
 ```
 
-Include sections for: progress bar, status breakdown, priority breakdown, time estimates, next tasks, tag distribution (if tags exist), **pending deferrals summary** (if any exist).
+Include sections for: progress bar, status breakdown, priority breakdown, time estimates, next tasks, tag distribution (if tags exist), **current milestone progress** (if milestones exist), **MoSCoW distribution** (if tasks have moscow), **pending deferrals summary** (if any exist).
+
+#### Milestone section (in dashboard)
+
+Only show if milestones exist:
+
+```bash
+MILESTONE_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM milestones;")
+if [[ "$MILESTONE_COUNT" -gt 0 ]]; then
+    echo "--- Milestone Progress ---"
+    sqlite3 -box "$DB" "
+    SELECT m.id as ID, m.title as Milestone, m.status as Status,
+        COUNT(t.id) as Tasks,
+        SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as Done,
+        ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id), 0), 1) || '%' as Complete
+    FROM milestones m
+    LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+    GROUP BY m.id
+    ORDER BY m.phase_order;
+    "
+fi
+```
+
+#### MoSCoW section (in dashboard)
+
+Only show if tasks have moscow values:
+
+```bash
+MOSCOW_COUNT=$(sqlite3 "$DB" "SELECT COUNT(*) FROM tasks WHERE moscow IS NOT NULL AND archived_at IS NULL;")
+if [[ "$MOSCOW_COUNT" -gt 0 ]]; then
+    echo "--- MoSCoW Distribution ---"
+    sqlite3 -box "$DB" "
+    SELECT
+        COALESCE(moscow, 'unset') as MoSCoW,
+        COUNT(*) as Tasks,
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as Done,
+        SUM(CASE WHEN status NOT IN ('done', 'canceled', 'duplicate') THEN 1 ELSE 0 END) as Remaining
+    FROM tasks WHERE archived_at IS NULL
+    GROUP BY moscow ORDER BY
+        CASE moscow WHEN 'must' THEN 0 WHEN 'should' THEN 1 WHEN 'could' THEN 2 WHEN 'wont' THEN 3 ELSE 4 END;
+    "
+fi
+```
 
 #### Deferrals section (in dashboard)
 
@@ -98,7 +142,7 @@ SELECT $2 FROM tasks WHERE id = '$1';
 "
 ```
 
-Available columns: `id`, `title`, `status`, `priority`, `type`, `description`, `details`, `test_strategy`, `complexity_scale`, `estimate_seconds`, `started_at`, `completed_at`, `duration_seconds`, `dependencies`, `parent_id`, `tags`.
+Available columns: `id`, `title`, `status`, `priority`, `type`, `description`, `details`, `test_strategy`, `complexity_scale`, `estimate_seconds`, `started_at`, `completed_at`, `duration_seconds`, `dependencies`, `parent_id`, `tags`, `milestone_id`, `acceptance_criteria`, `moscow`, `business_value`, `dependency_types`.
 
 ### `show --next [N]` — Next available tasks
 
@@ -179,7 +223,13 @@ SELECT json_object(
           AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = tasks.id)
     ),
     'pending_deferrals', (SELECT COUNT(*) FROM deferrals WHERE status = 'pending'),
-    'unassigned_deferrals', (SELECT COUNT(*) FROM deferrals WHERE status = 'pending' AND target_task_id IS NULL)
+    'unassigned_deferrals', (SELECT COUNT(*) FROM deferrals WHERE status = 'pending' AND target_task_id IS NULL),
+    'by_moscow', (
+        SELECT json_group_object(COALESCE(moscow, 'unset'), cnt)
+        FROM (SELECT moscow, COUNT(*) as cnt FROM tasks WHERE archived_at IS NULL GROUP BY moscow)
+    ),
+    'milestones', (SELECT COUNT(*) FROM milestones),
+    'active_milestone', (SELECT id FROM milestones WHERE status = 'active' ORDER BY phase_order LIMIT 1)
 );
 "
 ```
@@ -222,6 +272,72 @@ ORDER BY d.status, d.created_at;
 
 If no deferrals found: `"No deferrals found for task <task-id>"`
 
+### `show --milestones` — Milestone progress
+
+```bash
+sqlite3 -column -header "$DB" "
+SELECT m.id as ID,
+    m.title as Milestone,
+    m.status as Status,
+    m.phase_order as Phase,
+    COUNT(t.id) as Tasks,
+    SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as Done,
+    SUM(CASE WHEN t.status NOT IN ('done', 'canceled', 'duplicate') THEN 1 ELSE 0 END) as Remaining,
+    ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id), 0), 1) || '%' as Complete
+FROM milestones m
+LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+GROUP BY m.id
+ORDER BY m.phase_order;
+"
+```
+
+Also show business value distribution per milestone:
+
+```bash
+sqlite3 -column -header "$DB" "
+SELECT m.id as Milestone,
+    SUM(CASE WHEN t.business_value = 5 THEN 1 ELSE 0 END) as 'BV-5',
+    SUM(CASE WHEN t.business_value = 4 THEN 1 ELSE 0 END) as 'BV-4',
+    SUM(CASE WHEN t.business_value = 3 THEN 1 ELSE 0 END) as 'BV-3',
+    SUM(CASE WHEN t.business_value <= 2 THEN 1 ELSE 0 END) as 'BV-1-2'
+FROM milestones m
+LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+GROUP BY m.id
+ORDER BY m.phase_order;
+"
+```
+
+If no milestones exist: `"No milestones defined. Use taskmanager:plan to create milestones from a PRD."`
+
+### `show --analysis [id]` — View plan analyses
+
+#### All analyses (no id):
+
+```bash
+sqlite3 -column -header "$DB" "
+SELECT id as ID,
+    prd_source as Source,
+    SUBSTR(prd_hash, 1, 8) || '...' as Hash,
+    json_array_length(tech_stack) as 'Tech',
+    json_array_length(assumptions) as 'Assumptions',
+    json_array_length(risks) as 'Risks',
+    json_array_length(decisions) as 'Decisions',
+    created_at as Created
+FROM plan_analyses
+ORDER BY created_at DESC;
+"
+```
+
+#### Specific analysis (with id):
+
+```bash
+sqlite3 -json "$DB" "SELECT * FROM plan_analyses WHERE id = '<id>';" | jq '.[0] // empty'
+```
+
+Display formatted sections: tech stack, assumptions, risks, ambiguities, NFRs, scope, cross-cutting concerns, decisions.
+
+If no analyses found: `"No plan analyses found. Run taskmanager:plan to analyze a PRD."`
+
 ## Notes
 
 - This command is **read-only** — it does not modify any files or database.
@@ -256,4 +372,11 @@ taskmanager:show --stats --tags
 # Deferrals
 taskmanager:show --deferrals
 taskmanager:show --deferrals 1.2.3
+
+# Milestones
+taskmanager:show --milestones
+
+# Plan analyses
+taskmanager:show --analysis
+taskmanager:show --analysis PA-001
 ```

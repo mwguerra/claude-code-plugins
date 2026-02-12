@@ -171,6 +171,120 @@
 -- WHERE target_task_id = '<old-id>';
 
 -- ============================================================================
+-- MILESTONE QUERIES
+-- ============================================================================
+
+-- Get all milestones with task counts
+-- SELECT m.id, m.title, m.status, m.phase_order,
+--     COUNT(t.id) as total_tasks,
+--     SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as done_tasks,
+--     ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) / NULLIF(COUNT(t.id), 0), 1) as pct_complete
+-- FROM milestones m
+-- LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+-- GROUP BY m.id
+-- ORDER BY m.phase_order;
+
+-- Get active milestone
+-- SELECT * FROM milestones WHERE status = 'active' ORDER BY phase_order LIMIT 1;
+
+-- Get first planned milestone (fallback when none active)
+-- SELECT * FROM milestones WHERE status IN ('active', 'planned') ORDER BY phase_order LIMIT 1;
+
+-- Create milestone
+-- INSERT INTO milestones (id, title, description, phase_order, status)
+-- VALUES ('<id>', '<title>', '<desc>', <order>, 'planned');
+
+-- Generate next milestone ID
+-- SELECT 'MS-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1)
+-- FROM milestones;
+
+-- ============================================================================
+-- PLAN ANALYSES QUERIES
+-- ============================================================================
+
+-- Check for existing analysis by PRD hash
+-- SELECT * FROM plan_analyses WHERE prd_hash = ? ORDER BY created_at DESC LIMIT 1;
+
+-- Insert new analysis
+-- INSERT INTO plan_analyses (id, prd_source, prd_hash, tech_stack, assumptions, risks, ambiguities, nfrs, scope_in, scope_out, cross_cutting)
+-- VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Generate next analysis ID
+-- SELECT 'PA-' || printf('%03d', COALESCE(MAX(CAST(SUBSTR(id, 4) AS INTEGER)), 0) + 1)
+-- FROM plan_analyses;
+
+-- Update analysis with decisions
+-- UPDATE plan_analyses SET
+--     decisions = json_insert(decisions, '$[#]', json_object('question', ?, 'answer', ?, 'rationale', ?, 'memory_id', ?)),
+--     updated_at = datetime('now')
+-- WHERE id = ?;
+
+-- ============================================================================
+-- MILESTONE-SCOPED NEXT TASK (dependency-type-aware)
+-- ============================================================================
+
+-- Find next available task preferring active milestone (flexible mode)
+-- WITH done_ids AS (
+--     SELECT id FROM tasks WHERE status IN ('done', 'canceled', 'duplicate')
+-- ),
+-- active_milestone AS (
+--     SELECT id FROM milestones
+--     WHERE status IN ('active', 'planned')
+--     ORDER BY phase_order
+--     LIMIT 1
+-- )
+-- SELECT t.* FROM tasks t
+-- WHERE t.archived_at IS NULL
+--   AND t.status NOT IN ('done', 'canceled', 'duplicate', 'blocked')
+--   AND NOT EXISTS (SELECT 1 FROM tasks c WHERE c.parent_id = t.id)
+--   AND NOT EXISTS (
+--       SELECT 1 FROM json_each(t.dependencies) d
+--       WHERE d.value NOT IN (SELECT id FROM done_ids)
+--         AND COALESCE((SELECT je.value FROM json_each(t.dependency_types) je WHERE je.key = d.value), 'hard') = 'hard'
+--   )
+-- ORDER BY
+--   CASE WHEN t.milestone_id = (SELECT id FROM active_milestone) THEN 0
+--        WHEN t.milestone_id IS NOT NULL THEN 1
+--        ELSE 2 END,
+--   CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+--   COALESCE(t.business_value, 3) DESC,
+--   CASE t.complexity_scale WHEN 'XS' THEN 0 WHEN 'S' THEN 1 WHEN 'M' THEN 2 WHEN 'L' THEN 3 WHEN 'XL' THEN 4 ELSE 2 END,
+--   t.id
+-- LIMIT 1;
+
+-- ============================================================================
+-- MOSCOW & BUSINESS VALUE QUERIES
+-- ============================================================================
+
+-- MoSCoW distribution
+-- SELECT COALESCE(moscow, 'unset') as moscow, COUNT(*) as count
+-- FROM tasks WHERE archived_at IS NULL
+-- GROUP BY moscow
+-- ORDER BY CASE moscow WHEN 'must' THEN 0 WHEN 'should' THEN 1 WHEN 'could' THEN 2 WHEN 'wont' THEN 3 ELSE 4 END;
+
+-- Business value distribution
+-- SELECT business_value, COUNT(*) as count
+-- FROM tasks WHERE archived_at IS NULL AND business_value IS NOT NULL
+-- GROUP BY business_value ORDER BY business_value DESC;
+
+-- Tasks by milestone with MoSCoW breakdown
+-- SELECT m.id, m.title,
+--     SUM(CASE WHEN t.moscow = 'must' THEN 1 ELSE 0 END) as must_count,
+--     SUM(CASE WHEN t.moscow = 'should' THEN 1 ELSE 0 END) as should_count,
+--     SUM(CASE WHEN t.moscow = 'could' THEN 1 ELSE 0 END) as could_count
+-- FROM milestones m
+-- LEFT JOIN tasks t ON t.milestone_id = m.id AND t.archived_at IS NULL
+-- GROUP BY m.id ORDER BY m.phase_order;
+
+-- ============================================================================
+-- CROSS-CUTTING CONCERN QUERIES
+-- ============================================================================
+
+-- Get cross-cutting concerns from latest analysis
+-- SELECT json_each.value FROM plan_analyses pa, json_each(pa.cross_cutting)
+-- ORDER BY pa.created_at DESC LIMIT 20;
+
+-- ============================================================================
 -- ARCHIVAL
 -- ============================================================================
 
