@@ -610,7 +610,10 @@ Memory integration during task execution is handled by the `run` command. Key pr
 
 - **Pre-execution**: Load relevant global memories (`importance >= 3`) and task-scoped memories. Display summary.
 - **During execution**: Treat loaded memories as hard constraints. Violations require conflict resolution.
-- **Post-execution**: Review task-scoped memories for promotion to global. Update `use_count` and `last_used_at`.
+- **Post-execution**: Three steps:
+  1. Promote existing task-scoped memories to global (ask user).
+  2. **Proactive knowledge capture**: Ask whether any new discoveries (architectural decisions, constraints, conventions, patterns) should be saved as global memories so all future tasks are aware.
+  3. Update `use_count` and `last_used_at` for applied memories.
 
 ### Memory Arguments
 

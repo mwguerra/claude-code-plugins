@@ -170,9 +170,41 @@ Propagate in-progress status to ancestors using recursive CTE.
 
 #### 7a. Memory review
 
-- Review task-scoped memories for promotion to global.
-- Ask user for promotion decisions.
+**Step 1: Promote existing task-scoped memories.**
+
+- Check if task-scoped memories exist in `state.task_memory` for this task.
+- If any exist, ask user whether to promote each to global or discard.
 - Clear task-specific memories from state.
+
+**Step 2: Proactive knowledge capture.**
+
+After promotion review, the agent MUST ask: **"Did you discover anything during this task that the rest of the project should know?"**
+
+This covers architectural decisions made, constraints discovered, conventions established, patterns found, or any other knowledge that future tasks should be aware of. Examples:
+- "We chose WebSockets over SSE for real-time updates because..."
+- "The payment API requires idempotency keys on all POST requests"
+- "All form validation must happen server-side, client-side is optional"
+
+If the user or agent identifies new knowledge:
+
+1. Generate next memory ID:
+   ```sql
+   SELECT 'M-' || printf('%04d', COALESCE(MAX(CAST(SUBSTR(id, 3) AS INTEGER)), 0) + 1)
+   FROM memories;
+   ```
+
+2. Insert with appropriate importance (`4` for decisions that affect multiple tasks, `5` for hard constraints):
+   ```sql
+   INSERT INTO memories (id, title, kind, why_important, body, source_type, source_name, importance, confidence, status, scope, tags)
+   VALUES ('<id>', '<title>', '<kind>', '<why_important>', '<body>', 'agent', 'run', <importance>, 0.8, 'active', '<scope_json>', '<tags_json>');
+   ```
+
+3. Log to `activity.log`:
+   ```
+   <timestamp> [DECISION] [run] Created memory <id>: "<title>" (importance: <n>) from task <task-id>
+   ```
+
+These memories are automatically loaded by Step 4b of every future task execution (`importance >= 3`), so all subsequent tasks will be aware of them.
 
 #### 7b. Deferral creation
 
