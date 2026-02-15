@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, WebSearch, AskUserQuestion, Task
-argument-hint: "<ask|quick|premortem|review|compass|history|followup|init|config> [args...]"
+argument-hint: "<ask|quick|premortem|review|compass|history|followup|init|config|help> [args...]"
 description: Personal advisory council for life and business decisions
 ---
 
@@ -25,6 +25,7 @@ Parse the first argument to determine the subcommand:
 - `board followup <decision-id> [--outcome success|partial|fail] [--notes "what happened"]` - Record outcome
 - `board init` - Initialize `.board/` directory and database
 - `board config [show|weights|mode|councils]` - View/change configuration
+- `board help` - Show board structure, all council members, and a worked example
 
 ## Database Location
 
