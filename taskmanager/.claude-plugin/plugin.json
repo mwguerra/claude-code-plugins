@@ -1,7 +1,7 @@
 {
   "name": "taskmanager",
   "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions.",
-  "version": "4.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
