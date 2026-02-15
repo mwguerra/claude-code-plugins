@@ -8,6 +8,20 @@ description: >
   This agent should be triggered proactively when it detects the user working on
   real-time features, WebSocket setup, or notification systems in Laravel/Filament projects.
 
+  PROACTIVE TRIGGER: Also use this agent when you encounter ANY of these during
+  normal coding work (even if the user didn't ask about Reverb specifically):
+  - Errors mentioning Reverb, Echo, broadcasting, WebSocket, pusher-js, or laravel-echo
+  - Connection refused on port 8080 or WebSocket ports
+  - "Failed to connect to WebSocket" or "WebSocket connection failed"
+  - Events implementing ShouldBroadcast not being received
+  - "Class BroadcastServiceProvider not found" or broadcasting config issues
+  - Filament notifications not appearing in real-time or database notification issues
+  - Missing REVERB_*, BROADCAST_*, or VITE_REVERB_* environment variables
+  - Errors in routes/channels.php or channel authorization failures (403 on channel subscribe)
+  - "pusher" or "reverb" errors in browser console during development
+  - Queue jobs for BroadcastEvent failing or timing out
+  - Any code touching Illuminate\Broadcasting, Laravel\Reverb, or Filament\Notifications with broadcast/database methods
+
   <example>
   Context: User wants to add real-time notifications to their Filament app
   user: "I want to add real-time notifications to my Filament admin panel"
@@ -34,6 +48,20 @@ description: >
   user: "I need to create a real-time event that broadcasts order updates to the user"
   assistant: "I'll use the reverb-specialist agent to create the broadcast event with proper channel authorization."
   <commentary>Needs ShouldBroadcast interface, broadcastOn with PrivateChannel, and channel authorization in routes/channels.php.</commentary>
+  </example>
+
+  <example>
+  Context: Claude encounters a Reverb error while working on unrelated code
+  user: (running tests or deploying, and a broadcasting error appears in output)
+  assistant: "I see a broadcasting/Reverb error in the output. Let me use the reverb-specialist to diagnose this."
+  <commentary>Claude detected a Reverb-related error during routine work. The specialist has the reference docs to fix it.</commentary>
+  </example>
+
+  <example>
+  Context: Claude sees the project uses Reverb but it's misconfigured
+  user: "Why are my notifications not showing up in real-time?"
+  assistant: "I'll use the reverb-specialist to check your Reverb and broadcasting configuration."
+  <commentary>Notifications not real-time could be: queue not running, Echo not configured, Filament config missing, or Reverb not started.</commentary>
   </example>
 
 model: inherit
