@@ -1,7 +1,8 @@
 {
   "name": "taskmanager",
-  "description": "Manage project tasks with hierarchical planning, dependency tracking, and persistent project memory. Backed by SQLite.",
+  "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions.",
   "version": "4.1.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -12,7 +13,9 @@
     "planning",
     "prd",
     "taskmanager-memory",
+    "project-management",
     "automation",
+    "memory",
     "workflow",
     "sqlite",
     "export",
@@ -20,5 +23,15 @@
     "milestones",
     "analysis",
     "moscow"
+  ],
+  "category": "productivity",
+  "tags": [
+    "task-management",
+    "prd-execution",
+    "project-planning",
+    "batch-execution",
+    "project-memory",
+    "dependencies",
+    "workflow"
   ]
 }

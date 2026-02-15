@@ -2,6 +2,7 @@
   "name": "terminal-specialist",
   "description": "Terminal and shell systems expert with comprehensive documentation. Covers TTY/PTY architecture, stdin/stdout/stderr streams, signals, ANSI escape sequences, job control, terminal modes, and cross-platform CLI development.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -27,5 +28,16 @@
     "console",
     "cross-platform",
     "cli"
+  ],
+  "category": "development-tools",
+  "tags": [
+    "terminal",
+    "shell",
+    "cli-development",
+    "tty-pty",
+    "ansi-escape",
+    "signals",
+    "cross-platform",
+    "streams"
   ]
 }

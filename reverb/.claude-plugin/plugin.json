@@ -1,7 +1,8 @@
 {
   "name": "reverb",
-  "description": "Expert on Laravel Reverb, broadcasting, and real-time notifications for Laravel and Filament apps. Includes complete official documentation for Reverb, Laravel Broadcasting, and Filament notification systems.",
+  "description": "Expert on Laravel Reverb, broadcasting, and real-time notifications for Laravel and Filament apps. Includes complete official documentation for setup, events, channels, Echo client configuration, Filament panel WebSocket integration, and production deployment.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -16,5 +17,16 @@
     "filament",
     "echo",
     "pusher"
+  ],
+  "category": "laravel",
+  "tags": [
+    "laravel-reverb",
+    "websockets",
+    "broadcasting",
+    "real-time",
+    "notifications",
+    "filament",
+    "laravel-echo",
+    "production-deployment"
   ]
 }

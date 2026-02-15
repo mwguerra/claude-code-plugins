@@ -21,9 +21,19 @@
         "technical",
         "articles",
         "blog",
+        "documentation",
         "publishing",
         "research",
-        "multilingual"
+        "voice-profile",
+        "transcription",
+        "laravel",
+        "php",
+        "automation",
+        "batch-processing",
+        "multi-language",
+        "multilingual",
+        "examples",
+        "agent"
       ],
       "category": "content-creation",
       "tags": [
@@ -42,12 +52,17 @@
       "description": "Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment with full verification.",
       "keywords": [
         "production",
-        "deployment",
         "cleanup",
-        "testing",
-        "verification",
         "code-quality",
-        "automation"
+        "production-ready",
+        "testing",
+        "pest",
+        "playwright",
+        "analysis",
+        "automation",
+        "deployment",
+        "refactoring",
+        "verification"
       ],
       "category": "development-tools",
       "tags": [
@@ -69,13 +84,16 @@
         "docker-local",
         "laravel",
         "docker",
+        "troubleshooting",
+        "ssl",
+        "dns",
+        "traefik",
         "development-environment",
         "php",
         "mysql",
         "postgresql",
         "redis",
         "minio",
-        "traefik",
         "xdebug",
         "multi-project",
         "mailpit"
@@ -101,10 +119,13 @@
       "keywords": [
         "documentation",
         "docs",
-        "generation",
+        "technical-writing",
+        "code-to-docs",
         "sync",
-        "templates",
         "drift-detection",
+        "templates",
+        "validation",
+        "generation",
         "markdown"
       ],
       "category": "documentation",
@@ -125,13 +146,21 @@
       "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues.",
       "keywords": [
         "docker",
+        "docker-compose",
         "containers",
-        "compose",
         "devops",
-        "ssl",
+        "dockerfile",
+        "networking",
+        "volumes",
+        "databases",
+        "postgresql",
+        "mysql",
+        "mongodb",
+        "redis",
         "traefik",
         "nginx",
-        "database"
+        "ssl",
+        "tls"
       ],
       "category": "devops",
       "tags": [
@@ -151,13 +180,16 @@
       "version": "1.0.0",
       "description": "Expert FilamentPHP v4 assistant with complete official documentation. Generates resources, forms, tables, actions, widgets, infolists, and Pest tests following v4 patterns. Includes diagnosis and troubleshooting.",
       "keywords": [
-        "filament",
         "filamentphp",
+        "filament",
         "laravel",
         "admin-panel",
-        "php",
+        "resources",
         "forms",
         "tables",
+        "crud",
+        "php",
+        "livewire",
         "widgets"
       ],
       "category": "laravel",
@@ -180,11 +212,16 @@
       "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle.",
       "keywords": [
         "laravel",
-        "package",
         "filament",
+        "package",
         "plugin",
+        "scaffold",
         "pest",
         "testing",
+        "composer",
+        "generator",
+        "development",
+        "specialist",
         "github-actions",
         "ci-cd"
       ],
@@ -205,14 +242,16 @@
       "version": "1.0.0",
       "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables.",
       "keywords": [
+        "post-development",
         "marketing",
         "seo",
         "screenshots",
+        "personas",
         "ads",
         "landing-pages",
-        "personas",
+        "content",
         "launch",
-        "content"
+        "automation"
       ],
       "category": "marketing",
       "tags": [
@@ -231,13 +270,21 @@
       "version": "4.1.0",
       "description": "Plan and execute tasks from PRDs with hierarchical subtasks, dependency tracking, and project memories. Features dashboard visualization, autonomous batch execution, and persistent memory for constraints, decisions, and conventions.",
       "keywords": [
+        "taskmanager",
         "tasks",
         "planning",
         "prd",
+        "taskmanager-memory",
         "project-management",
         "automation",
         "memory",
-        "workflow"
+        "workflow",
+        "sqlite",
+        "export",
+        "dependencies",
+        "milestones",
+        "analysis",
+        "moscow"
       ],
       "category": "productivity",
       "tags": [
@@ -258,12 +305,24 @@
       "keywords": [
         "terminal",
         "shell",
-        "cli",
         "tty",
         "pty",
-        "ansi",
+        "bash",
+        "zsh",
+        "powershell",
+        "cmd",
+        "stdin",
+        "stdout",
+        "stderr",
         "signals",
-        "cross-platform"
+        "ansi",
+        "escape-sequences",
+        "job-control",
+        "process-management",
+        "termios",
+        "console",
+        "cross-platform",
+        "cli"
       ],
       "category": "development-tools",
       "tags": [
@@ -285,11 +344,12 @@
       "keywords": [
         "testing",
         "pest",
-        "php",
         "laravel",
-        "livewire",
         "filament",
+        "livewire",
         "coverage",
+        "automation",
+        "php",
         "tdd"
       ],
       "category": "testing",
@@ -307,16 +367,16 @@
       "name": "e2e-test-specialist",
       "source": "./e2e-test-specialist",
       "version": "1.0.0",
-      "description": "Comprehensive E2E testing using Playwright MCP. Creates detailed test plans, tests all pages for errors, verifies user flows by role, and runs visual browser tests with complete coverage.",
+      "description": "Ultra-specialized agent for E2E testing using Playwright MCP. Creates comprehensive test plans, tests all pages, verifies user flows by role, and ensures complete test coverage with visual browser testing.",
       "keywords": [
         "e2e",
-        "testing",
         "playwright",
+        "testing",
         "browser",
         "automation",
-        "visual-testing",
         "end-to-end",
-        "role-based"
+        "visual-testing",
+        "role-based-testing"
       ],
       "category": "testing",
       "tags": [
@@ -343,6 +403,8 @@
         "journal",
         "memory",
         "commits",
+        "tasks",
+        "claude-code",
         "automation"
       ],
       "category": "productivity",
@@ -368,7 +430,8 @@
         "learning",
         "troubleshooting",
         "exceptions",
-        "stack-traces"
+        "stack-traces",
+        "knowledge-base"
       ],
       "category": "development-tools",
       "tags": [
@@ -405,17 +468,23 @@
       "name": "my-workflow",
       "source": "./my-workflow",
       "version": "1.0.0",
-      "description": "Personal workflow management with AI-powered content analysis. Tracks sessions, commitments, decisions, and goals in multiple languages. Integrates with GitHub and Obsidian vault. Provides intelligent briefings and productivity insights.",
+      "description": "Personal workflow management - assistant, secretary, and executive in one. Tracks sessions, commitments, decisions, and goals. Integrates with Obsidian vault and GitHub. Provides intelligent briefings and productivity insights.",
       "keywords": [
         "workflow",
         "productivity",
         "assistant",
+        "secretary",
+        "executive",
         "commitments",
         "decisions",
         "goals",
+        "briefing",
         "github",
         "obsidian",
-        "briefing"
+        "tracking",
+        "sessions",
+        "patterns",
+        "knowledge-graph"
       ],
       "category": "productivity",
       "tags": [
@@ -468,12 +537,14 @@
       "version": "1.0.0",
       "description": "Personal advisory council system for life and business decisions. Simulates a Board of Advisors with four pillar councils (Intelligence, Business, Life, Security), persistent decision tracking in SQLite, outcome learning, and pattern analysis.",
       "keywords": [
-        "decisions",
+        "board",
         "advisory",
         "council",
+        "decisions",
         "strategy",
         "planning",
         "deliberation",
+        "sqlite",
         "life",
         "business"
       ],

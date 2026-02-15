@@ -1,7 +1,8 @@
 {
   "name": "docker-local",
-  "description": "Troubleshooting assistant for docker-local Laravel development environments. Diagnoses and fixes access issues (404, SSL, DNS, linking), performs health checks, and sets up new projects. Follows a strict diagnostic hierarchy and never modifies application code.",
+  "description": "Docker-local (mwguerra/docker-local) CLI expert for Laravel Docker development environments. Provides 50+ commands for managing PHP, MySQL, PostgreSQL, Redis, MinIO, Traefik, and multi-project isolation. Diagnoses issues, checks conflicts, manages databases, queues, Xdebug, and guides users through setup and troubleshooting.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -14,6 +15,26 @@
     "ssl",
     "dns",
     "traefik",
-    "development-environment"
+    "development-environment",
+    "php",
+    "mysql",
+    "postgresql",
+    "redis",
+    "minio",
+    "xdebug",
+    "multi-project",
+    "mailpit"
+  ],
+  "category": "devops",
+  "tags": [
+    "docker-local",
+    "laravel-docker",
+    "local-development",
+    "docker-environment",
+    "php-development",
+    "mysql",
+    "postgresql",
+    "redis",
+    "traefik"
   ]
 }

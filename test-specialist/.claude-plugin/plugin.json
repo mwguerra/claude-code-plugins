@@ -2,6 +2,7 @@
   "name": "test-specialist",
   "description": "Proactive Pest 4 testing for PHP, Laravel, Livewire, and Filament apps. Auto-generates tests for models, controllers, policies, and Livewire components. Analyzes coverage gaps and runs test suites with detailed reporting.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -14,6 +15,17 @@
     "livewire",
     "coverage",
     "automation",
-    "php"
+    "php",
+    "tdd"
+  ],
+  "category": "testing",
+  "tags": [
+    "pest-testing",
+    "php-testing",
+    "laravel-testing",
+    "livewire-testing",
+    "filament-testing",
+    "code-coverage",
+    "test-generation"
   ]
 }

@@ -2,6 +2,7 @@
   "name": "obsidian-vault",
   "description": "Manage an Obsidian vault as your development knowledge base and automatic work journal. Auto-captures commits, tasks, and Claude Code components with structured frontmatter.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -16,6 +17,15 @@
     "commits",
     "tasks",
     "claude-code",
+    "automation"
+  ],
+  "category": "productivity",
+  "tags": [
+    "obsidian",
+    "knowledge-base",
+    "work-journal",
+    "note-taking",
+    "documentation",
     "automation"
   ]
 }

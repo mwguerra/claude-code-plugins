@@ -2,6 +2,7 @@
   "name": "docs-specialist",
   "description": "Generate and maintain documentation from code with drift detection. Validates docs against source, auto-generates from code patterns, syncs outdated content, and provides reusable templates for consistent documentation.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -17,5 +18,15 @@
     "validation",
     "generation",
     "markdown"
+  ],
+  "category": "documentation",
+  "tags": [
+    "documentation",
+    "auto-generation",
+    "drift-detection",
+    "templates",
+    "sync",
+    "markdown",
+    "code-docs"
   ]
 }

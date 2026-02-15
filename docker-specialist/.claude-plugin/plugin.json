@@ -2,6 +2,7 @@
   "name": "docker-specialist",
   "description": "Docker and Docker Compose expert with complete documentation. Generates Dockerfiles, compose configs, database containers, SSL/TLS setup with Traefik or Nginx, and provides troubleshooting for common container issues.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -23,5 +24,16 @@
     "nginx",
     "ssl",
     "tls"
+  ],
+  "category": "devops",
+  "tags": [
+    "docker",
+    "docker-compose",
+    "containers",
+    "ssl-tls",
+    "traefik",
+    "nginx",
+    "databases",
+    "devops"
   ]
 }

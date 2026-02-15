@@ -2,6 +2,7 @@
   "name": "error-memory",
   "description": "Intelligent error tracking and solution recall system. Learns from every error you solve, providing instant access to past solutions with multi-level matching and confidence scores.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -16,5 +17,13 @@
     "exceptions",
     "stack-traces",
     "knowledge-base"
+  ],
+  "category": "development-tools",
+  "tags": [
+    "error-tracking",
+    "debugging",
+    "solution-recall",
+    "knowledge-base",
+    "troubleshooting"
   ]
 }

@@ -2,6 +2,7 @@
   "name": "e2e-test-specialist",
   "description": "Ultra-specialized agent for E2E testing using Playwright MCP. Creates comprehensive test plans, tests all pages, verifies user flows by role, and ensures complete test coverage with visual browser testing.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -15,5 +16,16 @@
     "end-to-end",
     "visual-testing",
     "role-based-testing"
+  ],
+  "category": "testing",
+  "tags": [
+    "e2e-testing",
+    "playwright",
+    "browser-testing",
+    "visual-testing",
+    "role-based-testing",
+    "flow-testing",
+    "page-testing",
+    "automation"
   ]
 }

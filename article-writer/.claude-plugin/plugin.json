@@ -2,15 +2,19 @@
   "name": "article-writer",
   "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
   },
   "keywords": [
+    "content",
     "writing",
+    "technical",
     "articles",
     "blog",
     "documentation",
+    "publishing",
     "research",
     "voice-profile",
     "transcription",
@@ -19,7 +23,17 @@
     "automation",
     "batch-processing",
     "multi-language",
+    "multilingual",
     "examples",
     "agent"
+  ],
+  "category": "content-creation",
+  "tags": [
+    "content-writing",
+    "technical-articles",
+    "blog-posts",
+    "research",
+    "batch-processing",
+    "author-profiles"
   ]
 }

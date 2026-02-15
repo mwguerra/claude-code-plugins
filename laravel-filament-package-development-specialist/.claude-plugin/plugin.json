@@ -2,11 +2,11 @@
   "name": "laravel-filament-package-development-specialist",
   "description": "Scaffold and develop Laravel packages and Filament plugins with full testing support. Creates package structure, configures Pest testing, sets up GitHub Actions CI, and manages the complete package development lifecycle.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
   },
-  "license": "MIT",
   "keywords": [
     "laravel",
     "filament",
@@ -18,6 +18,18 @@
     "composer",
     "generator",
     "development",
-    "specialist"
+    "specialist",
+    "github-actions",
+    "ci-cd"
+  ],
+  "category": "laravel",
+  "tags": [
+    "laravel-packages",
+    "filament-plugins",
+    "package-development",
+    "pest-testing",
+    "github-actions",
+    "ci-cd",
+    "scaffolding"
   ]
 }

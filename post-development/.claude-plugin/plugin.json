@@ -1,7 +1,8 @@
 {
   "name": "post-development",
-  "version": "1.0.0",
   "description": "App launch preparation toolkit with SEO analysis, automated screenshots across viewports, buyer persona creation, social media ad generation, technical article writing, and landing page proposals. Orchestrates all marketing deliverables.",
+  "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
@@ -18,14 +19,14 @@
     "launch",
     "automation"
   ],
-  "commands": "./commands",
-  "agents": [
-    "./agents/ad-creator.md",
-    "./agents/content-writer.md",
-    "./agents/landing-designer.md",
-    "./agents/persona-strategist.md",
-    "./agents/post-dev-orchestrator.md",
-    "./agents/screenshot-planner.md",
-    "./agents/seo-analyst.md"
+  "category": "marketing",
+  "tags": [
+    "post-launch",
+    "seo-analysis",
+    "screenshots",
+    "social-media-ads",
+    "landing-pages",
+    "buyer-personas",
+    "marketing-automation"
   ]
 }

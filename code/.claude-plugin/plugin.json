@@ -2,11 +2,13 @@
   "name": "code",
   "description": "Production readiness toolkit with code cleanup, comprehensive analysis, and automated testing. Removes debug artifacts for clean commits, runs Pest and Playwright tests, and prepares apps for deployment with full verification.",
   "version": "1.0.0",
+  "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
     "email": "mwguerra@gmail.com"
   },
   "keywords": [
+    "production",
     "cleanup",
     "code-quality",
     "production-ready",
@@ -16,6 +18,17 @@
     "analysis",
     "automation",
     "deployment",
-    "refactoring"
+    "refactoring",
+    "verification"
+  ],
+  "category": "development-tools",
+  "tags": [
+    "code-cleanup",
+    "production-ready",
+    "testing",
+    "verification",
+    "pest",
+    "playwright",
+    "deployment"
   ]
 }

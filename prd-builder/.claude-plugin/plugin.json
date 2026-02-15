@@ -1,9 +1,11 @@
 {
   "name": "prd-builder",
+  "description": "Interactive PRD (Product Requirements Document) builder with comprehensive interview-driven discovery, gap analysis, and taskmanager integration.",
   "version": "1.0.0",
-  "description": "Interactive PRD (Product Requirements Document) builder with comprehensive interview-driven discovery, gap analysis, and taskmanager integration",
+  "license": "MIT",
   "author": {
-    "name": "MWGuerra"
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
   },
   "keywords": [
     "prd",
@@ -12,5 +14,13 @@
     "product",
     "features",
     "documentation"
+  ],
+  "category": "productivity",
+  "tags": [
+    "prd",
+    "product-requirements",
+    "planning",
+    "documentation",
+    "discovery"
   ]
 }
