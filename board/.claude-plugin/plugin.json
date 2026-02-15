@@ -1,0 +1,19 @@
+{
+  "name": "board",
+  "description": "Personal advisory council system for life and business decisions. Simulates a Board of Advisors with four pillar councils, persistent decision tracking in SQLite, outcome learning, and pattern analysis.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
+  },
+  "keywords": [
+    "board",
+    "advisory",
+    "council",
+    "decisions",
+    "strategy",
+    "planning",
+    "deliberation",
+    "sqlite"
+  ]
+}

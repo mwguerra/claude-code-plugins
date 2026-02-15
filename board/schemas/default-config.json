@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "weights": {
+    "intelligence": 25,
+    "business": 25,
+    "life": 25,
+    "security": 25
+  },
+  "defaults": {
+    "mode": "standard",
+    "urgency": "medium"
+  },
+  "councils": {
+    "intelligence": true,
+    "business": true,
+    "life": true,
+    "security": true
+  },
+  "features": {
+    "auto_research": true,
+    "record_decisions": true
+  }
+}

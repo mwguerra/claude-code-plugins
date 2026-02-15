@@ -461,6 +461,33 @@
         "captions",
         "programmatic-video"
       ]
+    },
+    {
+      "name": "board",
+      "source": "./board",
+      "version": "1.0.0",
+      "description": "Personal advisory council system for life and business decisions. Simulates a Board of Advisors with four pillar councils (Intelligence, Business, Life, Security), persistent decision tracking in SQLite, outcome learning, and pattern analysis.",
+      "keywords": [
+        "decisions",
+        "advisory",
+        "council",
+        "strategy",
+        "planning",
+        "deliberation",
+        "life",
+        "business"
+      ],
+      "category": "productivity",
+      "tags": [
+        "advisory-council",
+        "decision-making",
+        "strategy",
+        "life-planning",
+        "business-decisions",
+        "sqlite",
+        "outcome-tracking",
+        "pattern-analysis"
+      ]
     }
   ]
 }
