@@ -1,27 +1,32 @@
 # Schema Reference
 
+> **Storage:** All data is stored in a SQLite database at `.article_writer/article_writer.db` using Bun's built-in `bun:sqlite`. The database uses WAL mode for concurrent reads and foreign keys for referential integrity.
+
 ## Article Task Fields
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | integer | ✓ | Unique identifier (min: 1) |
-| `title` | string | ✓ | Article title (10-200 chars) |
-| `subject` | string | ✓ | Main topic (3-100 chars) |
-| `area` | enum | ✓ | Technical category |
-| `tags` | string | ✓ | Comma-separated keywords |
-| `difficulty` | enum | ✓ | Target skill level |
-| `relevance` | string | ✓ | Priority description |
-| `content_type` | enum | ✓ | Article format |
-| `estimated_effort` | enum | ✓ | Writing time estimate |
-| `versions` | string | ✓ | Target versions |
-| `series_potential` | string | ✓ | Series info |
-| `prerequisites` | string | ✓ | Required knowledge |
-| `reference_urls` | string | ✓ | Source URLs |
-| `status` | enum | ✓ | Current state |
-| `author` | object | | Author reference |
+| `id` | integer | Yes | Unique identifier (min: 1) |
+| `title` | string | Yes | Article title (10-200 chars) |
+| `subject` | string | Yes | Main topic (3-100 chars) |
+| `area` | enum | Yes | Technical category |
+| `tags` | string | Yes | Comma-separated keywords |
+| `difficulty` | enum | Yes | Target skill level |
+| `relevance` | string | Yes | Priority description |
+| `content_type` | enum | Yes | Article format |
+| `estimated_effort` | enum | Yes | Writing time estimate |
+| `versions` | string | Yes | Target versions |
+| `series_potential` | string | Yes | Series info |
+| `prerequisites` | string | Yes | Required knowledge |
+| `reference_urls` | string | Yes | Source URLs |
+| `status` | enum | Yes | Current state |
+| `author_id` | string | | Author ID (FK to authors table) |
+| `author_name` | string | | Cached author display name |
+| `author_languages` | JSON | | Author languages for this article |
 | `output_folder` | string | | Base folder path |
-| `output_files` | array | | Per-language file paths |
-| `sources_used` | array | | Web sources researched and used |
+| `output_files` | JSON | | Per-language file paths |
+| `sources_used` | JSON | | Web sources researched and used |
+| `companion_project` | JSON | | Companion project info |
 | `created_at` | datetime | | When task was created |
 | `written_at` | datetime | | When primary article completed |
 | `published_at` | datetime | | When article published |
@@ -30,28 +35,32 @@
 
 ## Author Reference
 
-```json
-{
-  "id": "author-slug",
-  "name": "Display Name",
-  "languages": ["pt_BR", "en_US"]
-}
+Articles store author references as separate columns:
+
+```sql
+author_id TEXT REFERENCES authors(id),
+author_name TEXT,
+author_languages TEXT  -- JSON array
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Must match id in authors.json |
-| `name` | string | Cached display name |
-| `languages` | array | Languages for this article |
+| `author_id` | string | Must match id in authors table |
+| `author_name` | string | Cached display name |
+| `author_languages` | JSON array | Languages for this article |
 
 ## Output File
 
+Stored in the `output_files` JSON column as an array:
+
 ```json
-{
-  "language": "pt_BR",
-  "path": "content/articles/2025_01_15_slug/slug.pt_BR.md",
-  "translated_at": "2025-01-15T14:00:00Z"
-}
+[
+  {
+    "language": "pt_BR",
+    "path": "content/articles/2025_01_15_slug/slug.pt_BR.md",
+    "translated_at": "2025-01-15T14:00:00Z"
+  }
+]
 ```
 
 | Field | Type | Description |
@@ -62,31 +71,33 @@
 
 ## Source Reference
 
-Tracks web sources researched and used in the article.
+Stored in the `sources_used` JSON column as an array.
 
 ```json
-{
-  "url": "https://laravel.com/docs/11.x/rate-limiting",
-  "title": "Rate Limiting - Laravel Documentation",
-  "summary": "Official docs covering RateLimiter facade and configuration",
-  "usage": "Primary reference for syntax and best practices",
-  "accessed_at": "2025-01-15T10:00:00Z",
-  "type": "documentation"
-}
+[
+  {
+    "url": "https://laravel.com/docs/11.x/rate-limiting",
+    "title": "Rate Limiting - Laravel Documentation",
+    "summary": "Official docs covering RateLimiter facade and configuration",
+    "usage": "Primary reference for syntax and best practices",
+    "accessed_at": "2025-01-15T10:00:00Z",
+    "type": "documentation"
+  }
+]
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `url` | string | ✓ | URL of the source |
+| `url` | string | Yes | URL of the source |
 | `title` | string | | Page/document title |
-| `summary` | string | ✓ | What the source covers |
-| `usage` | string | ✓ | How it was used in article |
+| `summary` | string | Yes | What the source covers |
+| `usage` | string | Yes | How it was used in article |
 | `accessed_at` | datetime | | When accessed |
 | `type` | enum | | documentation/tutorial/news/blog/repository/specification/other |
 
 ## Companion Project Info
 
-Tracks the practical companion project created for the article.
+Stored in the `companion_project` JSON column.
 
 > **Companion projects must be COMPLETE and RUNNABLE.**
 
@@ -112,7 +123,7 @@ Tracks the practical companion project created for the article.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | enum | code/document/diagram/template/dataset/config/script/spreadsheet/other |
+| `type` | enum | code/node/python/document/diagram/template/dataset/config/script/spreadsheet/other |
 | `path` | string | Path to companion project folder (usually `code/`) |
 | `description` | string | What the companion project demonstrates |
 | `technologies` | array | Technologies used |
@@ -127,30 +138,18 @@ Tracks the practical companion project created for the article.
 | `skipped` | boolean | True if companion project was skipped |
 | `skip_reason` | string | Why companion project was skipped |
 
-## Settings (settings.json)
+## Settings (settings table)
 
-Global settings including companion project defaults.
+Global settings stored as a singleton row (id=1) in the `settings` table.
 
 ### Structure
 
-```json
-{
-  "$schema": "./schemas/settings.schema.json",
-  "companion_project_defaults": {
-    "code": { ... },
-    "document": { ... },
-    "diagram": { ... },
-    "template": { ... },
-    "dataset": { ... },
-    "config": { ... },
-    "other": { ... }
-  },
-  "metadata": {
-    "version": "1.0.0",
-    "last_updated": "2025-01-15T00:00:00Z"
-  }
-}
-```
+Two JSON columns:
+
+| Column | Description |
+|--------|-------------|
+| `article_limits` | JSON object with `max_words` and other limits |
+| `companion_project_defaults` | JSON object with defaults per type |
 
 ### Companion Project Defaults Fields
 
@@ -185,12 +184,23 @@ Global settings including companion project defaults.
 Article-specific values **override** defaults:
 
 ```
-settings.json          article companion_project    result
-─────────────          ────────────────────────     ──────
-technologies: [L12]    technologies: [L11] →     [L11]
-has_tests: true        (not set)           →     true
-path: "code/"          path: "example/"    →     "example/"
+settings defaults        article companion_project    result
+─────────────            ────────────────────────     ──────
+technologies: [L12]      technologies: [L11]    ->   [L11]
+has_tests: true          (not set)              ->   true
+path: "code/"            path: "example/"       ->   "example/"
 ```
+
+## Database Tables
+
+| Table | Description |
+|-------|-------------|
+| `authors` | Author profiles with JSON columns for complex data |
+| `articles` | Article queue with enum-checked scalar columns + JSON columns |
+| `settings` | Singleton settings (id=1) with two JSON columns |
+| `metadata` | Singleton metadata (id=1) with version and timestamps |
+| `schema_version` | Tracks applied database migrations |
+| `articles_fts` | FTS5 full-text search index on title, subject, tags |
 
 ## Enums
 
@@ -235,11 +245,9 @@ pending, in_progress, draft, review, published, archived
   "series_potential": "Yes",
   "prerequisites": "Basic Laravel",
   "reference_urls": "https://laravel.com/docs",
-  "author": {
-    "id": "mwguerra",
-    "name": "MW Guerra",
-    "languages": ["pt_BR", "en_US"]
-  },
+  "author_id": "mwguerra",
+  "author_name": "MW Guerra",
+  "author_languages": ["pt_BR", "en_US"],
   "status": "draft",
   "output_folder": "content/articles/2025_01_15_rate-limiting/",
   "output_files": [

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Show - View authors, settings, and configuration
+ * Show - View authors, settings, and configuration (SQLite)
  *
  * Usage:
  *   bun run show.ts authors                    # List all authors
@@ -10,32 +10,7 @@
  *   bun run show.ts queue                      # Show queue summary
  */
 
-import { readFile, stat } from "fs/promises";
-import { join } from "path";
-
-// Project root - use CLAUDE_PROJECT_DIR when available, fall back to process.cwd()
-const PROJECT_ROOT = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-
-const CONFIG_DIR = join(PROJECT_ROOT, ".article_writer");
-const FILES = {
-  authors: join(CONFIG_DIR, "authors.json"),
-  settings: join(CONFIG_DIR, "settings.json"),
-  tasks: join(CONFIG_DIR, "article_tasks.json"),
-};
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function loadJson(path: string): Promise<any> {
-  const content = await readFile(path, "utf-8");
-  return JSON.parse(content);
-}
+import { getDb, dbExists, rowToAuthor, getSettings } from "./db";
 
 function printDivider(char: string = "─", length: number = 60): void {
   console.log(char.repeat(length));
@@ -48,36 +23,40 @@ function printHeader(title: string): void {
   printDivider("═");
 }
 
+function ensureDb(): void {
+  if (!dbExists()) {
+    console.error("❌ Database not found.");
+    console.log("   Run /article-writer:init first.");
+    process.exit(1);
+  }
+}
+
 // ============================================
 // Authors
 // ============================================
 
-async function listAuthors(): Promise<void> {
-  if (!(await exists(FILES.authors))) {
-    console.error(`❌ File not found: ${FILES.authors}`);
-    console.log(`   Run /article-writer:init first.`);
-    process.exit(1);
-  }
-
-  const data = await loadJson(FILES.authors);
-  const authors = data.authors || [];
+function listAuthors(): void {
+  ensureDb();
+  const db = getDb();
+  const rows = db.query("SELECT * FROM authors ORDER BY sort_order ASC").all() as any[];
 
   printHeader("AUTHORS");
-  console.log(`  File: ${FILES.authors}`);
   printDivider();
 
-  if (authors.length === 0) {
+  if (rows.length === 0) {
     console.log("\n  No authors configured yet.");
     console.log("  Run /article-writer:author add to create one.\n");
+    db.close();
     return;
   }
 
-  console.log(`\n  Total: ${authors.length} author(s)\n`);
+  console.log(`\n  Total: ${rows.length} author(s)\n`);
 
-  authors.forEach((author: any, index: number) => {
+  rows.forEach((row, index) => {
+    const author = rowToAuthor(row);
     const isDefault = index === 0 ? " [DEFAULT]" : "";
     const hasVoice = author.voice_analysis ? "✓" : "✗";
-    
+
     console.log(`  ${index + 1}. ${author.name} (${author.id})${isDefault}`);
     console.log(`     Languages: ${author.languages?.join(", ") || "none"}`);
     if (author.role) {
@@ -96,29 +75,27 @@ async function listAuthors(): Promise<void> {
 
   console.log(`  To see full details: /article-writer:author show <id>`);
   printDivider();
+  db.close();
 }
 
-async function showAuthor(authorId: string): Promise<void> {
-  if (!(await exists(FILES.authors))) {
-    console.error(`❌ File not found: ${FILES.authors}`);
-    process.exit(1);
-  }
+function showAuthor(authorId: string): void {
+  ensureDb();
+  const db = getDb();
+  const row = db.query("SELECT * FROM authors WHERE id = ?").get(authorId) as any;
 
-  const data = await loadJson(FILES.authors);
-  const authors = data.authors || [];
-  const author = authors.find((a: any) => a.id === authorId);
-
-  if (!author) {
+  if (!row) {
     console.error(`❌ Author not found: ${authorId}`);
+    const all = db.query("SELECT id, name FROM authors ORDER BY sort_order").all() as any[];
     console.log(`\n   Available authors:`);
-    authors.forEach((a: any) => console.log(`   - ${a.id} (${a.name})`));
+    all.forEach((a: any) => console.log(`   - ${a.id} (${a.name})`));
+    db.close();
     process.exit(1);
   }
 
-  const isDefault = authors[0]?.id === authorId;
+  const author = rowToAuthor(row);
+  const isDefault = row.sort_order === 0;
 
   printHeader(`AUTHOR: ${author.name}`);
-  console.log(`  File: ${FILES.authors}`);
   printDivider();
 
   // Identity
@@ -167,15 +144,11 @@ async function showAuthor(authorId: string): Promise<void> {
     console.log("  │");
     console.log("  ├─ VOCABULARY");
     if (author.vocabulary.use_freely) {
-      const terms = Array.isArray(author.vocabulary.use_freely) 
-        ? author.vocabulary.use_freely 
-        : [author.vocabulary.use_freely];
+      const terms = Array.isArray(author.vocabulary.use_freely) ? author.vocabulary.use_freely : [author.vocabulary.use_freely];
       console.log(`  │  Use freely: ${terms.join(", ")}`);
     }
     if (author.vocabulary.always_explain) {
-      const terms = Array.isArray(author.vocabulary.always_explain)
-        ? author.vocabulary.always_explain
-        : [author.vocabulary.always_explain];
+      const terms = Array.isArray(author.vocabulary.always_explain) ? author.vocabulary.always_explain : [author.vocabulary.always_explain];
       console.log(`  │  Always explain: ${terms.join(", ")}`);
     }
   }
@@ -185,16 +158,12 @@ async function showAuthor(authorId: string): Promise<void> {
     console.log("  │");
     console.log("  ├─ PHRASES");
     if (author.phrases.signature) {
-      const phrases = Array.isArray(author.phrases.signature)
-        ? author.phrases.signature
-        : [author.phrases.signature];
+      const phrases = Array.isArray(author.phrases.signature) ? author.phrases.signature : [author.phrases.signature];
       console.log(`  │  Signature:`);
       phrases.forEach((p: string) => console.log(`  │    • "${p}"`));
     }
     if (author.phrases.avoid) {
-      const phrases = Array.isArray(author.phrases.avoid)
-        ? author.phrases.avoid
-        : [author.phrases.avoid];
+      const phrases = Array.isArray(author.phrases.avoid) ? author.phrases.avoid : [author.phrases.avoid];
       console.log(`  │  Avoid:`);
       phrases.forEach((p: string) => console.log(`  │    ✗ "${p}"`));
     }
@@ -205,16 +174,12 @@ async function showAuthor(authorId: string): Promise<void> {
     console.log("  │");
     console.log("  ├─ OPINIONS");
     if (author.opinions.strong_positions) {
-      const positions = Array.isArray(author.opinions.strong_positions)
-        ? author.opinions.strong_positions
-        : [author.opinions.strong_positions];
+      const positions = Array.isArray(author.opinions.strong_positions) ? author.opinions.strong_positions : [author.opinions.strong_positions];
       console.log(`  │  Strong positions:`);
       positions.forEach((p: string) => console.log(`  │    • ${p}`));
     }
     if (author.opinions.stay_neutral) {
-      const neutral = Array.isArray(author.opinions.stay_neutral)
-        ? author.opinions.stay_neutral
-        : [author.opinions.stay_neutral];
+      const neutral = Array.isArray(author.opinions.stay_neutral) ? author.opinions.stay_neutral : [author.opinions.stay_neutral];
       console.log(`  │  Stay neutral on:`);
       neutral.forEach((p: string) => console.log(`  │    ○ ${p}`));
     }
@@ -227,27 +192,27 @@ async function showAuthor(authorId: string): Promise<void> {
     console.log("  ├─ VOICE ANALYSIS (from transcripts)");
     console.log(`  │  Extracted from: ${va.extracted_from?.join(", ") || "unknown"}`);
     console.log(`  │  Samples: ${va.sample_count || 0} turns, ${va.total_words || 0} words`);
-    
+
     if (va.sentence_structure) {
       console.log(`  │  Sentence style: ${va.sentence_structure.variety || "unknown"} (~${va.sentence_structure.avg_length || "?"} words)`);
       console.log(`  │  Question ratio: ${va.sentence_structure.question_ratio || 0}%`);
     }
-    
+
     if (va.communication_style && va.communication_style.length > 0) {
       console.log(`  │  Communication style:`);
       va.communication_style.slice(0, 3).forEach((s: any) => {
         console.log(`  │    • ${s.trait}: ${s.percentage}%`);
       });
     }
-    
+
     if (va.characteristic_expressions && va.characteristic_expressions.length > 0) {
       console.log(`  │  Characteristic expressions: "${va.characteristic_expressions.slice(0, 5).join('", "')}"`);
     }
-    
+
     if (va.signature_vocabulary && va.signature_vocabulary.length > 0) {
       console.log(`  │  Signature vocabulary: ${va.signature_vocabulary.slice(0, 8).join(", ")}`);
     }
-    
+
     if (va.analyzed_at) {
       console.log(`  │  Analyzed at: ${va.analyzed_at}`);
     }
@@ -272,53 +237,63 @@ async function showAuthor(authorId: string): Promise<void> {
 
   console.log("");
   printDivider();
+  db.close();
 }
 
 // ============================================
 // Settings
 // ============================================
 
-async function showSettings(companionProjectType?: string): Promise<void> {
-  if (!(await exists(FILES.settings))) {
-    console.error(`❌ File not found: ${FILES.settings}`);
-    console.log(`   Run /article-writer:init first.`);
-    process.exit(1);
-  }
-
-  const data = await loadJson(FILES.settings);
+function showSettings(companionProjectType?: string): void {
+  ensureDb();
 
   if (companionProjectType) {
-    // Show specific companion project type
-    await showCompanionProjectDefaults(data, companionProjectType);
+    showCompanionProjectDefaults(companionProjectType);
   } else {
-    // Show all settings
-    await showAllSettings(data);
+    showAllSettings();
   }
 }
 
-async function showAllSettings(data: any): Promise<void> {
+function showAllSettings(): void {
+  const db = getDb();
+  const settings = getSettings(db);
+
+  if (!settings) {
+    console.error("❌ Settings not found in database.");
+    db.close();
+    process.exit(1);
+  }
+
   printHeader("SETTINGS");
-  console.log(`  File: ${FILES.settings}`);
   printDivider();
 
+  // Article limits
+  if (settings.article_limits) {
+    console.log("\n  Article Limits:");
+    if (settings.article_limits.max_words) {
+      console.log(`    Max words: ${settings.article_limits.max_words}`);
+    }
+  }
+
   // Metadata
-  if (data.metadata) {
+  const meta = db.query("SELECT * FROM metadata WHERE id = 1").get() as any;
+  if (meta) {
     console.log("\n  Metadata:");
-    console.log(`    Version: ${data.metadata.version || "unknown"}`);
-    console.log(`    Last updated: ${data.metadata.last_updated || "unknown"}`);
+    console.log(`    Version: ${meta.version || "unknown"}`);
+    console.log(`    Last updated: ${meta.last_updated || "unknown"}`);
   }
 
   // Companion project defaults summary
-  if (data.companion_project_defaults) {
+  if (settings.companion_project_defaults) {
     console.log("\n  Companion Project Defaults:");
     console.log("  ┌────────────┬─────────────────────────────────┬───────────┐");
     console.log("  │ Type       │ Technologies                    │ Has Tests │");
     console.log("  ├────────────┼─────────────────────────────────┼───────────┤");
 
-    const types = ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
-    
+    const types = ["code", "node", "python", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
+
     for (const type of types) {
-      const defaults = data.companion_project_defaults[type];
+      const defaults = settings.companion_project_defaults[type];
       if (defaults) {
         const tech = defaults.technologies?.slice(0, 3).join(", ") || "-";
         const techDisplay = tech.length > 30 ? tech.substring(0, 27) + "..." : tech.padEnd(30);
@@ -326,17 +301,18 @@ async function showAllSettings(data: any): Promise<void> {
         console.log(`  │ ${type.padEnd(10)} │ ${techDisplay} │ ${hasTests.padEnd(9)} │`);
       }
     }
-    
+
     console.log("  └────────────┴─────────────────────────────────┴───────────┘");
   }
 
   console.log("\n  To see type details: /article-writer:settings show <type>");
   console.log("  Example: /article-writer:settings show code");
   printDivider();
+  db.close();
 }
 
-async function showCompanionProjectDefaults(data: any, type: string): Promise<void> {
-  const validTypes = ["code", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
+function showCompanionProjectDefaults(type: string): void {
+  const validTypes = ["code", "node", "python", "document", "diagram", "template", "dataset", "config", "script", "spreadsheet", "other"];
 
   if (!validTypes.includes(type)) {
     console.error(`❌ Unknown companion project type: ${type}`);
@@ -344,43 +320,47 @@ async function showCompanionProjectDefaults(data: any, type: string): Promise<vo
     process.exit(1);
   }
 
-  const defaults = data.companion_project_defaults?.[type];
+  const db = getDb();
+  const settings = getSettings(db);
+
+  if (!settings) {
+    console.error("❌ Settings not found in database.");
+    db.close();
+    process.exit(1);
+  }
+
+  const defaults = settings.companion_project_defaults?.[type];
 
   if (!defaults) {
     console.error(`❌ No defaults configured for type: ${type}`);
+    db.close();
     process.exit(1);
   }
 
   printHeader(`COMPANION PROJECT DEFAULTS: ${type.toUpperCase()}`);
-  console.log(`  File: ${FILES.settings}`);
   printDivider();
 
   console.log("");
-  
-  // Technologies
+
   if (defaults.technologies) {
     console.log("  Technologies:");
     defaults.technologies.forEach((t: string) => console.log(`    • ${t}`));
   }
 
-  // Testing
   console.log(`\n  Has Tests: ${defaults.has_tests ? "Yes ✓" : "No ✗"}`);
   if (defaults.test_command) {
     console.log(`  Test Command: ${defaults.test_command}`);
   }
 
-  // Path
   if (defaults.path) {
     console.log(`\n  Default Path: ${defaults.path}`);
   }
 
-  // Scaffold command
   if (defaults.scaffold_command) {
     console.log(`\n  Scaffold Command:`);
     console.log(`    ${defaults.scaffold_command}`);
   }
 
-  // Post scaffold
   if (defaults.post_scaffold && defaults.post_scaffold.length > 0) {
     console.log(`\n  Post-Scaffold Commands:`);
     defaults.post_scaffold.forEach((cmd: string, i: number) => {
@@ -388,30 +368,19 @@ async function showCompanionProjectDefaults(data: any, type: string): Promise<vo
     });
   }
 
-  // Setup commands
-  if (defaults.setup_commands && defaults.setup_commands.length > 0) {
-    console.log(`\n  Setup Commands (for users):`);
-    defaults.setup_commands.forEach((cmd: string, i: number) => {
-      console.log(`    ${i + 1}. ${cmd}`);
-    });
+  if (defaults.verification) {
+    const v = defaults.verification;
+    if (v.install_command) console.log(`\n  Install Command: ${v.install_command}`);
+    if (v.setup_commands && v.setup_commands.length > 0) {
+      console.log(`\n  Setup Commands (for users):`);
+      v.setup_commands.forEach((cmd: string, i: number) => {
+        console.log(`    ${i + 1}. ${cmd}`);
+      });
+    }
+    if (v.run_command) console.log(`\n  Run Command: ${v.run_command}`);
+    if (v.test_command) console.log(`  Test Command: ${v.test_command}`);
   }
 
-  // Run command/instructions
-  if (defaults.run_command) {
-    console.log(`\n  Run Command: ${defaults.run_command}`);
-  }
-  if (defaults.run_instructions) {
-    console.log(`\n  Run Instructions:`);
-    console.log(`    ${defaults.run_instructions}`);
-  }
-
-  // File structure
-  if (defaults.file_structure && defaults.file_structure.length > 0) {
-    console.log(`\n  Expected File Structure:`);
-    defaults.file_structure.forEach((f: string) => console.log(`    ${f}`));
-  }
-
-  // Env setup
   if (defaults.env_setup) {
     console.log(`\n  Environment Setup:`);
     for (const [key, value] of Object.entries(defaults.env_setup)) {
@@ -419,7 +388,11 @@ async function showCompanionProjectDefaults(data: any, type: string): Promise<vo
     }
   }
 
-  // Notes
+  if (defaults.required_structure && defaults.required_structure.length > 0) {
+    console.log(`\n  Required Structure:`);
+    defaults.required_structure.forEach((f: string) => console.log(`    ${f}`));
+  }
+
   if (defaults.notes) {
     console.log(`\n  Notes:`);
     console.log(`    ${defaults.notes}`);
@@ -429,78 +402,63 @@ async function showCompanionProjectDefaults(data: any, type: string): Promise<vo
   console.log("  To modify: /article-writer:settings set <key> <value>");
   console.log(`  Example: /article-writer:settings set ${type}.technologies '["Laravel 11", "Pest 3"]'`);
   printDivider();
+  db.close();
 }
 
 // ============================================
 // Queue Summary
 // ============================================
 
-async function showQueueSummary(): Promise<void> {
-  if (!(await exists(FILES.tasks))) {
-    console.error(`❌ File not found: ${FILES.tasks}`);
-    console.log(`   Run /article-writer:init first.`);
-    process.exit(1);
-  }
+function showQueueSummary(): void {
+  ensureDb();
+  const db = getDb();
 
-  const data = await loadJson(FILES.tasks);
-  const articles = data.articles || [];
+  const total = (db.query("SELECT COUNT(*) as c FROM articles").get() as any).c;
 
   printHeader("ARTICLE QUEUE");
-  console.log(`  File: ${FILES.tasks}`);
   printDivider();
 
-  if (articles.length === 0) {
+  if (total === 0) {
     console.log("\n  No articles in queue.");
     console.log("  Run /article-writer:article <topic> to add one.\n");
+    db.close();
     return;
   }
 
-  // Count by status
-  const byStatus: Record<string, number> = {};
-  const byAuthor: Record<string, number> = {};
-  const byArea: Record<string, number> = {};
-
-  articles.forEach((a: any) => {
-    const status = a.status || "unknown";
-    const author = a.author?.id || a.author || "unassigned";
-    const area = a.area || "unknown";
-
-    byStatus[status] = (byStatus[status] || 0) + 1;
-    byAuthor[author] = (byAuthor[author] || 0) + 1;
-    byArea[area] = (byArea[area] || 0) + 1;
-  });
-
-  console.log(`\n  Total: ${articles.length} articles\n`);
+  console.log(`\n  Total: ${total} articles\n`);
 
   // By status
   console.log("  By Status:");
-  for (const [status, count] of Object.entries(byStatus).sort((a, b) => b[1] - a[1])) {
-    const emoji = status === "pending" ? "⏳" : 
-                  status === "in_progress" ? "🔄" :
-                  status === "draft" ? "📝" :
-                  status === "review" ? "👀" :
-                  status === "published" ? "✅" :
-                  status === "archived" ? "📦" : "❓";
-    console.log(`    ${emoji} ${status}: ${count}`);
+  const statusRows = db.query("SELECT status, COUNT(*) as count FROM articles GROUP BY status ORDER BY count DESC").all() as any[];
+  for (const r of statusRows) {
+    const emoji = r.status === "pending" ? "⏳" :
+                  r.status === "in_progress" ? "🔄" :
+                  r.status === "draft" ? "📝" :
+                  r.status === "review" ? "👀" :
+                  r.status === "published" ? "✅" :
+                  r.status === "archived" ? "📦" : "❓";
+    console.log(`    ${emoji} ${r.status}: ${r.count}`);
   }
 
   // By author
-  if (Object.keys(byAuthor).length > 1 || !byAuthor["unassigned"]) {
+  const authorRows = db.query("SELECT COALESCE(author_id, 'unassigned') as author, COUNT(*) as count FROM articles GROUP BY author ORDER BY count DESC").all() as any[];
+  if (authorRows.length > 1 || (authorRows.length === 1 && authorRows[0].author !== "unassigned")) {
     console.log("\n  By Author:");
-    for (const [author, count] of Object.entries(byAuthor).sort((a, b) => b[1] - a[1])) {
-      console.log(`    • ${author}: ${count}`);
+    for (const r of authorRows) {
+      console.log(`    • ${r.author}: ${r.count}`);
     }
   }
 
   // Top areas
   console.log("\n  Top Areas:");
-  const topAreas = Object.entries(byArea).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  for (const [area, count] of topAreas) {
-    console.log(`    • ${area}: ${count}`);
+  const areaRows = db.query("SELECT area, COUNT(*) as count FROM articles GROUP BY area ORDER BY count DESC LIMIT 5").all() as any[];
+  for (const r of areaRows) {
+    console.log(`    • ${r.area}: ${r.count}`);
   }
 
   console.log("\n  For full list: /article-writer:queue list");
   printDivider();
+  db.close();
 }
 
 // ============================================
@@ -535,7 +493,7 @@ Examples:
 
   switch (command) {
     case "authors":
-      await listAuthors();
+      listAuthors();
       break;
     case "author":
       if (!subArg) {
@@ -543,13 +501,13 @@ Examples:
         console.log("   Usage: bun run show.ts author <id>");
         process.exit(1);
       }
-      await showAuthor(subArg);
+      showAuthor(subArg);
       break;
     case "settings":
-      await showSettings(subArg);
+      showSettings(subArg);
       break;
     case "queue":
-      await showQueueSummary();
+      showQueueSummary();
       break;
     default:
       console.error(`❌ Unknown command: ${command}`);

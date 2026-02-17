@@ -8,7 +8,7 @@ argument-hint: <show [type] | set <path> <value> | reset | reset-type <type>>
 
 Manage global settings for the article-writer plugin, including **article word limits** and companion project defaults.
 
-**File location:** `.article_writer/settings.json`
+**Database:** `.article_writer/article_writer.db`
 **Schema:** `.article_writer/schemas/settings.schema.json`
 **Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writersettings)
 
@@ -92,6 +92,8 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts reset-type <type>`
 | Type | Default Technologies | Has Tests | Use For |
 |------|---------------------|-----------|---------|
 | `code` | Laravel 12, Pest 4, SQLite | Yes | Full application companion projects |
+| `node` | Node.js, npm | No | Node.js applications |
+| `python` | Python 3 | No | Python scripts/applications |
 | `document` | Markdown | No | Templates, guides |
 | `diagram` | Mermaid | No | Architecture diagrams |
 | `template` | Markdown, YAML | No | Reusable file templates |
@@ -123,16 +125,16 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts reset-type <type>`
 When creating a companion project:
 
 1. System reads article's `companion_project.type` (e.g., "code")
-2. Loads defaults for that type from `settings.json`
+2. Loads defaults for that type from settings
 3. Merges with article-specific values
 4. **Article values always override defaults**
 
 ```
-settings.json defaults    +    article companion_project    =    final companion_project
-──────────────────────         ──────────────────────────        ────────────────────────
-technologies: [Laravel 12]     technologies: [L11]               technologies: [L11]
-has_tests: true                (not specified)                   has_tests: true
-run_instructions: "..."        run_instructions: "X"             run_instructions: "X"
+settings defaults           +    article companion_project    =    final companion_project
+──────────────────────           ──────────────────────────        ────────────────────────
+technologies: [Laravel 12]       technologies: [L11]               technologies: [L11]
+has_tests: true                  (not specified)                   has_tests: true
+run_instructions: "..."          run_instructions: "X"             run_instructions: "X"
 ```
 
 ## Examples
@@ -190,5 +192,5 @@ run_instructions: "..."        run_instructions: "X"             run_instruction
 ### View current word limit
 
 ```bash
-jq '.article_limits.max_words' .article_writer/settings.json
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 ```

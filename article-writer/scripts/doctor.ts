@@ -1,30 +1,19 @@
 #!/usr/bin/env bun
 /**
- * Doctor - Validate and fix JSON files against schemas
+ * Doctor - Validate and fix database records against schemas
  * Usage: bun run doctor.ts [--check | --fix | --interactive]
- * 
+ *
  * Modes:
  *   --check        Only report issues, don't fix
  *   --fix          Auto-fix with defaults (non-interactive)
  *   --interactive  Ask for each issue (default)
  */
 
-import { readFile, writeFile, stat } from "fs/promises";
-import { join } from "path";
 import * as readline from "readline";
-
-const CONFIG_DIR = ".article_writer";
-const SCHEMAS_DIR = join(CONFIG_DIR, "schemas");
-
-// File paths
-const FILES = {
-  tasksSchema: join(SCHEMAS_DIR, "article-tasks.schema.json"),
-  authorsSchema: join(SCHEMAS_DIR, "authors.schema.json"),
-  settingsSchema: join(SCHEMAS_DIR, "settings.schema.json"),
-  tasks: join(CONFIG_DIR, "article_tasks.json"),
-  authors: join(CONFIG_DIR, "authors.json"),
-  settings: join(CONFIG_DIR, "settings.json"),
-};
+import {
+  getDb, dbExists, getSettings, touchMetadata,
+  rowToAuthor, rowToArticle, CONFIG_DIR,
+} from "./db";
 
 // Valid enum values from schema
 const ENUMS = {
@@ -50,7 +39,10 @@ const ENUMS = {
   ],
   estimated_effort: ["Short", "Medium", "Long", "Long (Series)"],
   source_type: ["documentation", "tutorial", "news", "blog", "repository", "specification", "other"],
-  companion_project_type: ["code", "document", "diagram", "template", "dataset", "config", "other"],
+  companion_project_type: [
+    "code", "node", "python", "document", "diagram", "template",
+    "dataset", "config", "script", "spreadsheet", "other"
+  ],
 };
 
 // Required fields for articles
@@ -64,13 +56,19 @@ const ARTICLE_REQUIRED = [
 const AUTHOR_REQUIRED = ["id", "name", "languages"];
 
 interface Issue {
-  type: "missing" | "invalid_type" | "invalid_enum" | "invalid_format" | "unknown";
+  type: "missing" | "invalid_type" | "invalid_enum" | "invalid_format" | "unknown" | "integrity";
   item: string;
   field: string;
   message: string;
   currentValue?: any;
   suggestedFix?: any;
   enumOptions?: string[];
+  // For DB updates
+  table?: string;
+  rowId?: any;
+  column?: string;
+  isJsonColumn?: boolean;
+  jsonPath?: string;
 }
 
 interface FixResult {
@@ -81,24 +79,6 @@ interface FixResult {
 
 let mode: "check" | "fix" | "interactive" = "interactive";
 let rl: readline.Interface | null = null;
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function loadJson(path: string): Promise<any> {
-  const content = await readFile(path, "utf-8");
-  return JSON.parse(content);
-}
-
-async function saveJson(path: string, data: any): Promise<void> {
-  await writeFile(path, JSON.stringify(data, null, 2));
-}
 
 function prompt(question: string): Promise<string> {
   if (!rl) {
@@ -123,9 +103,9 @@ function closePrompt(): void {
 // Validation Functions
 // ============================================
 
-function validateArticle(article: any, index: number, authors: any[]): Issue[] {
+function validateArticle(article: any, authors: any[]): Issue[] {
   const issues: Issue[] = [];
-  const itemName = `Article #${article.id || index + 1}`;
+  const itemName = `Article #${article.id}`;
 
   // Check required fields
   for (const field of ARTICLE_REQUIRED) {
@@ -137,72 +117,40 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
         field,
         message: `Missing required field '${field}'`,
         suggestedFix,
+        table: "articles",
+        rowId: article.id,
+        column: field,
       });
     }
   }
 
   // Check enum fields
-  if (article.status && !ENUMS.status.includes(article.status)) {
-    issues.push({
-      type: "invalid_enum",
-      item: itemName,
-      field: "status",
-      message: `Invalid status '${article.status}'`,
-      currentValue: article.status,
-      enumOptions: ENUMS.status,
-      suggestedFix: findClosestEnum(article.status, ENUMS.status) || "pending",
-    });
+  const enumChecks: { field: string; options: string[]; fallback: string }[] = [
+    { field: "status", options: ENUMS.status, fallback: "pending" },
+    { field: "difficulty", options: ENUMS.difficulty, fallback: "Intermediate" },
+    { field: "area", options: ENUMS.area, fallback: "Backend" },
+    { field: "content_type", options: ENUMS.content_type, fallback: "Tutorial" },
+    { field: "estimated_effort", options: ENUMS.estimated_effort, fallback: "Medium" },
+  ];
+
+  for (const { field, options, fallback } of enumChecks) {
+    if (article[field] && !options.includes(article[field])) {
+      issues.push({
+        type: "invalid_enum",
+        item: itemName,
+        field,
+        message: `Invalid ${field} '${article[field]}'`,
+        currentValue: article[field],
+        enumOptions: options,
+        suggestedFix: findClosestEnum(article[field], options) || fallback,
+        table: "articles",
+        rowId: article.id,
+        column: field,
+      });
+    }
   }
 
-  if (article.difficulty && !ENUMS.difficulty.includes(article.difficulty)) {
-    issues.push({
-      type: "invalid_enum",
-      item: itemName,
-      field: "difficulty",
-      message: `Invalid difficulty '${article.difficulty}'`,
-      currentValue: article.difficulty,
-      enumOptions: ENUMS.difficulty,
-      suggestedFix: findClosestEnum(article.difficulty, ENUMS.difficulty) || "Intermediate",
-    });
-  }
-
-  if (article.area && !ENUMS.area.includes(article.area)) {
-    issues.push({
-      type: "invalid_enum",
-      item: itemName,
-      field: "area",
-      message: `Invalid area '${article.area}'`,
-      currentValue: article.area,
-      enumOptions: ENUMS.area,
-      suggestedFix: findClosestEnum(article.area, ENUMS.area),
-    });
-  }
-
-  if (article.content_type && !ENUMS.content_type.includes(article.content_type)) {
-    issues.push({
-      type: "invalid_enum",
-      item: itemName,
-      field: "content_type",
-      message: `Invalid content_type '${article.content_type}'`,
-      currentValue: article.content_type,
-      enumOptions: ENUMS.content_type,
-      suggestedFix: findClosestEnum(article.content_type, ENUMS.content_type) || "Tutorial",
-    });
-  }
-
-  if (article.estimated_effort && !ENUMS.estimated_effort.includes(article.estimated_effort)) {
-    issues.push({
-      type: "invalid_enum",
-      item: itemName,
-      field: "estimated_effort",
-      message: `Invalid estimated_effort '${article.estimated_effort}'`,
-      currentValue: article.estimated_effort,
-      enumOptions: ENUMS.estimated_effort,
-      suggestedFix: findClosestEnum(article.estimated_effort, ENUMS.estimated_effort) || "Medium",
-    });
-  }
-
-  // Check types
+  // Check id type
   if (article.id !== undefined && typeof article.id !== "number") {
     issues.push({
       type: "invalid_type",
@@ -210,41 +158,45 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
       field: "id",
       message: `'id' should be a number, got ${typeof article.id}`,
       currentValue: article.id,
-      suggestedFix: parseInt(article.id, 10) || index + 1,
+      suggestedFix: parseInt(article.id, 10) || 1,
+      table: "articles",
+      rowId: article.id,
+      column: "id",
     });
   }
 
-  // Check author reference structure
+  // Check author reference
   if (article.author) {
     if (typeof article.author === "string") {
-      // Old format - just author ID string
-      const authorObj = authors.find(a => a.id === article.author);
+      const authorObj = authors.find((a: any) => a.id === article.author);
       issues.push({
         type: "invalid_format",
         item: itemName,
         field: "author",
-        message: `'author' should be an object with {id, name, languages}, found string`,
+        message: `'author' reference should be an object with {id, name, languages}, found string`,
         currentValue: article.author,
-        suggestedFix: authorObj ? {
-          id: authorObj.id,
-          name: authorObj.name,
-          languages: authorObj.languages,
-        } : { id: article.author, name: "", languages: [] },
+        suggestedFix: authorObj
+          ? { id: authorObj.id, name: authorObj.name, languages: authorObj.languages }
+          : { id: article.author, name: "", languages: [] },
+        table: "articles",
+        rowId: article.id,
+        column: "author_id",
       });
-    } else if (typeof article.author === "object") {
-      if (!article.author.id) {
-        issues.push({
-          type: "missing",
-          item: itemName,
-          field: "author.id",
-          message: `'author.id' is required`,
-          suggestedFix: authors[0]?.id || "",
-        });
-      }
+    } else if (typeof article.author === "object" && !article.author.id) {
+      issues.push({
+        type: "missing",
+        item: itemName,
+        field: "author.id",
+        message: `'author.id' is required when author is set`,
+        suggestedFix: authors[0]?.id || "",
+        table: "articles",
+        rowId: article.id,
+        column: "author_id",
+      });
     }
   }
 
-  // Check output_files structure
+  // Check output_files structure (JSON column)
   if (article.output_files && Array.isArray(article.output_files)) {
     article.output_files.forEach((file: any, i: number) => {
       if (!file.language) {
@@ -254,6 +206,11 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           field: `output_files[${i}].language`,
           message: `Missing 'language' in output_files[${i}]`,
           suggestedFix: "en_US",
+          table: "articles",
+          rowId: article.id,
+          column: "output_files",
+          isJsonColumn: true,
+          jsonPath: `[${i}].language`,
         });
       }
       if (!file.path) {
@@ -263,12 +220,17 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           field: `output_files[${i}].path`,
           message: `Missing 'path' in output_files[${i}]`,
           suggestedFix: "",
+          table: "articles",
+          rowId: article.id,
+          column: "output_files",
+          isJsonColumn: true,
+          jsonPath: `[${i}].path`,
         });
       }
     });
   }
 
-  // Check sources_used structure
+  // Check sources_used structure (JSON column)
   if (article.sources_used && Array.isArray(article.sources_used)) {
     article.sources_used.forEach((source: any, i: number) => {
       if (!source.url) {
@@ -278,6 +240,11 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           field: `sources_used[${i}].url`,
           message: `Missing 'url' in sources_used[${i}]`,
           suggestedFix: "",
+          table: "articles",
+          rowId: article.id,
+          column: "sources_used",
+          isJsonColumn: true,
+          jsonPath: `[${i}].url`,
         });
       }
       if (!source.summary) {
@@ -287,6 +254,11 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           field: `sources_used[${i}].summary`,
           message: `Missing 'summary' in sources_used[${i}]`,
           suggestedFix: "",
+          table: "articles",
+          rowId: article.id,
+          column: "sources_used",
+          isJsonColumn: true,
+          jsonPath: `[${i}].summary`,
         });
       }
       if (!source.usage) {
@@ -296,6 +268,11 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           field: `sources_used[${i}].usage`,
           message: `Missing 'usage' in sources_used[${i}]`,
           suggestedFix: "",
+          table: "articles",
+          rowId: article.id,
+          column: "sources_used",
+          isJsonColumn: true,
+          jsonPath: `[${i}].usage`,
         });
       }
       if (source.type && !ENUMS.source_type.includes(source.type)) {
@@ -307,12 +284,17 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
           currentValue: source.type,
           enumOptions: ENUMS.source_type,
           suggestedFix: "other",
+          table: "articles",
+          rowId: article.id,
+          column: "sources_used",
+          isJsonColumn: true,
+          jsonPath: `[${i}].type`,
         });
       }
     });
   }
 
-  // Check companion project structure
+  // Check companion_project structure (JSON column)
   if (article.companion_project && typeof article.companion_project === "object") {
     if (article.companion_project.type && !ENUMS.companion_project_type.includes(article.companion_project.type)) {
       issues.push({
@@ -323,6 +305,11 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
         currentValue: article.companion_project.type,
         enumOptions: ENUMS.companion_project_type,
         suggestedFix: "code",
+        table: "articles",
+        rowId: article.id,
+        column: "companion_project",
+        isJsonColumn: true,
+        jsonPath: "type",
       });
     }
   }
@@ -330,9 +317,9 @@ function validateArticle(article: any, index: number, authors: any[]): Issue[] {
   return issues;
 }
 
-function validateAuthor(author: any, index: number): Issue[] {
+function validateAuthor(author: any): Issue[] {
   const issues: Issue[] = [];
-  const itemName = `Author #${index + 1} (${author.id || author.name || "unknown"})`;
+  const itemName = `Author (${author.id || author.name || "unknown"})`;
 
   // Check required fields
   for (const field of AUTHOR_REQUIRED) {
@@ -343,11 +330,15 @@ function validateAuthor(author: any, index: number): Issue[] {
         field,
         message: `Missing required field '${field}'`,
         suggestedFix: field === "languages" ? ["en_US"] : "",
+        table: "authors",
+        rowId: author.id,
+        column: field === "languages" ? "languages" : field,
+        isJsonColumn: field === "languages",
       });
     }
   }
 
-  // Check id format (slug-like)
+  // Check id format
   if (author.id && !/^[a-z0-9-]+$/.test(author.id)) {
     issues.push({
       type: "invalid_format",
@@ -356,6 +347,9 @@ function validateAuthor(author: any, index: number): Issue[] {
       message: `'id' should be slug-like (lowercase, numbers, hyphens only)`,
       currentValue: author.id,
       suggestedFix: author.id.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-"),
+      table: "authors",
+      rowId: author.id,
+      column: "id",
     });
   }
 
@@ -368,6 +362,10 @@ function validateAuthor(author: any, index: number): Issue[] {
       message: `'languages' should be an array`,
       currentValue: author.languages,
       suggestedFix: typeof author.languages === "string" ? [author.languages] : ["en_US"],
+      table: "authors",
+      rowId: author.id,
+      column: "languages",
+      isJsonColumn: true,
     });
   }
 
@@ -380,6 +378,10 @@ function validateAuthor(author: any, index: number): Issue[] {
       message: `'languages' cannot be empty`,
       currentValue: author.languages,
       suggestedFix: ["en_US"],
+      table: "authors",
+      rowId: author.id,
+      column: "languages",
+      isJsonColumn: true,
     });
   }
 
@@ -395,6 +397,9 @@ function validateAuthor(author: any, index: number): Issue[] {
           message: `'tone.formality' should be a number between 1-10`,
           currentValue: val,
           suggestedFix: Math.max(1, Math.min(10, parseInt(val) || 5)),
+          table: "authors",
+          rowId: author.id,
+          column: "tone_formality",
         });
       }
     }
@@ -408,6 +413,9 @@ function validateAuthor(author: any, index: number): Issue[] {
           message: `'tone.opinionated' should be a number between 1-10`,
           currentValue: val,
           suggestedFix: Math.max(1, Math.min(10, parseInt(val) || 5)),
+          table: "authors",
+          rowId: author.id,
+          column: "tone_opinionated",
         });
       }
     }
@@ -419,7 +427,6 @@ function validateAuthor(author: any, index: number): Issue[] {
 function validateSettings(settings: any): Issue[] {
   const issues: Issue[] = [];
   const itemName = "Settings";
-  const validCompanionProjectTypes = ["code", "document", "diagram", "template", "dataset", "config", "other"];
 
   // Check companion_project_defaults exists
   if (!settings.companion_project_defaults) {
@@ -429,20 +436,29 @@ function validateSettings(settings: any): Issue[] {
       field: "companion_project_defaults",
       message: `Missing 'companion_project_defaults' object`,
       suggestedFix: {},
+      table: "settings",
+      rowId: 1,
+      column: "companion_project_defaults",
+      isJsonColumn: true,
     });
     return issues;
   }
 
   // Check each companion project type
   for (const [type, defaults] of Object.entries(settings.companion_project_defaults)) {
-    if (!validCompanionProjectTypes.includes(type)) {
+    if (!ENUMS.companion_project_type.includes(type)) {
       issues.push({
         type: "invalid_enum",
         item: itemName,
         field: `companion_project_defaults.${type}`,
         message: `Unknown companion project type '${type}'`,
         currentValue: type,
-        enumOptions: validCompanionProjectTypes,
+        enumOptions: ENUMS.companion_project_type,
+        table: "settings",
+        rowId: 1,
+        column: "companion_project_defaults",
+        isJsonColumn: true,
+        jsonPath: type,
       });
       continue;
     }
@@ -460,6 +476,11 @@ function validateSettings(settings: any): Issue[] {
         suggestedFix: typeof typeDefaults.technologies === "string"
           ? [typeDefaults.technologies]
           : [],
+        table: "settings",
+        rowId: 1,
+        column: "companion_project_defaults",
+        isJsonColumn: true,
+        jsonPath: `${type}.technologies`,
       });
     }
 
@@ -472,6 +493,11 @@ function validateSettings(settings: any): Issue[] {
         message: `'has_tests' should be a boolean`,
         currentValue: typeDefaults.has_tests,
         suggestedFix: Boolean(typeDefaults.has_tests),
+        table: "settings",
+        rowId: 1,
+        column: "companion_project_defaults",
+        isJsonColumn: true,
+        jsonPath: `${type}.has_tests`,
       });
     }
 
@@ -486,6 +512,11 @@ function validateSettings(settings: any): Issue[] {
         suggestedFix: typeof typeDefaults.setup_commands === "string"
           ? [typeDefaults.setup_commands]
           : [],
+        table: "settings",
+        rowId: 1,
+        column: "companion_project_defaults",
+        isJsonColumn: true,
+        jsonPath: `${type}.setup_commands`,
       });
     }
 
@@ -500,6 +531,11 @@ function validateSettings(settings: any): Issue[] {
         suggestedFix: typeof typeDefaults.file_structure === "string"
           ? [typeDefaults.file_structure]
           : [],
+        table: "settings",
+        rowId: 1,
+        column: "companion_project_defaults",
+        isJsonColumn: true,
+        jsonPath: `${type}.file_structure`,
       });
     }
   }
@@ -535,17 +571,17 @@ function getDefaultValue(field: string): any {
 
 function findClosestEnum(value: string, options: string[]): string | null {
   if (!value) return null;
-  
+
   const lower = value.toLowerCase();
-  
+
   // Exact match (case-insensitive)
   const exact = options.find(o => o.toLowerCase() === lower);
   if (exact) return exact;
-  
+
   // Partial match
   const partial = options.find(o => o.toLowerCase().includes(lower) || lower.includes(o.toLowerCase()));
   if (partial) return partial;
-  
+
   // Common mappings
   const mappings: Record<string, string> = {
     "wip": "in_progress",
@@ -564,14 +600,14 @@ function findClosestEnum(value: string, options: string[]): string | null {
     "advanced": "Advanced",
     "all": "All Levels",
   };
-  
+
   return mappings[lower] || null;
 }
 
 function setNestedValue(obj: any, path: string, value: any): void {
   const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".");
   let current = obj;
-  
+
   for (let i = 0; i < parts.length - 1; i++) {
     const part = parts[i];
     if (current[part] === undefined) {
@@ -579,7 +615,7 @@ function setNestedValue(obj: any, path: string, value: any): void {
     }
     current = current[part];
   }
-  
+
   current[parts[parts.length - 1]] = value;
 }
 
@@ -593,7 +629,6 @@ async function handleIssue(issue: Issue): Promise<FixResult> {
   }
 
   if (mode === "fix") {
-    // Auto-fix with suggested value
     if (issue.suggestedFix !== undefined) {
       return { fixed: true, value: issue.suggestedFix };
     }
@@ -601,33 +636,33 @@ async function handleIssue(issue: Issue): Promise<FixResult> {
   }
 
   // Interactive mode
-  console.log(`\n⚠️  ${issue.item}: ${issue.message}`);
-  
+  console.log(`\n  ${issue.item}: ${issue.message}`);
+
   if (issue.currentValue !== undefined) {
     console.log(`   Current value: ${JSON.stringify(issue.currentValue)}`);
   }
-  
+
   if (issue.enumOptions) {
     console.log(`   Valid options:`);
     issue.enumOptions.forEach((opt, i) => {
       console.log(`     ${i + 1}. ${opt}`);
     });
   }
-  
+
   if (issue.suggestedFix !== undefined) {
     console.log(`   Suggested fix: ${JSON.stringify(issue.suggestedFix)}`);
   }
 
   const response = await prompt(`   Apply fix? [Y/n/custom]: `);
-  
+
   if (response.toLowerCase() === "n" || response.toLowerCase() === "no") {
     return { fixed: false, skipped: true };
   }
-  
+
   if (response.toLowerCase() === "y" || response.toLowerCase() === "yes" || response === "") {
     return { fixed: true, value: issue.suggestedFix };
   }
-  
+
   // Check if it's a number selection for enums
   if (issue.enumOptions && /^\d+$/.test(response)) {
     const idx = parseInt(response) - 1;
@@ -635,15 +670,58 @@ async function handleIssue(issue: Issue): Promise<FixResult> {
       return { fixed: true, value: issue.enumOptions[idx] };
     }
   }
-  
+
   // Custom value
   try {
-    // Try to parse as JSON first
     const parsed = JSON.parse(response);
     return { fixed: true, value: parsed };
   } catch {
-    // Use as string
     return { fixed: true, value: response };
+  }
+}
+
+function applyFix(db: any, issue: Issue, value: any): void {
+  if (!issue.table || issue.rowId === undefined || !issue.column) return;
+
+  const idColumn = issue.table === "settings" ? "id" : "id";
+
+  if (issue.isJsonColumn && issue.jsonPath) {
+    // Read current JSON column, modify, write back
+    const row = db.query(`SELECT ${issue.column} FROM ${issue.table} WHERE ${idColumn} = ?`).get(issue.rowId) as any;
+    if (!row) return;
+
+    let jsonData;
+    try {
+      jsonData = JSON.parse(row[issue.column] || "{}");
+    } catch {
+      jsonData = {};
+    }
+
+    setNestedValue(jsonData, issue.jsonPath, value);
+    db.run(
+      `UPDATE ${issue.table} SET ${issue.column} = ?, updated_at = datetime('now') WHERE ${idColumn} = ?`,
+      [JSON.stringify(jsonData), issue.rowId]
+    );
+  } else if (issue.isJsonColumn && !issue.jsonPath) {
+    // Replace entire JSON column
+    const serialized = typeof value === "string" ? value : JSON.stringify(value);
+    db.run(
+      `UPDATE ${issue.table} SET ${issue.column} = ?, updated_at = datetime('now') WHERE ${idColumn} = ?`,
+      [serialized, issue.rowId]
+    );
+  } else if (issue.column === "author_id" && issue.field === "author") {
+    // Special handling for author reference fix
+    const authorFix = typeof value === "object" ? value : { id: value };
+    db.run(
+      `UPDATE articles SET author_id = ?, author_name = ?, author_languages = ?, updated_at = datetime('now') WHERE id = ?`,
+      [authorFix.id, authorFix.name || null, authorFix.languages ? JSON.stringify(authorFix.languages) : null, issue.rowId]
+    );
+  } else {
+    // Scalar column update
+    db.run(
+      `UPDATE ${issue.table} SET ${issue.column} = ?, updated_at = datetime('now') WHERE ${idColumn} = ?`,
+      [value, issue.rowId]
+    );
   }
 }
 
@@ -655,94 +733,74 @@ async function doctor(): Promise<void> {
   console.log("\n🔍 Article Writer Doctor");
   console.log("========================\n");
 
-  // Check if initialized
-  if (!(await exists(CONFIG_DIR))) {
-    console.error(`❌ ${CONFIG_DIR}/ not found. Run /article-writer:init first.`);
+  // Check if database exists
+  if (!dbExists()) {
+    console.error(`❌ Database not found. Run /article-writer:init first.`);
     process.exit(1);
   }
 
-  // Check schema files
-  console.log("Checking schema files...");
-  
-  if (!(await exists(FILES.tasksSchema))) {
-    console.error(`❌ ${FILES.tasksSchema} not found`);
+  const db = getDb();
+
+  // SQLite integrity checks
+  console.log("Checking database integrity...");
+
+  const integrityResult = db.query("PRAGMA integrity_check").get() as any;
+  if (integrityResult?.integrity_check === "ok") {
+    console.log("✓ Database integrity: OK");
+  } else {
+    console.error(`❌ Database integrity check failed: ${JSON.stringify(integrityResult)}`);
+    db.close();
     process.exit(1);
   }
-  console.log(`✓ article-tasks.schema.json found`);
-  
-  if (!(await exists(FILES.authorsSchema))) {
-    console.error(`❌ ${FILES.authorsSchema} not found`);
-    process.exit(1);
-  }
-  console.log(`✓ authors.schema.json found`);
 
-  if (!(await exists(FILES.settingsSchema))) {
-    console.warn(`⚠️ ${FILES.settingsSchema} not found (optional)`);
+  const fkResults = db.query("PRAGMA foreign_key_check").all() as any[];
+  if (fkResults.length === 0) {
+    console.log("✓ Foreign key constraints: OK");
   } else {
-    console.log(`✓ settings.schema.json found`);
-  }
-
-  // Load data files
-  let authorsData: any = { authors: [] };
-  let tasksData: any = { articles: [] };
-  let settingsData: any = null;
-
-  if (await exists(FILES.authors)) {
-    try {
-      authorsData = await loadJson(FILES.authors);
-      console.log(`✓ authors.json loaded (${authorsData.authors?.length || 0} authors)`);
-    } catch (e) {
-      console.error(`❌ Failed to parse authors.json: ${e}`);
-      process.exit(1);
+    console.error(`❌ Foreign key violations found: ${fkResults.length}`);
+    for (const fk of fkResults) {
+      console.error(`   Table: ${fk.table}, Row: ${fk.rowid}, Parent: ${fk.parent}`);
     }
-  } else {
-    console.log(`⚠️  authors.json not found (will be skipped)`);
   }
 
-  if (await exists(FILES.tasks)) {
-    try {
-      tasksData = await loadJson(FILES.tasks);
-      const articles = tasksData.articles || tasksData;
-      console.log(`✓ article_tasks.json loaded (${Array.isArray(articles) ? articles.length : 0} articles)`);
-    } catch (e) {
-      console.error(`❌ Failed to parse article_tasks.json: ${e}`);
-      process.exit(1);
+  // Check schema files exist in .article_writer/schemas/
+  const schemaFiles = ["article-tasks.schema.json", "authors.schema.json", "settings.schema.json"];
+  for (const f of schemaFiles) {
+    const { existsSync } = await import("fs");
+    const schemaPath = `${CONFIG_DIR}/schemas/${f}`;
+    if (existsSync(schemaPath)) {
+      console.log(`✓ ${f} found`);
+    } else {
+      console.warn(`⚠️  ${f} not found (optional, for documentation)`);
     }
-  } else {
-    console.log(`⚠️  article_tasks.json not found (will be skipped)`);
   }
 
-  if (await exists(FILES.settings)) {
-    try {
-      settingsData = await loadJson(FILES.settings);
-      console.log(`✓ settings.json loaded`);
-    } catch (e) {
-      console.error(`❌ Failed to parse settings.json: ${e}`);
-      process.exit(1);
-    }
-  } else {
-    console.log(`⚠️  settings.json not found (will be skipped)`);
-  }
+  // Load data from database
+  const authorRows = db.query("SELECT * FROM authors ORDER BY sort_order ASC").all() as any[];
+  const articleRows = db.query("SELECT * FROM articles ORDER BY id ASC").all() as any[];
+  const settings = getSettings(db);
+
+  const authors = authorRows.map(rowToAuthor);
+  const articles = articleRows.map(rowToArticle);
+
+  console.log(`\nLoaded: ${authors.length} authors, ${articles.length} articles, ${settings ? "settings" : "no settings"}`);
 
   const allIssues: Issue[] = [];
-  let authorsModified = false;
-  let tasksModified = false;
-  let settingsModified = false;
+  let fixCount = 0;
 
   // Validate authors
-  console.log("\nValidating authors.json...");
-  const authors = authorsData.authors || [];
-  
-  for (let i = 0; i < authors.length; i++) {
-    const issues = validateAuthor(authors[i], i);
-    
+  console.log("\nValidating authors...");
+
+  for (const author of authors) {
+    const issues = validateAuthor(author);
+
     for (const issue of issues) {
       allIssues.push(issue);
       const result = await handleIssue(issue);
-      
+
       if (result.fixed) {
-        setNestedValue(authors[i], issue.field, result.value);
-        authorsModified = true;
+        applyFix(db, issue, result.value);
+        fixCount++;
         console.log(`   ✓ Fixed: ${issue.field} = ${JSON.stringify(result.value)}`);
       } else if (result.skipped) {
         console.log(`   ⏭️  Skipped: ${issue.field}`);
@@ -757,43 +815,43 @@ async function doctor(): Promise<void> {
   }
 
   // Validate settings
-  if (settingsData) {
-    console.log("\nValidating settings.json...");
-    const settingsIssues = validateSettings(settingsData);
-    
+  if (settings) {
+    console.log("\nValidating settings...");
+    const settingsIssues = validateSettings(settings);
+
     for (const issue of settingsIssues) {
       allIssues.push(issue);
       const result = await handleIssue(issue);
-      
+
       if (result.fixed) {
-        setNestedValue(settingsData, issue.field, result.value);
-        settingsModified = true;
+        applyFix(db, issue, result.value);
+        fixCount++;
         console.log(`   ✓ Fixed: ${issue.field} = ${JSON.stringify(result.value)}`);
       } else if (result.skipped) {
         console.log(`   ⏭️  Skipped: ${issue.field}`);
       }
     }
-    
+
     if (settingsIssues.length === 0) {
       console.log(`   ✓ Settings valid`);
     }
+  } else {
+    console.log("\n⚠️  No settings found in database");
   }
 
   // Validate articles
-  console.log("\nValidating article_tasks.json...");
-  const articles = tasksData.articles || (Array.isArray(tasksData) ? tasksData : []);
-  const articlesArray = Array.isArray(articles) ? articles : [];
-  
-  for (let i = 0; i < articlesArray.length; i++) {
-    const issues = validateArticle(articlesArray[i], i, authors);
-    
+  console.log("\nValidating articles...");
+
+  for (const article of articles) {
+    const issues = validateArticle(article, authors);
+
     for (const issue of issues) {
       allIssues.push(issue);
       const result = await handleIssue(issue);
-      
+
       if (result.fixed) {
-        setNestedValue(articlesArray[i], issue.field, result.value);
-        tasksModified = true;
+        applyFix(db, issue, result.value);
+        fixCount++;
         console.log(`   ✓ Fixed: ${issue.field} = ${JSON.stringify(result.value)}`);
       } else if (result.skipped) {
         console.log(`   ⏭️  Skipped: ${issue.field}`);
@@ -801,66 +859,40 @@ async function doctor(): Promise<void> {
     }
   }
 
-  if (articlesArray.length === 0) {
+  if (articles.length === 0) {
     console.log("   No articles to validate");
   } else if (allIssues.filter(i => i.item.startsWith("Article")).length === 0) {
-    console.log(`   ✓ All ${articlesArray.length} articles valid`);
+    console.log(`   ✓ All ${articles.length} articles valid`);
   }
 
-  // Save modified files
-  if (authorsModified && mode !== "check") {
-    authorsData.authors = authors;
-    if (authorsData.metadata) {
-      authorsData.metadata.last_updated = new Date().toISOString();
-    }
-    await saveJson(FILES.authors, authorsData);
-    console.log(`\n💾 Saved authors.json`);
+  // Update metadata if fixes were applied
+  if (fixCount > 0 && mode !== "check") {
+    touchMetadata(db);
   }
 
-  if (settingsModified && mode !== "check") {
-    if (settingsData.metadata) {
-      settingsData.metadata.last_updated = new Date().toISOString();
-    }
-    await saveJson(FILES.settings, settingsData);
-    console.log(`💾 Saved settings.json`);
-  }
-
-  if (tasksModified && mode !== "check") {
-    if (Array.isArray(tasksData)) {
-      tasksData = { articles: articlesArray };
-    } else {
-      tasksData.articles = articlesArray;
-    }
-    if (tasksData.metadata) {
-      tasksData.metadata.last_updated = new Date().toISOString();
-      tasksData.metadata.total_count = articlesArray.length;
-    }
-    await saveJson(FILES.tasks, tasksData);
-    console.log(`💾 Saved article_tasks.json`);
-  }
+  db.close();
 
   // Summary
   const totalIssues = allIssues.length;
-  const fixedIssues = allIssues.filter((_, i) => authorsModified || tasksModified || settingsModified).length;
-  
+
   console.log("\n" + "─".repeat(40));
   console.log("Summary:");
-  console.log(`  Checked: ${articlesArray.length} articles, ${authors.length} authors, ${settingsData ? "settings" : "no settings"}`);
+  console.log(`  Checked: ${articles.length} articles, ${authors.length} authors, ${settings ? "settings" : "no settings"}`);
   console.log(`  Issues found: ${totalIssues}`);
-  
+
   if (mode === "check") {
     console.log(`  Mode: check-only (no fixes applied)`);
     if (totalIssues > 0) {
       console.log(`\n⚠️  Run with --fix or --interactive to repair issues`);
     }
   } else {
-    console.log(`  Fixed: ${authorsModified || tasksModified || settingsModified ? "yes" : "no"}`);
+    console.log(`  Fixed: ${fixCount}`);
   }
 
   if (totalIssues === 0) {
-    console.log(`\n✅ All files are schema-compliant!`);
-  } else if (mode !== "check" && (authorsModified || tasksModified || settingsModified)) {
-    console.log(`\n✅ Files have been repaired`);
+    console.log(`\n✅ Database is fully valid!`);
+  } else if (mode !== "check" && fixCount > 0) {
+    console.log(`\n✅ Database has been repaired`);
   }
 
   closePrompt();

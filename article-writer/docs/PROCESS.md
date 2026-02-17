@@ -18,9 +18,9 @@ Complete workflow guide for creating articles with the article-writer plugin.
 │       │                    /author analyze                │                 │
 │       ▼                         │                         ▼                 │
 │  Creates structure              │              Plan → Research → Draft      │
-│  + settings.json                │              → Companion Project → Review │
-│  + authors.json                 ▼              → Translate → Finalize       │
-│                           authors.json                    │                 │
+│  + article_writer.db            │              → Companion Project → Review │
+│                                 ▼              → Translate → Finalize       │
+│                           Database updated               │                 │
 │                                                          ▼                 │
 │                                               content/articles/YYYY_MM_DD/  │
 │                                                                             │
@@ -46,9 +46,7 @@ your-project/
 │   │   ├── article-tasks.schema.json    # Article task schema
 │   │   ├── authors.schema.json          # Author profile schema
 │   │   └── settings.schema.json         # Settings schema
-│   ├── article_tasks.json               # Empty article queue
-│   ├── authors.json                     # Empty (add authors next)
-│   └── settings.json                    # Companion project defaults configured
+│   └── article_writer.db                # SQLite database (all data)
 ├── content/
 │   └── articles/                        # Output folder for articles
 └── docs/                                # Documentation folder
@@ -74,8 +72,6 @@ This shows the default configuration for each companion project type (code, docu
 # Change test command
 /article-writer:settings set code.test_command "vendor/bin/pest"
 ```
-
-**Settings file location:** `.article_writer/settings.json`
 
 ---
 
@@ -134,8 +130,6 @@ Claude will:
 /article-writer:author show mwguerra
 ```
 
-**Authors file location:** `.article_writer/authors.json`
-
 ---
 
 ## Phase 3: Create Article
@@ -143,7 +137,7 @@ Claude will:
 ### Single Article
 
 ```bash
-# With default author (first in authors.json)
+# With default author (lowest sort_order)
 /article-writer:article implementing rate limiting in Laravel
 
 # With specific author
@@ -152,7 +146,7 @@ Claude will:
 
 ### From Queue
 
-If you have articles queued in `article_tasks.json`:
+If you have articles queued in the database:
 
 ```bash
 # Get next pending article
@@ -162,7 +156,7 @@ If you have articles queued in `article_tasks.json`:
 /article-writer:queue list
 
 # Create specific article by ID
-/article-writer:article from-queue laravel-rate-limiting
+/article-writer:article from-queue 42
 ```
 
 ### Batch Processing
@@ -183,7 +177,7 @@ When you run `/article-writer:article`, these phases execute:
 
 ### Phase 3.1: Initialize
 
-- Load author profile from `authors.json`
+- Load author profile from database
 - Generate article slug from title
 - Create folder structure:
 
@@ -225,9 +219,7 @@ Claude searches the web for:
 3. **Best Practices** - Community recommendations
 4. **Related Repositories** - GitHub examples
 
-All sources are recorded in:
-- `02_research/sources.json` (during writing)
-- `article_tasks.json` → `sources_used` (after completion)
+All sources are recorded and saved to the article's `sources_used` field in the database.
 
 ### Phase 3.4: Draft (Initial)
 
@@ -253,7 +245,7 @@ All sources are recorded in:
 /article-writer:settings show code
 ```
 
-This reads `.article_writer/settings.json` and shows:
+This reads companion project defaults and shows:
 - `scaffold_command`: Command to create base project
 - `post_scaffold`: Commands to run after scaffolding
 - `technologies`: Default tech stack
@@ -287,7 +279,7 @@ Then add article-specific code:
 - Tests
 - README explaining the companion project
 
-#### Step 5: VERIFY (Mandatory) ⚠️
+#### Step 5: VERIFY (Mandatory)
 
 **You MUST actually run these commands and confirm they succeed:**
 
@@ -296,35 +288,35 @@ cd code
 
 # 1. Install dependencies - MUST SUCCEED
 composer install
-# ✓ Check: No errors, vendor/ exists
+# Check: No errors, vendor/ exists
 
 # 2. Setup - MUST SUCCEED
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
-# ✓ Check: No errors
+# Check: No errors
 
 # 3. Run application - MUST START
 php artisan serve &
-# ✓ Check: Server starts on localhost:8000
+# Check: Server starts on localhost:8000
 # Stop server after confirming
 
 # 4. Run tests - ALL MUST PASS
 php artisan test
-# ✓ Check: "Tests: X passed" (0 failures)
+# Check: "Tests: X passed" (0 failures)
 ```
 
-**If ANY step fails → Fix the code → Re-verify → Repeat until all pass.**
+**If ANY step fails -> Fix the code -> Re-verify -> Repeat until all pass.**
 
 **For Other Types:**
 
 | Type | Verification |
 |------|--------------|
-| `node` | `npm install` → `npm start` → `npm test` |
-| `python` | `pip install -r requirements.txt` → `python src/main.py` → `pytest` |
-| `config` | `docker-compose up -d` → `docker-compose ps` (all "Up") |
-| `script` | `chmod +x` → `./script.sh --help` (runs without error) |
+| `node` | `npm install` -> `npm start` -> `npm test` |
+| `python` | `pip install -r requirements.txt` -> `python src/main.py` -> `pytest` |
+| `config` | `docker-compose up -d` -> `docker-compose ps` (all "Up") |
+| `script` | `chmod +x` -> `./script.sh --help` (runs without error) |
 | `document` | Manual: all sections complete, filled examples exist |
 | `diagram` | Manual: renders in Mermaid preview |
 
@@ -348,7 +340,15 @@ Check:
 
 **CHECKPOINT:** Claude confirms article + companion project are ready.
 
-### Phase 3.8: Translate
+### Phase 3.8: Condense (if needed)
+
+If article exceeds `max_words`:
+- Identify and remove redundancy
+- Tighten verbose passages
+- Preserve author voice and technical accuracy
+- Maintain narrative flow and quality
+
+### Phase 3.9: Translate
 
 For each additional language in author's profile:
 - Translate article content
@@ -356,11 +356,11 @@ For each additional language in author's profile:
 - Optionally translate code comments
 - Save as `{slug}.{lang}.md`
 
-### Phase 3.9: Finalize
+### Phase 3.10: Finalize
 
 - Write final article with frontmatter
 - Move from `03_drafts/` to root of article folder
-- Update `article_tasks.json`:
+- Update database:
   - `output_folder`: folder path
   - `output_files`: per-language file paths
   - `sources_used`: all researched URLs
@@ -442,13 +442,13 @@ Shows summary: total articles, by status, by author, top areas.
 
 ## Troubleshooting
 
-### Validate Configuration
+### Validate Database
 
 ```bash
 /article-writer:doctor
 ```
 
-Checks all JSON files against schemas and offers to fix issues.
+Checks database integrity and all records, offers to fix issues.
 
 ### Reset Settings
 
@@ -465,16 +465,22 @@ Checks all JSON files against schemas and offers to fix issues.
 
 Shows what's missing without creating anything.
 
+### Migration from JSON
+
+If you have existing JSON files from a previous version:
+
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/migrate.ts
+```
+
 ---
 
-## File Reference
+## Data Reference
 
-| File | Purpose | View Command |
-|------|---------|--------------|
-| `.article_writer/authors.json` | Author profiles | `/author list` |
-| `.article_writer/settings.json` | Companion project defaults | `/settings show` |
-| `.article_writer/article_tasks.json` | Article queue | `/queue status` |
-| `.article_writer/schemas/` | JSON schemas | `/doctor` |
+| Resource | Purpose | View Command |
+|----------|---------|--------------|
+| `.article_writer/article_writer.db` | All data | See commands above |
+| `.article_writer/schemas/` | Schema documentation | `/doctor` |
 
 ---
 

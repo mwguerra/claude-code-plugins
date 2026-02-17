@@ -1,239 +1,161 @@
 #!/usr/bin/env bun
 /**
- * Article queue management with author support
+ * Article queue management (SQLite)
  * Usage: bun run queue.ts <command> [args]
- * 
+ *
  * Commands:
  *   status              Show queue summary
- *   list [filter]       List articles (pending, area:X, author:X, lang:X)
+ *   list [filter]       List articles (pending, area:X, author:X, lang:X, difficulty:X)
  *   show <id>           Show article details
  *   update <id> <f:v>   Update article field
  *   next [n]            Get next n pending articles
  *   backup              Create backup
  */
 
-import { readFile, writeFile, copyFile, stat } from "fs/promises";
+import { copyFileSync, existsSync } from "fs";
 import { join } from "path";
+import { getDb, dbExists, DB_PATH, rowToArticle, rowToAuthor } from "./db";
 
-const CONFIG_DIR = ".article_writer";
-const QUEUE_FILE = join(CONFIG_DIR, "article_tasks.json");
-const AUTHORS_FILE = join(CONFIG_DIR, "authors.json");
-const BACKUP_FILE = join(CONFIG_DIR, "article_tasks.backup.json");
-
-interface Author {
-  id: string;
-  name: string;
-  languages: string[];
-}
-
-interface OutputFile {
-  language: string;
-  path: string;
-  translated_at?: string;
-}
-
-interface Article {
-  id: number;
-  title: string;
-  subject: string;
-  area: string;
-  tags: string;
-  difficulty: string;
-  relevance: string;
-  content_type: string;
-  estimated_effort: string;
-  versions: string;
-  series_potential: string;
-  prerequisites: string;
-  reference_urls: string;
-  author?: {
-    id: string;
-    name?: string;
-    languages?: string[];
-  };
-  status: string;
-  output_folder?: string;
-  output_files?: OutputFile[];
-  created_at?: string;
-  written_at?: string;
-  published_at?: string;
-  updated_at?: string;
-  error_note?: string;
-}
-
-interface Queue {
-  $schema?: string;
-  metadata?: {
-    version: string;
-    last_updated: string;
-    total_count: number;
-  };
-  articles: Article[];
-}
-
-interface Authors {
-  authors: Author[];
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function loadQueue(): Promise<Queue> {
-  if (!(await exists(QUEUE_FILE))) {
-    console.error(`Queue file not found: ${QUEUE_FILE}`);
-    console.error("Run /article-writer:init first.");
+function ensureDb(): void {
+  if (!dbExists()) {
+    console.error("Database not found. Run /article-writer:init first.");
     process.exit(1);
   }
-
-  const content = await readFile(QUEUE_FILE, "utf-8");
-  const data = JSON.parse(content);
-  return Array.isArray(data) ? { articles: data } : data;
 }
 
-async function loadAuthors(): Promise<Authors> {
-  try {
-    const content = await readFile(AUTHORS_FILE, "utf-8");
-    return JSON.parse(content);
-  } catch {
-    return { authors: [] };
-  }
-}
+function showStatus(): void {
+  ensureDb();
+  const db = getDb();
 
-async function saveQueue(queue: Queue): Promise<void> {
-  if (queue.metadata) {
-    queue.metadata.last_updated = new Date().toISOString();
-    queue.metadata.total_count = queue.articles.length;
-  }
-  await writeFile(QUEUE_FILE, JSON.stringify(queue, null, 2));
-}
-
-async function backup(): Promise<void> {
-  await copyFile(QUEUE_FILE, BACKUP_FILE);
-  console.log(`✅ Backup created: ${BACKUP_FILE}`);
-}
-
-function showStatus(queue: Queue, authors: Authors): void {
-  const articles = queue.articles;
-  const byStatus: Record<string, number> = {};
-  const byArea: Record<string, number> = {};
-  const byAuthor: Record<string, number> = {};
-
-  for (const a of articles) {
-    byStatus[a.status] = (byStatus[a.status] || 0) + 1;
-    if (a.status === "pending") {
-      byArea[a.area] = (byArea[a.area] || 0) + 1;
-      const authorId = a.author?.id || "(default)";
-      byAuthor[authorId] = (byAuthor[authorId] || 0) + 1;
-    }
-  }
+  const total = (db.query("SELECT COUNT(*) as c FROM articles").get() as any).c;
 
   console.log("\n📊 Article Queue Status");
   console.log("========================");
-  console.log(`Total: ${articles.length}`);
+  console.log(`Total: ${total}`);
   console.log("");
-  
+
   const statusIcons: Record<string, string> = {
     pending: "⏳", in_progress: "🔄", draft: "📝",
-    review: "👀", published: "✅", archived: "📦"
+    review: "👀", published: "✅", archived: "📦",
   };
 
-  for (const [status, icon] of Object.entries(statusIcons)) {
-    if (byStatus[status]) {
-      console.log(`${icon} ${status}: ${byStatus[status]}`);
-    }
+  const statusRows = db.query("SELECT status, COUNT(*) as count FROM articles GROUP BY status").all() as any[];
+  for (const r of statusRows) {
+    const icon = statusIcons[r.status] || "❓";
+    console.log(`${icon} ${r.status}: ${r.count}`);
   }
 
-  const nextPending = articles.find(a => a.status === "pending");
-  if (nextPending) {
-    const authorName = nextPending.author?.name || authors.authors[0]?.name || "Default";
-    console.log(`\n📌 Next pending: ID ${nextPending.id}`);
-    console.log(`   "${nextPending.title}"`);
+  // Next pending
+  const nextRow = db.query("SELECT id, title, author_id, author_name FROM articles WHERE status='pending' ORDER BY id LIMIT 1").get() as any;
+  if (nextRow) {
+    const authorName = nextRow.author_name || nextRow.author_id || "(default)";
+    console.log(`\n📌 Next pending: ID ${nextRow.id}`);
+    console.log(`   "${nextRow.title}"`);
     console.log(`   Author: ${authorName}`);
   }
 
-  const stuck = articles.filter(a => a.status === "in_progress");
-  if (stuck.length > 0) {
+  // Stuck articles
+  const stuckRows = db.query("SELECT id, title FROM articles WHERE status='in_progress'").all() as any[];
+  if (stuckRows.length > 0) {
     console.log(`\n⚠️  In progress (may be stuck):`);
-    for (const a of stuck) {
-      console.log(`   ID ${a.id} - "${a.title}"`);
+    for (const r of stuckRows) {
+      console.log(`   ID ${r.id} - "${r.title}"`);
     }
   }
 
-  if (Object.keys(byArea).length > 0) {
+  // By area (pending only)
+  const areaRows = db.query("SELECT area, COUNT(*) as count FROM articles WHERE status='pending' GROUP BY area ORDER BY count DESC LIMIT 5").all() as any[];
+  if (areaRows.length > 0) {
     console.log("\n📂 Pending by Area:");
-    const sorted = Object.entries(byArea).sort((a, b) => b[1] - a[1]);
-    for (const [area, count] of sorted.slice(0, 5)) {
-      console.log(`   ${area}: ${count}`);
+    for (const r of areaRows) {
+      console.log(`   ${r.area}: ${r.count}`);
     }
   }
 
-  if (Object.keys(byAuthor).length > 1) {
+  // By author (pending only)
+  const authorRows = db.query("SELECT COALESCE(author_id, '(default)') as author, COUNT(*) as count FROM articles WHERE status='pending' GROUP BY author").all() as any[];
+  if (authorRows.length > 1) {
     console.log("\n✍️  Pending by Author:");
-    for (const [author, count] of Object.entries(byAuthor)) {
-      console.log(`   ${author}: ${count}`);
+    for (const r of authorRows) {
+      console.log(`   ${r.author}: ${r.count}`);
     }
   }
 
   console.log("");
+  db.close();
 }
 
-function listArticles(queue: Queue, filter?: string): void {
-  let articles = queue.articles;
+function listArticles(filter?: string): void {
+  ensureDb();
+  const db = getDb();
+
+  let query = "SELECT * FROM articles";
+  const params: any[] = [];
+  const conditions: string[] = [];
 
   if (filter) {
     const statusFilters = ["pending", "draft", "review", "published", "in_progress", "archived"];
     if (statusFilters.includes(filter)) {
-      articles = articles.filter(a => a.status === filter);
+      conditions.push("status = ?");
+      params.push(filter);
     } else if (filter.startsWith("area:")) {
-      const area = filter.slice(5);
-      articles = articles.filter(a => a.area.toLowerCase() === area.toLowerCase());
+      conditions.push("LOWER(area) = LOWER(?)");
+      params.push(filter.slice(5));
     } else if (filter.startsWith("difficulty:")) {
-      const diff = filter.slice(11);
-      articles = articles.filter(a => a.difficulty.toLowerCase() === diff.toLowerCase());
+      conditions.push("LOWER(difficulty) = LOWER(?)");
+      params.push(filter.slice(11));
     } else if (filter.startsWith("author:")) {
-      const authorId = filter.slice(7);
-      articles = articles.filter(a => a.author?.id === authorId);
+      conditions.push("author_id = ?");
+      params.push(filter.slice(7));
     } else if (filter.startsWith("lang:")) {
-      const lang = filter.slice(5);
-      articles = articles.filter(a => a.author?.languages?.includes(lang));
+      conditions.push("author_languages LIKE ?");
+      params.push(`%${filter.slice(5)}%`);
     }
   } else {
-    articles = articles.filter(a => a.status === "pending");
+    conditions.push("status = 'pending'");
   }
 
-  console.log(`\n📋 Articles (${articles.length} found)\n`);
-  
+  if (conditions.length > 0) {
+    query += " WHERE " + conditions.join(" AND ");
+  }
+  query += " ORDER BY id ASC";
+
+  const rows = db.query(query).all(...params) as any[];
+
+  console.log(`\n📋 Articles (${rows.length} found)\n`);
+
   const icons: Record<string, string> = {
     pending: "⏳", in_progress: "🔄", draft: "📝",
-    review: "👀", published: "✅", archived: "📦"
+    review: "👀", published: "✅", archived: "📦",
   };
 
-  for (const a of articles.slice(0, 20)) {
-    const icon = icons[a.status] || "📄";
-    const langs = a.author?.languages?.join(", ") || "default";
-    console.log(`${icon} [${a.id}] ${a.title}`);
-    console.log(`   ${a.area} | ${a.difficulty} | ${a.content_type}`);
-    console.log(`   Author: ${a.author?.name || "(default)"} | Languages: ${langs}`);
+  for (const row of rows.slice(0, 20)) {
+    const icon = icons[row.status] || "📄";
+    const langs = row.author_languages ? JSON.parse(row.author_languages).join(", ") : "default";
+    console.log(`${icon} [${row.id}] ${row.title}`);
+    console.log(`   ${row.area} | ${row.difficulty} | ${row.content_type}`);
+    console.log(`   Author: ${row.author_name || row.author_id || "(default)"} | Languages: ${langs}`);
   }
 
-  if (articles.length > 20) {
-    console.log(`\n... and ${articles.length - 20} more`);
+  if (rows.length > 20) {
+    console.log(`\n... and ${rows.length - 20} more`);
   }
+
+  db.close();
 }
 
-function showArticle(queue: Queue, id: number): void {
-  const article = queue.articles.find(a => a.id === id);
-  
-  if (!article) {
+function showArticle(id: number): void {
+  ensureDb();
+  const db = getDb();
+  const row = db.query("SELECT * FROM articles WHERE id = ?").get(id) as any;
+
+  if (!row) {
     console.error(`Article ID ${id} not found`);
+    db.close();
     return;
   }
+
+  const article = rowToArticle(row);
 
   console.log(`\n📄 Article #${article.id}`);
   console.log("─".repeat(50));
@@ -246,7 +168,7 @@ function showArticle(queue: Queue, id: number): void {
   console.log(`Effort: ${article.estimated_effort}`);
   console.log(`Versions: ${article.versions}`);
   console.log(`Series: ${article.series_potential}`);
-  
+
   console.log(`\n✍️  Author:`);
   if (article.author) {
     console.log(`   ID: ${article.author.id}`);
@@ -260,11 +182,11 @@ function showArticle(queue: Queue, id: number): void {
   console.log(`References: ${article.reference_urls}`);
   console.log(`Tags: ${article.tags}`);
   console.log(`Relevance: ${article.relevance}`);
-  
+
   if (article.output_folder) {
     console.log(`\n📁 Output Folder: ${article.output_folder}`);
   }
-  
+
   if (article.output_files && article.output_files.length > 0) {
     console.log("\n📄 Output Files:");
     for (const f of article.output_files) {
@@ -284,19 +206,25 @@ function showArticle(queue: Queue, id: number): void {
   if (article.error_note) {
     console.log(`\n⚠️  Error: ${article.error_note}`);
   }
+
+  db.close();
 }
 
-async function updateArticle(queue: Queue, id: number, update: string): Promise<void> {
-  const article = queue.articles.find(a => a.id === id);
-  
-  if (!article) {
+function updateArticle(id: number, update: string): void {
+  ensureDb();
+  const db = getDb();
+
+  const existing = db.query("SELECT id FROM articles WHERE id = ?").get(id) as any;
+  if (!existing) {
     console.error(`Article ID ${id} not found`);
+    db.close();
     return;
   }
 
   const colonIndex = update.indexOf(":");
   if (colonIndex === -1) {
     console.error("Update format: field:value");
+    db.close();
     return;
   }
 
@@ -305,57 +233,69 @@ async function updateArticle(queue: Queue, id: number, update: string): Promise<
 
   const validFields = [
     "status", "output_folder", "error_note",
-    "created_at", "written_at", "published_at"
+    "created_at", "written_at", "published_at",
   ];
-  
+
   if (!validFields.includes(field)) {
     console.error(`Invalid field. Valid: ${validFields.join(", ")}`);
+    db.close();
     return;
   }
 
-  (article as any)[field] = value;
-  article.updated_at = new Date().toISOString();
-  
-  await saveQueue(queue);
+  db.run(
+    `UPDATE articles SET ${field} = ?, updated_at = datetime('now') WHERE id = ?`,
+    [value, id]
+  );
   console.log(`✅ Updated article ${id}: ${field} = ${value}`);
+  db.close();
 }
 
-function getNext(queue: Queue, n: number = 1): void {
-  const pending = queue.articles.filter(a => a.status === "pending").slice(0, n);
-  
-  if (pending.length === 0) {
+function getNext(n: number = 1): void {
+  ensureDb();
+  const db = getDb();
+
+  const rows = db.query("SELECT * FROM articles WHERE status='pending' ORDER BY id ASC LIMIT ?").all(n) as any[];
+
+  if (rows.length === 0) {
     console.log("No pending articles");
+    db.close();
     return;
   }
 
-  console.log(JSON.stringify(pending, null, 2));
+  const articles = rows.map(rowToArticle);
+  console.log(JSON.stringify(articles, null, 2));
+  db.close();
+}
+
+function backup(): void {
+  ensureDb();
+  const backupPath = DB_PATH + ".backup";
+  copyFileSync(DB_PATH, backupPath);
+  console.log(`✅ Backup created: ${backupPath}`);
 }
 
 // Main
 const args = process.argv.slice(2);
 const command = args[0];
 
-const queue = await loadQueue();
-const authors = await loadAuthors();
-
 switch (command) {
   case "status":
-    showStatus(queue, authors);
+    showStatus();
     break;
   case "list":
-    listArticles(queue, args[1]);
+    listArticles(args[1]);
     break;
   case "show":
-    showArticle(queue, parseInt(args[1], 10));
+    showArticle(parseInt(args[1], 10));
     break;
   case "update":
-    await updateArticle(queue, parseInt(args[1], 10), args[2]);
+    updateArticle(parseInt(args[1], 10), args[2]);
     break;
   case "next":
-    getNext(queue, parseInt(args[1], 10) || 1);
+    getNext(parseInt(args[1], 10) || 1);
     break;
   case "backup":
-    await backup();
+    backup();
     break;
   default:
     console.log(`

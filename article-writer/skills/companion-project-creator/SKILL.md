@@ -558,7 +558,7 @@ class Post extends Model
 
 ## Settings Integration
 
-**ALWAYS load settings.json before creating companion projects.**
+**ALWAYS load settings before creating companion projects.**
 
 ### Step 1: Load Settings
 
@@ -567,16 +567,15 @@ class Post extends Model
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 ```
 
-**Or read directly:**
-```javascript
-const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
-const defaults = settings.companion_project_defaults.code;
+**Or use article-stats.ts for programmatic access:**
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --json
 ```
 
 ### Step 2: Get Values from Settings
 
 ```json
-// .article_writer/settings.json → companion_project_defaults.code
+// Database settings → companion_project_defaults.code
 {
   "technologies": ["Laravel 12", "Pest 4", "SQLite"],
   "scaffold_command": "composer create-project laravel/laravel code --prefer-dist",
@@ -597,7 +596,7 @@ const defaults = settings.companion_project_defaults.code;
 If the article task has a `companion_project` field, those values override settings:
 
 ```
-settings.json defaults    +    article.companion_project    =    final config
+settings defaults          +    article.companion_project    =    final config
 ──────────────────────         ────────────────        ────────────
 scaffold_command: X            scaffold_command: Y      Y (article wins)
 technologies: [A, B]           (not set)                [A, B] (use default)
@@ -626,7 +625,7 @@ php artisan test
 
 ---
 
-Global defaults from `settings.json`:
+Global defaults from database settings:
 
 ```json
 {
@@ -712,7 +711,7 @@ class PostController extends Controller
 
 ## Companion Project Task Recording
 
-After creating companion project, update article_tasks.json:
+After creating companion project, update the article record in the database:
 
 ```json
 {

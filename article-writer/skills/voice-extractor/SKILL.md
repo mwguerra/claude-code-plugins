@@ -49,7 +49,7 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/voice-extractor.ts --speaker "Name" tran
 # Multiple transcripts (more data = better profile)
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/voice-extractor.ts --speaker "Name" t1.txt t2.txt t3.txt
 
-# Output JSON for direct merging into authors.json
+# Output JSON for direct use with author profiles
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/voice-extractor.ts --speaker "Name" --json transcript.txt
 ```
 

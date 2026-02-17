@@ -44,7 +44,7 @@ canonical_url: "https://example.com/articles/rate-limiting"
 | title | Yes | Article title (< 60 chars for SEO) |
 | slug | Yes | URL-friendly identifier |
 | description | Yes | Meta description (150-160 chars) |
-| author | Yes | Author ID (from authors.json) |
+| author | Yes | Author ID (from authors table) |
 | author_name | Yes | Author display name |
 | language | Yes | Language code (e.g., pt_BR, en_US) |
 | translations | No | Array of other language versions |

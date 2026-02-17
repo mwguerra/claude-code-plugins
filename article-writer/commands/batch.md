@@ -41,13 +41,13 @@ Process multiple articles from the task queue autonomously.
 ## Prerequisites
 
 1. Plugin initialized: `/article-writer:init`
-2. Authors configured: `.article_writer/authors.json`
-3. Tasks in queue: `.article_writer/article_tasks.json`
+2. Authors configured in database
+3. Tasks in queue: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --summary`
 
 ## Process
 
-1. Load and validate task queue
-2. **Load `settings.json`** (companion project defaults + `article_limits.max_words`)
+1. Load and validate task queue from database
+2. **Load settings** (companion project defaults + `article_limits.max_words`)
 3. Filter articles matching criteria
 4. For each article:
    - Get author (from task or default)
@@ -66,7 +66,7 @@ Process multiple articles from the task queue autonomously.
 ## Author Handling
 
 - Each task can specify its own author
-- If not specified, uses first author in authors.json
+- If not specified, uses default author (lowest sort_order)
 - Article follows that author's tone and languages
 
 ## Word Limit Enforcement
@@ -75,7 +75,7 @@ All articles processed in batch mode are subject to the `max_words` limit from s
 
 ```bash
 # Check current limit before batch
-jq '.article_limits.max_words' .article_writer/settings.json
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 ```
 
 Articles exceeding the limit are automatically condensed while preserving quality and author voice.
@@ -90,7 +90,7 @@ Articles exceeding the limit are automatically condensed while preserving qualit
 
 Articles saved as: `content/articles/{folder}/{slug}.{lang}.md`
 
-Task JSON updated with:
+Database updated with:
 - output_folder
 - output_files (per language)
 - sources_used (researched URLs)

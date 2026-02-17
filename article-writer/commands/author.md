@@ -6,9 +6,8 @@ argument-hint: <add | analyze | list | show ID | edit ID | remove ID>
 
 # Author Management
 
-Manage author profiles in `.article_writer/authors.json`.
+Manage author profiles stored in the SQLite database (`.article_writer/article_writer.db`).
 
-**File location:** `.article_writer/authors.json`
 **Schema:** `.article_writer/schemas/authors.schema.json`
 **Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerauthor)
 
@@ -100,9 +99,9 @@ Confirms before removing.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | string | ✓ | Unique slug identifier (lowercase, hyphens) |
-| `name` | string | ✓ | Display name |
-| `languages` | array | ✓ | Writing languages (first = primary) |
+| `id` | string | Yes | Unique slug identifier (lowercase, hyphens) |
+| `name` | string | Yes | Display name |
+| `languages` | array | Yes | Writing languages (first = primary) |
 | `role` | string/array | | Professional role(s) |
 | `experience` | string/array | | Years/areas of experience |
 | `expertise` | string/array | | Areas of expertise |
@@ -119,4 +118,4 @@ Confirms before removing.
 
 ## Default Author
 
-The first author in `authors.json` is used when no author is specified for an article.
+The author with the lowest `sort_order` in the database is used when no author is specified for an article.

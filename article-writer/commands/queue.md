@@ -8,7 +8,7 @@ argument-hint: <status | list [filter] | show ID>
 
 Manage the article task queue.
 
-**File location:** `.article_writer/article_tasks.json`
+**Database:** `.article_writer/article_writer.db`
 **Schema:** `.article_writer/schemas/article-tasks.schema.json`
 **Documentation:** [docs/COMMANDS.md](../docs/COMMANDS.md#article-writerqueue)
 
@@ -64,8 +64,8 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts show 42`
 ## Status Flow
 
 ```
-pending → in_progress → draft → review → published
-               ↓
+pending -> in_progress -> draft -> review -> published
+               |
            archived
 ```
 
@@ -79,8 +79,8 @@ pending → in_progress → draft → review → published
 | `area` | Category (Laravel, PHP, etc.) |
 | `difficulty` | Beginner/Intermediate/Advanced |
 | `status` | Current status |
-| `author.id` | Assigned author |
+| `author_id` | Assigned author |
 | `sources_used` | Researched URLs (after writing) |
-| `example` | Example info (after writing) |
+| `companion_project` | Companion project info (after writing) |
 | `output_folder` | Article folder path (after writing) |
 | `output_files` | Per-language file paths (after writing) |

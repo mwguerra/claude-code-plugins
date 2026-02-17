@@ -30,20 +30,20 @@ Create a single technical article interactively with multi-language support.
 ## Prerequisites
 
 1. Plugin initialized: `/article-writer:init`
-2. At least one author configured in `.article_writer/authors.json`
+2. At least one author configured in database
 
 ## Author Selection
 
 1. If `--author ID` specified, use that author
 2. If from queue and task has author, use task's author
-3. Otherwise, use first author in authors.json
+3. Otherwise, use default author (lowest sort_order)
 
 ## Process
 
-1. Select author and load profile from `.article_writer/authors.json`
-2. **Load settings from `.article_writer/settings.json`** (companion project defaults + `article_limits.max_words`)
+1. Select author and load profile from database
+2. **Load settings** (companion project defaults + `article_limits.max_words`)
 3. Initialize folder: `content/articles/{date}_{slug}/` (including `code/`)
-4. Guide through: Planning → **Web Research** → Drafting → **Companion Project Creation** → Review → **Condense**
+4. Guide through: Planning -> **Web Research** -> Drafting -> **Companion Project Creation** -> Review -> **Condense**
 5. Search web for documentation, news, and related content
 6. Write initial draft in author's primary language
 7. Create practical companion project using settings defaults (scaffold_command, post_scaffold, etc.)
@@ -51,7 +51,7 @@ Create a single technical article interactively with multi-language support.
 9. Review article for flow and voice compliance
 10. **Condense if over max_words** (preserving quality and voice)
 11. Translate to other languages
-12. Update article_tasks.json with output paths, sources, and companion project info
+12. Update database with output paths, sources, and companion project info
 
 ## Web Research
 
@@ -65,7 +65,7 @@ All sources are recorded in `sources_used` array.
 
 ## Practical Companion Projects
 
-Every article includes a practical companion project. Companion project defaults come from `.article_writer/settings.json`:
+Every article includes a practical companion project. Companion project defaults come from settings:
 
 ```bash
 # View defaults before creating
@@ -78,11 +78,11 @@ Companion project workflow:
 3. **Execute scaffold_command** from settings
 4. **Execute post_scaffold** commands from settings
 5. Add article-specific code (models, controllers, tests)
-6. **⚠️ VERIFY - Actually run the code:**
+6. **VERIFY - Actually run the code:**
    - `install_command` - Must succeed (vendor/ exists)
    - `run_command` - App must start without errors
    - `test_command` - All tests must pass
-7. **If verification fails → Fix code → Re-verify**
+7. **If verification fails -> Fix code -> Re-verify**
 8. Update draft with actual code from companion project
 9. Review integrated article as a whole
 
@@ -104,7 +104,7 @@ Articles are subject to a **hard word limit** defined in settings:
 
 ```bash
 # Check current limit
-jq '.article_limits.max_words' .article_writer/settings.json
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 ```
 
 **Default:** 3000 words (prose only, excludes frontmatter and code blocks)

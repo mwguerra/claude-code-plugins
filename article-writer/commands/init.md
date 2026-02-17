@@ -28,12 +28,10 @@ Runs: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/init.ts [--check]`
 your-project/
 ├── .article_writer/
 │   ├── schemas/
-│   │   ├── article-tasks.schema.json    # Validates article_tasks.json
-│   │   ├── authors.schema.json          # Validates authors.json
-│   │   └── settings.schema.json         # Validates settings.json
-│   ├── article_tasks.json               # Empty article queue
-│   ├── authors.json                     # Empty (add authors next)
-│   └── settings.json                    # Pre-configured example defaults
+│   │   ├── article-tasks.schema.json    # Article schema reference
+│   │   ├── authors.schema.json          # Author schema reference
+│   │   └── settings.schema.json         # Settings schema reference
+│   └── article_writer.db                # SQLite database (authors, articles, settings)
 ├── content/
 │   └── articles/                        # Output folder for articles
 └── docs/                                # Documentation folder
@@ -41,7 +39,7 @@ your-project/
 
 ## Default Settings
 
-The `settings.json` file comes pre-configured with defaults for each example type:
+The database comes pre-configured with defaults for each companion project type:
 
 | Type | Technologies | Has Tests |
 |------|-------------|-----------|
@@ -81,16 +79,26 @@ To view/customize: `/article-writer:settings show`
 ## Re-running Init
 
 Running `/article-writer:init` again is safe:
-- ✅ Creates any missing files/folders
-- ⏭️ Skips existing files (won't overwrite your data)
-- 📝 Reports what was created vs what already existed
+- Creates any missing files/folders
+- Skips existing files (won't overwrite your data)
+- Reports what was created vs what already existed
+
+## Migration from JSON
+
+If you have existing JSON files (`article_tasks.json`, `authors.json`, `settings.json`), run:
+
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/migrate.ts
+```
+
+This migrates all data to SQLite and renames JSON files to `.json.migrated`.
 
 ## Files Reference
 
-After init, these files are available:
+After init, these resources are available:
 
-| File | Purpose | View Command |
-|------|---------|--------------|
-| `.article_writer/authors.json` | Author profiles | `/article-writer:author list` |
-| `.article_writer/settings.json` | Example defaults | `/article-writer:settings show` |
-| `.article_writer/article_tasks.json` | Article queue | `/article-writer:queue status` |
+| Resource | Purpose | View Command |
+|----------|---------|--------------|
+| `.article_writer/article_writer.db` | All data (authors, articles, settings) | `/article-writer:queue status` |
+| `.article_writer/schemas/` | Schema documentation | `/article-writer:doctor` |
+| `content/articles/` | Output folder | (check after creation) |

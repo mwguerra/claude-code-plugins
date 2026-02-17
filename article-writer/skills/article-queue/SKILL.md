@@ -5,14 +5,27 @@ description: Manage article task queue - add, filter, update status, and track m
 
 # Article Queue
 
-Manage `.article_writer/article_tasks.json` for article creation.
+Manage the article queue stored in the SQLite database (`.article_writer/article_writer.db`).
 
-## File Locations
+## Data Access
 
-- **Queue**: `.article_writer/article_tasks.json`
-- **Authors**: `.article_writer/authors.json`
-- **Schema**: `.article_writer/schemas/article-tasks.schema.json`
-- **Backup**: `.article_writer/article_tasks.backup.json`
+All data is stored in the `articles` table of the SQLite database. Use the provided scripts for all operations:
+
+```bash
+# Queue summary
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts status
+
+# List articles (with filters)
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts list [filter]
+
+# Show article details
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts show <id>
+
+# Stats and operations
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --summary
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get <id>
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --set-status <status> <id>
+```
 
 ## Schema Reference
 
@@ -21,17 +34,18 @@ See [references/schema-reference.md](references/schema-reference.md) for fields.
 ## Key Fields
 
 ### Author Reference
+
+Articles reference authors via `author_id`, `author_name`, and `author_languages` columns:
+
 ```json
 {
-  "author": {
-    "id": "mwguerra",
-    "name": "MW Guerra",
-    "languages": ["pt_BR", "en_US"]
-  }
+  "author_id": "mwguerra",
+  "author_name": "MW Guerra",
+  "author_languages": ["pt_BR", "en_US"]
 }
 ```
 
-If author not specified, first author in authors.json is used.
+If author not specified, the default author (lowest `sort_order`) is used.
 
 ### Output Files (per language)
 ```json
@@ -66,65 +80,40 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts status
 ```
 
 ### Filter by Author
-```javascript
-articles.filter(a => a.author?.id === "mwguerra")
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts list author:mwguerra
 ```
 
 ### Filter by Language
-```javascript
-articles.filter(a => 
-  a.author?.languages?.includes("en_US")
-)
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts list lang:en_US
 ```
 
 ### Update After Writing
-```javascript
-article.status = "draft";
-article.output_folder = "content/articles/2025_01_15_slug/";
-article.output_files = [
-  { language: "pt_BR", path: "...", translated_at: "..." }
-];
-article.written_at = new Date().toISOString();
-article.updated_at = new Date().toISOString();
+```bash
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts update <id> status:draft
 ```
 
 ### Add Translation
-```javascript
-article.output_files.push({
-  language: "en_US",
-  path: "content/articles/.../article.en_US.md",
-  translated_at: new Date().toISOString()
-});
-```
+Update the `output_files` JSON column with additional language entries.
 
 ## Status Flow
 
 ```
-pending → in_progress → draft → review → published
-               ↓
+pending -> in_progress -> draft -> review -> published
+               |
            archived
 ```
 
 ## Default Author
 
 When adding tasks without author:
-1. Load authors.json
-2. Use first author's id, name, languages
-3. Store reference in task
-
-```javascript
-const authors = JSON.parse(await readFile(".article_writer/authors.json"));
-const defaultAuthor = authors.authors[0];
-task.author = {
-  id: defaultAuthor.id,
-  name: defaultAuthor.name,
-  languages: defaultAuthor.languages
-};
-```
+1. Query default author: `SELECT * FROM authors ORDER BY sort_order ASC LIMIT 1`
+2. Store author_id, author_name, author_languages in article record
 
 ## Validation
 
 Before processing:
-- Verify author.id exists in authors.json
+- Verify author_id exists in authors table
 - Validate languages are subset of author's languages
 - Check all required fields present

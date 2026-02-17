@@ -8,7 +8,7 @@
 
 ## Global Companion Project Defaults
 
-Defaults are in `.article_writer/settings.json`. Article values override defaults.
+Defaults are stored in the database settings table. Article values override defaults.
 
 ### Code Companion Project Defaults
 

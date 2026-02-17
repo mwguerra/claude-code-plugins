@@ -7,7 +7,7 @@ allowed-tools: Skill(article-queue), Bash(bun:*)
 
 Get the first pending article from the queue to start working on.
 
-**File**: `.article_writer/article_tasks.json`
+**Database**: `.article_writer/article_writer.db`
 **Documentation**: [docs/COMMANDS.md](../docs/COMMANDS.md#next)
 
 ## Usage
@@ -18,11 +18,10 @@ Get the first pending article from the queue to start working on.
 
 ## What It Does
 
-1. Loads `.article_writer/article_tasks.json`
-2. Filters articles with `status: "pending"`
-3. Sorts by priority (if set) then by order in file
-4. Returns the first pending article with full details
-5. Shows the command to start writing it
+1. Queries the SQLite database for articles with `status = 'pending'`
+2. Sorts by ID (ascending)
+3. Returns the first pending article with full details
+4. Shows the command to start writing it
 
 ## Output
 
@@ -31,11 +30,10 @@ Get the first pending article from the queue to start working on.
   NEXT ARTICLE
 ═══════════════════════════════════════════════════════════════
 
-  ID:       laravel-rate-limiting
+  ID:       5
   Title:    Implementing Rate Limiting in Laravel
-  Area:     Backend Development
+  Area:     Backend
   Author:   mwguerra
-  Priority: high
 
   Subject:
   How to implement and customize rate limiting in Laravel APIs
@@ -43,7 +41,7 @@ Get the first pending article from the queue to start working on.
 
 ────────────────────────────────────────────────────────────────
   To start writing:
-  /article-writer:article laravel-rate-limiting
+  /article-writer:article from-queue 5
 ────────────────────────────────────────────────────────────────
 
   Queue: 1 pending, 3 draft, 2 published
@@ -57,7 +55,7 @@ Get the first pending article from the queue to start working on.
   NEXT ARTICLE
 ═══════════════════════════════════════════════════════════════
 
-  ✓ No pending articles in queue!
+  No pending articles in queue!
 
   Queue: 0 pending, 5 draft, 10 published
 
@@ -68,16 +66,13 @@ Get the first pending article from the queue to start working on.
 
 ## Priority Order
 
-Articles are selected in this order:
-
-1. **Priority** (if set): `critical` → `high` → `normal` → `low`
-2. **Position** in file (first pending wins)
+Articles are selected by ascending ID (first pending wins).
 
 ## Related Commands
 
 | Command | Description |
 |---------|-------------|
-| `/article-writer:article <id>` | Start writing the article |
+| `/article-writer:article from-queue <id>` | Start writing the article |
 | `/article-writer:queue status` | See full queue status |
 | `/article-writer:queue list pending` | See all pending articles |
 
@@ -86,6 +81,6 @@ Articles are selected in this order:
 After getting the next article:
 
 1. Review the article details
-2. Run `/article-writer:article <id>` to start
+2. Run `/article-writer:article from-queue <id>` to start
 3. Follow the article creation workflow
-4. Article status changes: `pending` → `in_progress` → `draft`
+4. Article status changes: `pending` -> `in_progress` -> `draft`

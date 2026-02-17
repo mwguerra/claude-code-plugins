@@ -9,7 +9,7 @@ Create and maintain consistent author voice across all articles.
 
 ## Profile Location
 
-Stored in: `.article_writer/authors.json`
+Stored in: `.article_writer/article_writer.db` (authors table)
 
 Schema: `.article_writer/schemas/authors.schema.json`
 
@@ -161,7 +161,7 @@ content/articles/2025_01_15_rate-limiting/
 ## Default Author
 
 If article task doesn't specify author:
-- First author in `authors.json` is used
+- Author with lowest `sort_order` in the database is used
 - Their language settings apply
 - Their voice/tone is followed
 

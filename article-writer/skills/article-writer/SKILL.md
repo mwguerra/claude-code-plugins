@@ -9,10 +9,10 @@ Create technical articles with companion projects and multi-language support.
 
 ## Quick Start
 
-1. Determine author (from task or first in authors.json)
+1. Determine author (from task or default author in database)
 2. Create folder structure (including `code/` folder)
-3. Load author profile
-4. **Load settings.json** (including `article_limits.max_words`)
+3. Load author profile from database
+4. **Load settings** (including `article_limits.max_words`)
 5. Follow phases: Initialize → Plan → Research → **Draft → Companion Project → Integrate → Review → Condense** → Translate → Finalize
 
 ## Workflow Overview
@@ -53,7 +53,7 @@ content/articles/YYYY_MM_DD_slug/
 - Get author, generate slug, create folder
 - Create `code/` directory for companion project
 - Copy author profile to `00_context/`
-- **Load `article_limits.max_words` from settings.json**
+- **Load `article_limits.max_words` from settings**
 
 ### Phase 1: Plan
 - Classify article type
@@ -124,7 +124,7 @@ A Laravel companion project is a FULL Laravel installation. A Node companion pro
 
 #### Step 1: Load Companion Project Defaults from Settings
 
-**Read `.article_writer/settings.json` first:**
+**Load settings from database first:**
 
 ```bash
 # View defaults for the companion project type
@@ -133,7 +133,7 @@ bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 
 **Or read JSON and extract:**
 ```javascript
-const settings = JSON.parse(fs.readFileSync('.article_writer/settings.json'));
+// Settings are loaded from the database via show.ts or article-stats.ts
 const codeDefaults = settings.companion_project_defaults.code;
 // codeDefaults.scaffold_command
 // codeDefaults.verification.install_command
@@ -312,10 +312,10 @@ sed '/^---$/,/^---$/d; /^```/,/^```$/d' draft_v2.{lang}.md | wc -w
 #### Step 2: Load Word Limit from Settings
 
 ```bash
-# Read max_words from settings.json
+# Read max_words from settings
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 # Or read JSON directly:
-# jq '.article_limits.max_words' .article_writer/settings.json
+# bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
 ```
 
 #### Step 3: Condense if Over Limit
@@ -381,7 +381,7 @@ After condensing:
 
 ### Phase 8: Finalize
 - Write final article with frontmatter
-- Update article_tasks.json with:
+- Update database with:
   - output_files
   - sources_used
   - companion_project info

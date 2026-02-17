@@ -4,7 +4,7 @@ description: Autonomous agent that processes article tasks from the queue, creat
 
 # Article Writer Agent
 
-Autonomously process article tasks from `.article_writer/article_tasks.json`.
+Autonomously process article tasks from the SQLite database (`.article_writer/article_writer.db`).
 
 ## Activation Triggers
 
@@ -17,108 +17,105 @@ Autonomously process article tasks from `.article_writer/article_tasks.json`.
 ## Prerequisites
 
 Before running, verify:
-1. Plugin initialized: `.article_writer/` exists
-2. Authors configured: `.article_writer/authors.json` has entries
-3. Valid task queue: `.article_writer/article_tasks.json`
+1. Plugin initialized: `.article_writer/` exists with `article_writer.db`
+2. Authors configured: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts authors`
+3. Valid task queue: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --summary`
 
-## CRITICAL: Using article-stats.sh for JSON Operations
+## CRITICAL: Using article-stats.ts for Database Operations
 
-**ALWAYS use `article-stats.sh` as the primary way to interact with `article_tasks.json`.**
+**ALWAYS use `article-stats.ts` as the primary way to interact with the article queue.**
 
-This bash script efficiently processes JSON without loading entire files into memory, saving tokens and context. Located at: `${CLAUDE_PLUGIN_ROOT}/scripts/article-stats.sh`
+This TypeScript script efficiently queries the SQLite database, saving tokens and context. Located at: `${CLAUDE_PLUGIN_ROOT}/scripts/article-stats.ts`
 
 ### Quick Reference
 
 ```bash
 # Get queue summary (default)
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --summary
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --summary
 
 # Get full JSON stats for programmatic use
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --json
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --json
 
 # Get next article to process
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --next
 
 # Get next 5 articles
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --next5
 
 # Get counts by status/area/difficulty/author
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --status
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --area
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --difficulty
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --author
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --status
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --area
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --difficulty
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --author
 
 # Get specific article by ID
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5 title
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5 author.id
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get 5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get 5 title
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get 5 author.id
 
 # Update article status (valid: pending, in_progress, draft, review, published, archived)
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-status in_progress 5
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-status draft 5 6 7
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --set-status in_progress 5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --set-status draft 5 6 7
 
 # Set/clear error notes
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --set-error 5 "Build failed"
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --clear-error 5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --set-error 5 "Build failed"
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --clear-error 5
 
 # Check stuck articles (in_progress status)
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --stuck
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --stuck
 
 # List all/pending article IDs
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --ids
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --pending-ids
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --ids
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --pending-ids
 
 # Show help
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh --help
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --help
 ```
 
-**DO NOT** directly read or edit `article_tasks.json` unless absolutely necessary. Use the script for all operations.
+**DO NOT** directly query the SQLite database unless absolutely necessary. Use the scripts for all operations.
 
 ## Workflow
 
 ### 1. Initialize Session
 
-1. Run `article-stats.sh --summary` to get queue overview
-2. Run `article-stats.sh --stuck` to check for interrupted articles
-3. Load `authors.json`
-4. **Load `settings.json`** (companion project defaults AND `article_limits.max_words`)
-5. Create backup: `article_tasks.backup.json`
+1. Run `article-stats.ts --summary` to get queue overview
+2. Run `article-stats.ts --stuck` to check for interrupted articles
+3. Load authors: `bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts authors`
+4. **Load settings** (companion project defaults AND `article_limits.max_words`)
+5. Database handles backups via WAL mode (no manual backup needed)
 
-**CRITICAL: Read and store `article_limits.max_words` from settings.json. This is a HARD LIMIT that applies to ALL articles regardless of content_type.**
+**CRITICAL: Read and store `article_limits.max_words` from settings. This is a HARD LIMIT that applies to ALL articles regardless of content_type.**
 
 ```bash
 # View queue status
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --summary
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --summary
 
 # To view settings before starting (includes article_limits):
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings
-
-# Read max_words limit directly:
-jq '.article_limits.max_words' .article_writer/settings.json
 ```
 
 ### 2. Select Articles
 
-Use `article-stats.sh` to select pending articles:
+Use `article-stats.ts` to select pending articles:
 
 ```bash
 # Get next article
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --next
 
 # Get next 5 articles
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --next5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --next5
 
 # Get specific article by ID
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get 5
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get 5
 
-# Get pending article IDs (for filtering by area/author, use --json and jq)
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --pending-ids
+# Get pending article IDs
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --pending-ids
 ```
 
 Filter modes:
 - **By count**: Use `--next5` then process first N
 - **By ID**: Use `--get <id>` for specific article
-- **By area**: Use `--json | jq '.by_area'` to see distribution
+- **By area**: Use `--json` to see distribution
 - **By author**: Use `--author` for counts by author
 - **By difficulty**: Use `--difficulty` for counts by level
 
@@ -128,12 +125,12 @@ For each selected article:
 
 ```
 a. Determine author:
-   - Use: article-stats.sh --get <id> author.id
-   - If null, use first author in authors.json
-b. Load author profile from authors.json
-c. Load max_words from settings.json article_limits
+   - Use: article-stats.ts --get <id> author.id
+   - If null, use default author (lowest sort_order)
+b. Load author profile: bun run show.ts author <id>
+c. Load max_words from settings article_limits
 d. Update status: "pending" → "in_progress"
-   - Use: article-stats.sh --set-status in_progress <id>
+   - Use: article-stats.ts --set-status in_progress <id>
 e. Process article using Skill(article-writer):
    - Research: Search web for docs, news, tutorials
    - Draft: Write initial draft in primary language
@@ -143,12 +140,12 @@ e. Process article using Skill(article-writer):
    - **Condense: Enforce max_words limit (MANDATORY)**
    - Translate: Create other language versions
 f. On success:
-   - Use: article-stats.sh --set-status draft <id>
+   - Use: article-stats.ts --set-status draft <id>
    - Manually update output_folder, output_files, sources_used, companion_project
    - Record final word count in task
 g. On failure:
    - Keep "in_progress" status
-   - Use: article-stats.sh --set-error <id> "Error message"
+   - Use: article-stats.ts --set-error <id> "Error message"
    - Continue to next
 ```
 
@@ -200,8 +197,8 @@ If author has:
   "voice_analysis": {
     "sentence_structure": { "avg_length": 14, "variety": "moderate" },
     "communication_style": [{ "trait": "enthusiasm", "percentage": 32 }],
-    "characteristic_expressions": ["na prática", "o ponto é"],
-    "sentence_starters": ["Então", "O interessante é"]
+    "characteristic_expressions": ["na pratica", "o ponto e"],
+    "sentence_starters": ["Entao", "O interessante e"]
   }
 }
 ```
@@ -210,8 +207,8 @@ Then write:
 - Conversational but confident (formality 4, opinionated 7)
 - Medium-length sentences (~14 words average)
 - With enthusiasm and energy
-- Using "na prática" and "o ponto é" occasionally
-- Starting some sentences with "Então" or "O interessante é"
+- Using "na pratica" and "o ponto e" occasionally
+- Starting some sentences with "Entao" or "O interessante e"
 
 ### 5. Web Research Phase
 
@@ -242,23 +239,21 @@ For each article, search the web for:
 
 #### Step 1: Read Settings
 
-**Load companion project defaults from `.article_writer/settings.json`:**
+**Load companion project defaults from settings:**
 
 ```bash
 # View settings for the companion project type
 bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/show.ts settings code
 ```
 
-Or read the JSON file directly and extract `companion_project_defaults.code` (or relevant type).
-
 #### Step 2: Merge with Article Overrides
 
 ```
-settings.json defaults    +    article.companion_project    =    final config
-──────────────────────         ────────────────────────────      ────────────
-scaffold_command: X            scaffold_command: Y                scaffold_command: Y  (article wins)
-technologies: [A, B]           (not specified)                    technologies: [A, B] (use default)
-has_tests: true                has_tests: false                   has_tests: false     (article wins)
+settings defaults           +    article.companion_project    =    final config
+──────────────────────           ────────────────────────────      ────────────
+scaffold_command: X              scaffold_command: Y                scaffold_command: Y  (article wins)
+technologies: [A, B]             (not specified)                    technologies: [A, B] (use default)
+has_tests: true                  has_tests: false                   has_tests: false     (article wins)
 ```
 
 #### Step 3: Execute Scaffold
@@ -284,7 +279,7 @@ On top of scaffolded project, add:
 - Tests
 - README.md
 
-#### Step 5: VERIFY (Mandatory) ⚠️
+#### Step 5: VERIFY (Mandatory)
 
 **You MUST actually execute these commands and confirm they succeed.**
 
@@ -293,23 +288,23 @@ cd code
 
 # 1. Install - MUST SUCCEED
 composer install
-# ✓ Confirm: vendor/ directory exists, no errors
+# Confirm: vendor/ directory exists, no errors
 
 # 2. Setup - MUST SUCCEED
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
-# ✓ Confirm: No errors, database tables created
+# Confirm: No errors, database tables created
 
 # 3. Run - MUST START
 php artisan serve &
-# ✓ Confirm: "Server running on http://127.0.0.1:8000"
+# Confirm: "Server running on http://127.0.0.1:8000"
 # Stop server after confirming
 
 # 4. Test - ALL MUST PASS
 php artisan test
-# ✓ Confirm: "Tests: X passed" with 0 failures
+# Confirm: "Tests: X passed" with 0 failures
 ```
 
 **If ANY step fails:**
@@ -336,7 +331,7 @@ php artisan test
 
 **Never create partial projects with just a few files.**
 
-### 7. Word Limit Enforcement (Condense Phase) ⚠️
+### 7. Word Limit Enforcement (Condense Phase)
 
 **This is MANDATORY after review, before translation.**
 
@@ -373,7 +368,7 @@ sed '/^---$/,/^---$/d; /^```/,/^```$/d' 03_drafts/draft_v2.{lang}.md | wc -w
    # 03_drafts/draft_v3.{lang}.md
    ```
 
-5. **Verify** word count is now ≤ max_words
+5. **Verify** word count is now <= max_words
 
 **If condensation compromises quality:**
 - Document the issue in task notes
@@ -420,7 +415,7 @@ Log to `.article_writer/.processing-log.json`:
 ### 10. Completion
 
 After batch:
-1. Update `metadata.last_updated`
+1. Update metadata timestamp
 2. Report: processed, succeeded, failed
 3. List languages completed per article
 4. List errors
@@ -429,8 +424,8 @@ After batch:
 ## Status Flow
 
 ```
-pending → in_progress → draft → review → published
-               ↓
+pending -> in_progress -> draft -> review -> published
+               |
            archived
 ```
 
@@ -443,18 +438,18 @@ pending → in_progress → draft → review → published
 
 ## Error Recovery
 
-If interrupted, use `article-stats.sh` to recover:
+If interrupted, use `article-stats.ts` to recover:
 
 ```bash
 # 1. Find stuck articles (in_progress status)
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --stuck
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --stuck
 
 # 2. Get full details of stuck article
-"${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.sh .article_writer/article_tasks.json --get <id>
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --get <id>
 ```
 
 Then decide:
-- If all languages exist → `article-stats.sh --set-status draft <id>`
-- If partial → Note which languages missing, continue processing
-- If none → `article-stats.sh --set-status pending <id>` to reset
-- If error → `article-stats.sh --clear-error <id>` after fixing
+- If all languages exist -> `article-stats.ts --set-status draft <id>`
+- If partial -> Note which languages missing, continue processing
+- If none -> `article-stats.ts --set-status pending <id>` to reset
+- If error -> `article-stats.ts --clear-error <id>` after fixing

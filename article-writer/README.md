@@ -9,6 +9,21 @@ Create high-quality technical articles with authentic author voice, web research
 | **[docs/COMMANDS.md](docs/COMMANDS.md)** | Complete command reference |
 | **[docs/PROCESS.md](docs/PROCESS.md)** | Step-by-step workflow guide |
 
+## Architecture
+
+All data is stored in a single SQLite database (`.article_writer/article_writer.db`) using Bun's built-in `bun:sqlite` - zero external dependencies. The database uses WAL mode for concurrent reads and foreign keys for referential integrity.
+
+```
+┌─────────────────────────────────────────────┐
+│           article_writer.db                 │
+├─────────────┬──────────────┬────────────────┤
+│  authors    │  articles    │  settings      │
+│  (profiles) │  (queue)     │  (config)      │
+├─────────────┴──────────────┴────────────────┤
+│  metadata  │  schema_version │  articles_fts │
+└─────────────────────────────────────────────┘
+```
+
 ## Features
 
 - **Authentic Voice**: Extract voice patterns from transcripts OR create profiles manually
@@ -17,6 +32,7 @@ Create high-quality technical articles with authentic author voice, web research
 - **Web Research**: Automatic source gathering and citation
 - **Verified Examples**: Full runnable applications that are actually tested before completion
 - **Batch Processing**: Queue and process multiple articles
+- **SQLite Backend**: Zero external dependencies, WAL mode, FTS5 full-text search
 
 ## Quick Start
 
@@ -26,7 +42,7 @@ Create high-quality technical articles with authentic author voice, web research
 /article-writer:init
 ```
 
-Creates: `.article_writer/` folder with schemas, settings, and empty queue.
+Creates: `.article_writer/` folder with SQLite database, schemas, and default settings.
 
 ### 2. Create Author
 
@@ -72,17 +88,19 @@ Creates: `.article_writer/` folder with schemas, settings, and empty queue.
 | `/article-writer:next` | Get next pending article | [docs/COMMANDS.md#next](docs/COMMANDS.md#article-writernext) |
 | `/article-writer:queue status` | Show queue summary | [docs/COMMANDS.md#queue](docs/COMMANDS.md#article-writerqueue) |
 | `/article-writer:batch <n>` | Process n articles | [docs/COMMANDS.md#batch](docs/COMMANDS.md#article-writerbatch) |
-| `/article-writer:doctor` | Validate JSON files | [docs/COMMANDS.md#doctor](docs/COMMANDS.md#article-writerdoctor) |
+| `/article-writer:doctor` | Validate database records | [docs/COMMANDS.md#doctor](docs/COMMANDS.md#article-writerdoctor) |
 
-## File Locations
+## Data Storage
 
-| File | Purpose | View Command |
-|------|---------|--------------|
-| `.article_writer/authors.json` | Author profiles | `/article-writer:author list` |
-| `.article_writer/settings.json` | Companion project defaults | `/article-writer:settings show` |
-| `.article_writer/article_tasks.json` | Article queue | `/article-writer:queue status` |
-| `.article_writer/schemas/` | JSON schemas | `/article-writer:doctor` |
-| `content/articles/` | Output folder | (check after creation) |
+| Table | Purpose | View Command |
+|-------|---------|--------------|
+| `authors` | Author profiles | `/article-writer:author list` |
+| `settings` | Companion project defaults + article limits | `/article-writer:settings show` |
+| `articles` | Article queue | `/article-writer:queue status` |
+| `metadata` | Version and timestamp tracking | (internal) |
+| `articles_fts` | Full-text search index | (internal) |
+
+All data lives in a single file: `.article_writer/article_writer.db`
 
 ## Author Profiles
 
@@ -145,6 +163,9 @@ Claude asks about: identity, languages, tone, vocabulary, phrases, opinions.
 
 # Change scaffold command
 /article-writer:settings set code.scaffold_command "composer create-project laravel/laravel:^11.0 code"
+
+# Set word limit
+/article-writer:settings set article_limits.max_words 5000
 ```
 
 ### Reset Settings
@@ -165,9 +186,7 @@ your-project/
 │   │   ├── article-tasks.schema.json
 │   │   ├── authors.schema.json
 │   │   └── settings.schema.json
-│   ├── article_tasks.json
-│   ├── authors.json
-│   └── settings.json
+│   └── article_writer.db
 ├── content/
 │   └── articles/
 │       └── 2025_01_15_rate-limiting/
@@ -193,21 +212,44 @@ cd code && composer install && php artisan serve
 | Type | What Gets Created |
 |------|-------------------|
 | `code` | Full application (Laravel, Node, etc.) |
+| `node` | Node.js application |
+| `python` | Python script/application |
 | `document` | Templates + filled-in samples |
 | `diagram` | Valid Mermaid diagrams |
 | `config` | Working docker-compose setup |
 | `script` | Executable bash scripts |
 | `dataset` | Data files + schemas |
 
+## Migration from JSON
+
+If upgrading from a previous JSON-based version:
+
+```bash
+# Check what would be migrated
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/migrate.ts --check
+
+# Run migration
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/migrate.ts
+
+# Rollback if needed
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/migrate.ts --rollback
+```
+
+The migration:
+- Reads all 3 JSON files (article_tasks.json, authors.json, settings.json)
+- Creates the SQLite database with all tables and indexes
+- Inserts all data preserving IDs and relationships
+- Renames JSON files to `.json.migrated` (safety net)
+
 ## Troubleshooting
 
-### Validate Configuration
+### Validate Database
 
 ```bash
 /article-writer:doctor
 ```
 
-Checks all JSON files against schemas and offers to fix issues.
+Checks database integrity, validates all records, and offers to fix issues.
 
 ### Check Initialization
 
@@ -227,8 +269,43 @@ Resets to plugin defaults.
 
 ## Requirements
 
-- Bun runtime (for scripts)
+- Bun runtime (for scripts and `bun:sqlite`)
 - Claude Code with plugin support
+
+## Scripts Reference
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/init.ts` | Initialize plugin |
+| `scripts/show.ts` | View authors, settings, queue |
+| `scripts/config.ts` | Modify settings |
+| `scripts/queue.ts` | Queue management |
+| `scripts/article-stats.ts` | Queue stats and status updates |
+| `scripts/doctor.ts` | Validate and fix database |
+| `scripts/migrate.ts` | Migrate from JSON to SQLite |
+| `scripts/create-article-folder.ts` | Create article folder structure |
+| `scripts/voice-extractor.ts` | Extract voice from transcripts |
+| `scripts/db.ts` | Shared database module |
+
+## Database Schema
+
+### Tables
+
+| Table | Key Columns | Description |
+|-------|-------------|-------------|
+| `authors` | id (PK), name, languages (JSON), tone_formality, tone_opinionated, vocabulary (JSON), phrases (JSON), sort_order | Author profiles |
+| `articles` | id (PK), title, status, area, difficulty, author_id (FK), output_files (JSON), sources_used (JSON) | Article queue with CHECK constraints on all enums |
+| `settings` | id=1, article_limits (JSON), companion_project_defaults (JSON) | Singleton configuration |
+| `metadata` | id=1, version, last_updated | Plugin metadata |
+| `articles_fts` | title, subject, tags | FTS5 full-text search (auto-synced via triggers) |
+
+### Key Design Decisions
+
+- **Scalar columns** for frequently-queried fields (status, area, difficulty) with CHECK constraints
+- **JSON columns** for complex nested data (voice_analysis, companion_project, output_files)
+- **sort_order** on authors: lowest = default author
+- **WAL mode** for concurrent read access
+- **FTS5** virtual table with insert/update/delete triggers for full-text search
 
 ## Skills Reference
 
@@ -240,21 +317,9 @@ Resets to plugin defaults.
 | `companion-project-creator` | Create complete companion projects | `skills/companion-project-creator/SKILL.md` |
 | `article-queue` | Queue operations | `skills/article-queue/SKILL.md` |
 
-## Scripts Reference
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/init.ts` | Initialize plugin |
-| `scripts/show.ts` | View authors, settings, queue |
-| `scripts/config.ts` | Modify settings |
-| `scripts/voice-extractor.ts` | Extract voice from transcripts |
-| `scripts/queue.ts` | Queue management |
-| `scripts/doctor.ts` | Validate and fix JSON |
-| `scripts/create-article-folder.ts` | Create article folder structure |
-
 ## Further Reading
 
 - **[docs/COMMANDS.md](docs/COMMANDS.md)** - Complete command reference with examples
 - **[docs/PROCESS.md](docs/PROCESS.md)** - Detailed workflow guide
-- **[schemas/](schemas/)** - JSON schema definitions
+- **[schemas/](schemas/)** - JSON schema definitions and SQL schema
 - **[skills/](skills/)** - Skill documentation

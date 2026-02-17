@@ -132,7 +132,7 @@
 - [ ] Application starts (php artisan serve / npm start)
 - [ ] Can be accessed in browser at documented URL
 - [ ] All tests pass (php artisan test / npm test)
-- [ ] Marked as verified=true in article_tasks.json
+- [ ] Marked as verified=true in the article record
 
 ## Quality
 - [ ] Well-commented (references article sections)

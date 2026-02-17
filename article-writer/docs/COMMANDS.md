@@ -2,10 +2,8 @@
 
 Complete reference for all article-writer commands.
 
-**File Locations:**
-- Authors: `.article_writer/authors.json`
-- Settings: `.article_writer/settings.json`
-- Article Queue: `.article_writer/article_tasks.json`
+**Data Storage:**
+- Database: `.article_writer/article_writer.db` (SQLite)
 - Schemas: `.article_writer/schemas/`
 
 ---
@@ -30,7 +28,7 @@ Complete reference for all article-writer commands.
 | `/article-writer:queue list` | List queued articles |
 | `/article-writer:queue status` | Show queue summary |
 | `/article-writer:batch <n>` | Process n articles |
-| `/article-writer:doctor` | Validate JSON files |
+| `/article-writer:doctor` | Validate database records |
 
 ---
 
@@ -54,12 +52,10 @@ your-project/
 │   │   ├── article-tasks.schema.json
 │   │   ├── authors.schema.json
 │   │   └── settings.schema.json
-│   ├── article_tasks.json        # Empty queue
-│   ├── authors.json              # Empty (add authors next)
-│   └── settings.json             # Example defaults
+│   └── article_writer.db          # SQLite database
 ├── content/
-│   └── articles/                 # Where articles go
-└── docs/                         # Documentation folder
+│   └── articles/                  # Where articles go
+└── docs/                          # Documentation folder
 ```
 
 ### Example Output
@@ -72,7 +68,7 @@ your-project/
    • content/articles
 
 📋 Missing items to create:
-   • settings.json
+   • article_writer.db
 
 📁 Creating directories...
    ✓ .article_writer/schemas/
@@ -80,8 +76,8 @@ your-project/
 📋 Setting up schema files...
    ✓ settings.schema.json
 
-📝 Creating data files...
-   ✓ settings.json (with example defaults)
+💾 Creating database...
+   ✓ article_writer.db (with default settings)
 
 ──────────────────────────────────────────────────────
 ✅ Article Writer initialized!
@@ -167,8 +163,6 @@ Extract authentic voice patterns from podcast/interview/meeting transcripts.
 ═══════════════════════════════════════════════════════════════
   AUTHORS
 ═══════════════════════════════════════════════════════════════
-  File: /your/project/.article_writer/authors.json
-────────────────────────────────────────────────────────────────
 
   Total: 2 author(s)
 
@@ -219,10 +213,10 @@ Provides interactive editing. For direct edits, use:
 
 ```bash
 # Change tone
-/article-writer:settings set-author mwguerra tone.formality 6
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts set-author mwguerra tone.formality 6
 
 # Add phrase
-/article-writer:settings add-phrase mwguerra signature "Na prática..."
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts add-phrase mwguerra signature "Na pratica..."
 ```
 
 ---
@@ -265,15 +259,10 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
 ═══════════════════════════════════════════════════════════════
   SETTINGS
 ═══════════════════════════════════════════════════════════════
-  File: /your/project/.article_writer/settings.json
 ────────────────────────────────────────────────────────────────
 
   Article Limits:
     Max Words: 3000
-
-  Metadata:
-    Version: 1.0.0
-    Last updated: 2025-01-15T10:00:00Z
 
   Companion Project Defaults:
   ┌────────────┬─────────────────────────────────┬───────────┐
@@ -286,43 +275,6 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
   └────────────┴─────────────────────────────────┴───────────┘
 
   To see type details: /article-writer:settings show <type>
-────────────────────────────────────────────────────────────────
-```
-
-**Example output for `/article-writer:settings show code`:**
-
-```
-═══════════════════════════════════════════════════════════════
-  COMPANION PROJECT DEFAULTS: CODE
-═══════════════════════════════════════════════════════════════
-  File: /your/project/.article_writer/settings.json
-────────────────────────────────────────────────────────────────
-
-  Technologies:
-    • Laravel 12
-    • Pest 4
-    • SQLite
-
-  Has Tests: Yes ✓
-  Test Command: php artisan test
-
-  Default Path: code/
-
-  Scaffold Command:
-    composer create-project laravel/laravel code --prefer-dist
-
-  Post-Scaffold Commands:
-    1. cd code
-    2. composer require pestphp/pest --dev
-    3. php artisan pest:install
-
-  Run Command: php artisan serve
-
-  Notes:
-    Create COMPLETE Laravel applications. Must be runnable.
-
-  To modify: /article-writer:settings set <key> <value>
-  Example: /article-writer:settings set code.technologies '["Laravel 11"]'
 ────────────────────────────────────────────────────────────────
 ```
 
@@ -352,17 +304,11 @@ Articles exceeding `max_words` are automatically condensed during the Condense p
 # Set article word limit to 2000 words
 /article-writer:settings set article_limits.max_words 2000
 
-# Set article word limit to 5000 words (for deep-dives)
-/article-writer:settings set article_limits.max_words 5000
-
 # Change Laravel version
 /article-writer:settings set code.technologies '["Laravel 11", "Pest 3", "SQLite"]'
 
 # Disable tests for code companion projects
 /article-writer:settings set code.has_tests false
-
-# Change scaffold command
-/article-writer:settings set code.scaffold_command "composer create-project laravel/laravel:^11.0 code"
 ```
 
 ---
@@ -410,8 +356,9 @@ Create a new article.
 5. **Companion Project** - Create complete runnable companion project
 6. **Integrate** - Merge companion project into article
 7. **Review** - Check accuracy and voice compliance
-8. **Translate** - Create other language versions
-9. **Finalize** - Update task metadata
+8. **Condense** - Enforce max_words limit
+9. **Translate** - Create other language versions
+10. **Finalize** - Update database metadata
 
 ---
 
@@ -427,11 +374,10 @@ Get the next pending article from the queue.
 
 ### What It Does
 
-1. Loads `.article_writer/article_tasks.json`
-2. Filters articles with `status: "pending"`
-3. Sorts by priority (critical → high → normal → low)
-4. Returns the first pending article with details
-5. Shows the command to start writing
+1. Queries the database for articles with `status = 'pending'`
+2. Sorts by ID (ascending)
+3. Returns the first pending article with details
+4. Shows the command to start writing
 
 ### Example Output
 
@@ -440,11 +386,10 @@ Get the next pending article from the queue.
   NEXT ARTICLE
 ═══════════════════════════════════════════════════════════════
 
-  ID:       laravel-rate-limiting
+  ID:       5
   Title:    Implementing Rate Limiting in Laravel
-  Area:     Backend Development
+  Area:     Backend
   Author:   mwguerra
-  Priority: high
 
   Subject:
   How to implement and customize rate limiting in Laravel APIs
@@ -452,34 +397,12 @@ Get the next pending article from the queue.
 
 ────────────────────────────────────────────────────────────────
   To start writing:
-  /article-writer:article laravel-rate-limiting
+  /article-writer:article from-queue 5
 ────────────────────────────────────────────────────────────────
 
   Queue: 1 pending, 3 draft, 2 published
 ═══════════════════════════════════════════════════════════════
 ```
-
-### When Queue is Empty
-
-```
-═══════════════════════════════════════════════════════════════
-  NEXT ARTICLE
-═══════════════════════════════════════════════════════════════
-
-  ✓ No pending articles in queue!
-
-  Queue: 0 pending, 5 draft, 10 published
-
-  To add articles:
-  /article-writer:queue add "Article Title" --area "Category"
-═══════════════════════════════════════════════════════════════
-```
-
-### Priority Order
-
-Articles are selected in this order:
-1. **Priority** (if set): `critical` → `high` → `normal` → `low`
-2. **Position** in file (first pending wins)
 
 ---
 
@@ -508,8 +431,6 @@ Manage the article queue.
 ═══════════════════════════════════════════════════════════════
   ARTICLE QUEUE
 ═══════════════════════════════════════════════════════════════
-  File: /your/project/.article_writer/article_tasks.json
-────────────────────────────────────────────────────────────────
 
   Total: 25 articles
 
@@ -519,13 +440,13 @@ Manage the article queue.
     ✅ published: 2
 
   By Author:
-    • mwguerra: 20
-    • tech-writer: 5
+    mwguerra: 20
+    tech-writer: 5
 
   Top Areas:
-    • Laravel: 10
-    • PHP: 6
-    • Architecture: 4
+    Laravel: 10
+    PHP: 6
+    Architecture: 4
 
   For full list: /article-writer:queue list
 ────────────────────────────────────────────────────────────────
@@ -576,7 +497,7 @@ Commands available:
 
 ## /article-writer:doctor
 
-Validate and fix JSON configuration files.
+Validate and fix database records.
 
 ### Usage
 
@@ -588,18 +509,22 @@ Validate and fix JSON configuration files.
 
 ### What It Validates
 
-**authors.json:**
+**Database Integrity:**
+- SQLite PRAGMA integrity_check
+- Foreign key constraint verification
+
+**Authors:**
 - Required fields (id, name, languages)
 - ID format (slug-like)
 - Languages array not empty
 - Tone values 1-10
 
-**settings.json:**
+**Settings:**
 - Valid companion project types
 - Correct field types
 - Array fields are arrays
 
-**article_tasks.json:**
+**Articles:**
 - Required fields
 - Valid enum values (status, difficulty, area, etc.)
 - Author references
@@ -613,22 +538,18 @@ Validate and fix JSON configuration files.
 
 Mode: interactive
 
-Checking schema files...
-✓ article-tasks.schema.json found
-✓ authors.schema.json found
-✓ settings.schema.json found
-✓ authors.json loaded (2 authors)
-✓ settings.json loaded
-✓ article_tasks.json loaded (25 articles)
+Checking database integrity...
+✓ Database integrity: OK
+✓ Foreign key constraints: OK
 
-Validating authors.json...
+Validating authors...
    ✓ All 2 authors valid
 
-Validating settings.json...
+Validating settings...
    ✓ Settings valid
 
-Validating article_tasks.json...
-⚠ Article #5: Invalid status 'wip'
+Validating articles...
+  Article #5: Invalid status 'wip'
    Valid options: pending, in_progress, draft, review, published, archived
    Suggested fix: in_progress
    Apply fix? [Y/n/custom]
@@ -637,21 +558,19 @@ Validating article_tasks.json...
 Summary:
   Checked: 25 articles, 2 authors, settings
   Issues found: 1
-  Fixed: yes
+  Fixed: 1
 
-✅ Files have been repaired
+✅ Database has been repaired
 ```
 
 ---
 
-## File Locations Reference
+## Data Reference
 
-| File | Purpose | Command to View |
-|------|---------|-----------------|
-| `.article_writer/authors.json` | Author profiles | `/article-writer:author list` |
-| `.article_writer/settings.json` | Global settings | `/article-writer:settings show` |
-| `.article_writer/article_tasks.json` | Article queue | `/article-writer:queue status` |
-| `.article_writer/schemas/*.json` | JSON schemas | (validate with doctor) |
+| Resource | Purpose | Command to View |
+|----------|---------|-----------------|
+| `.article_writer/article_writer.db` | All data (authors, articles, settings) | See commands above |
+| `.article_writer/schemas/*.json` | Schema documentation | (validate with doctor) |
 | `content/articles/` | Article output | (check after creation) |
 
 ---
@@ -660,4 +579,4 @@ Summary:
 
 - [PROCESS.md](PROCESS.md) - Complete workflow guide
 - [README.md](../README.md) - Plugin overview
-- [schemas/](../schemas/) - JSON schema definitions
+- [schemas/](../schemas/) - Schema definitions

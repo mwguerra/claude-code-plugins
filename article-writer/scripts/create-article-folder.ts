@@ -4,8 +4,9 @@
  * Usage: bun run create-article-folder.ts <folder-path> [--from-queue <id>]
  */
 
-import { mkdir, writeFile, readFile, copyFile, stat } from "fs/promises";
+import { mkdir, writeFile, stat } from "fs/promises";
 import { join, basename } from "path";
+import { getDb, dbExists, getDefaultAuthor, rowToArticle } from "./db";
 
 const args = process.argv.slice(2);
 const fromQueueIdx = args.indexOf("--from-queue");
@@ -30,7 +31,7 @@ const dirs = [
   "03_drafts",
   "04_review",
   "05_assets/images",
-  "code",              // Practical example folder
+  "code",
 ];
 
 const files: Record<string, string> = {
@@ -80,9 +81,9 @@ const files: Record<string, string> = {
   "01_planning/outline.md": `# Article Outline
 
 ## Working Title Options
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Hook (first 150 words)
 
@@ -91,18 +92,18 @@ const files: Record<string, string> = {
 
 ### Introduction
 
-### Section 1: 
+### Section 1:
 
-### Section 2: 
+### Section 2:
 
-### Section 3: 
+### Section 3:
 
 ### Conclusion
 
 ## Key Takeaways
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 `,
   "01_planning/decisions.md": `# Editorial Decisions
@@ -110,10 +111,10 @@ const files: Record<string, string> = {
 ## Decision Log
 
 ### Decision #1
-**Question:** 
-**Options:** 
-**Decision:** 
-**Reasoning:** 
+**Question:**
+**Options:**
+**Decision:**
+**Reasoning:**
 
 `,
   "02_research/sources.md": `# Sources
@@ -133,7 +134,7 @@ const files: Record<string, string> = {
 
 ## Session 1: ${new Date().toISOString().split("T")[0]}
 
-**Focus:** 
+**Focus:**
 
 **Searches:**
 
@@ -149,8 +150,8 @@ const files: Record<string, string> = {
 | | | [ ] | |
 
 ## Code Tested
-- [ ] Example 1: 
-- [ ] Example 2: 
+- [ ] Example 1:
+- [ ] Example 2:
 
 `,
   "03_drafts/revision_notes.md": `# Revision Notes
@@ -338,23 +339,21 @@ async function create() {
       await writeFile(join(folderPath, file), content);
     }
 
-    // Copy author profile if authors.json exists
-    const authorsPath = ".article_writer/authors.json";
-    if (await exists(authorsPath)) {
+    // Copy author profile from database
+    if (dbExists()) {
       try {
-        const authorsContent = await readFile(authorsPath, "utf-8");
-        const authorsData = JSON.parse(authorsContent);
-        if (authorsData.authors && authorsData.authors.length > 0) {
-          // Use first author as default, or specified author
-          const author = authorsData.authors[0];
+        const db = getDb();
+        const author = getDefaultAuthor(db);
+        if (author) {
           await writeFile(
             join(folderPath, "00_context/author_profile.json"),
             JSON.stringify(author, null, 2)
           );
           console.log(`📋 Copied author profile: ${author.name}`);
         }
+        db.close();
       } catch (e) {
-        console.warn("⚠️ Could not load authors:", e);
+        console.warn("⚠️ Could not load author:", e);
       }
     } else {
       await writeFile(
@@ -363,20 +362,18 @@ async function create() {
       );
     }
 
-    // If from queue, load article metadata
-    if (articleId !== null) {
+    // If from queue, load article metadata from database
+    if (articleId !== null && dbExists()) {
       try {
-        const queueContent = await readFile(".article_writer/article_tasks.json", "utf-8");
-        const queue = JSON.parse(queueContent);
-        const articles = queue.articles || queue;
-        const article = articles.find((a: any) => a.id === articleId);
-        
-        if (article) {
-          // Write context from queue
-          const authorInfo = article.author 
+        const db = getDb();
+        const row = db.query("SELECT * FROM articles WHERE id = ?").get(articleId) as any;
+
+        if (row) {
+          const article = rowToArticle(row);
+          const authorInfo = article.author
             ? `- **Author:** ${article.author.name} (${article.author.id})\n- **Languages:** ${article.author.languages?.join(", ") || "default"}`
             : "- **Author:** (using default)";
-          
+
           const context = `# Editorial Context
 
 **Article:** ${article.title}
@@ -411,6 +408,7 @@ ${article.relevance}
           await writeFile(join(folderPath, "00_context/editorial_context.md"), context);
           console.log(`📝 Loaded context for article #${articleId}`);
         }
+        db.close();
       } catch (e) {
         console.warn("⚠️ Could not load queue data:", e);
       }
