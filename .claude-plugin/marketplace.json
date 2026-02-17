@@ -561,8 +561,8 @@
       ]
     },
     {
-      "name": "reverb",
-      "source": "./reverb",
+      "name": "reverb-specialist",
+      "source": "./reverb-specialist",
       "version": "1.0.0",
       "description": "Expert on Laravel Reverb, broadcasting, and real-time notifications for Laravel and Filament apps. Includes complete official documentation for setup, events, channels, Echo client configuration, Filament panel WebSocket integration, and production deployment.",
       "keywords": [
