@@ -465,41 +465,6 @@
       ]
     },
     {
-      "name": "my-workflow",
-      "source": "./my-workflow",
-      "version": "1.0.0",
-      "description": "Personal workflow management - assistant, secretary, and executive in one. Tracks sessions, commitments, decisions, and goals. Integrates with Obsidian vault and GitHub. Provides intelligent briefings and productivity insights.",
-      "keywords": [
-        "workflow",
-        "productivity",
-        "assistant",
-        "secretary",
-        "executive",
-        "commitments",
-        "decisions",
-        "goals",
-        "briefing",
-        "github",
-        "obsidian",
-        "tracking",
-        "sessions",
-        "patterns",
-        "knowledge-graph"
-      ],
-      "category": "productivity",
-      "tags": [
-        "workflow-management",
-        "personal-assistant",
-        "commitments",
-        "decisions",
-        "goals",
-        "github-integration",
-        "obsidian-integration",
-        "productivity",
-        "briefings"
-      ]
-    },
-    {
       "name": "remotion",
       "source": "./remotion",
       "version": "1.0.0",
