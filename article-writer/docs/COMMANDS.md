@@ -28,6 +28,7 @@ Complete reference for all article-writer commands.
 | `/article-writer:queue list` | List queued articles |
 | `/article-writer:queue status` | Show queue summary |
 | `/article-writer:batch <n>` | Process n articles |
+| `/article-writer:social <platform> <topic\|derive ID>` | Create social media posts |
 | `/article-writer:doctor` | Validate database records |
 
 ---
@@ -492,6 +493,77 @@ Commands available:
 - `skip` - Skip current, continue to next
 - `status` - Show progress
 - `abort` - Stop immediately
+
+---
+
+## /article-writer:social
+
+Create social media posts for LinkedIn, Instagram, or X/Twitter — standalone or derived from blog articles.
+
+### Usage
+
+```bash
+# Standalone posts from a topic
+/article-writer:social linkedin "Why rate limiting matters"
+/article-writer:social instagram "5 Laravel tips"
+/article-writer:social x "The future of PHP"
+
+# Derive from existing blog article
+/article-writer:social linkedin derive 42
+/article-writer:social all derive 42    # All 3 platforms at once
+
+# With author override
+/article-writer:social linkedin "topic" --author mwguerra
+```
+
+### Platforms
+
+| Platform | Length | Hashtags | Output Files |
+|----------|--------|----------|-------------|
+| `linkedin` | 200-1300 words | 3-5 | `{slug}.linkedin.{lang}.md` |
+| `instagram` | 2200 chars caption + carousel | 20-30 | `{slug}.instagram.{lang}.md` + `{slug}.instagram.carousel.{lang}.md` |
+| `x` | 280 chars/tweet, 5-15 tweet thread | 1-3 | `{slug}.x.tweet.{lang}.md` + `{slug}.x.thread.{lang}.md` |
+| `all` | All 3 platforms | Per platform | All of the above |
+
+### Derive Mode
+
+When deriving from a blog article:
+- Reads the source article to extract key themes
+- Creates `social/` subfolder inside the source article's folder
+- Links back to blog article via `derived_from` FK
+- Content stands alone (no dependency on reading the blog)
+
+### Workflow
+
+```
+Standalone: Initialize → Plan → Research (light) → Draft → Review → Translate → Finalize
+Derive:     Initialize → Read Source → Plan Adaptation → Draft → Review → Translate → Finalize
+```
+
+### Platform Defaults
+
+View and modify per-platform settings:
+
+```bash
+# View LinkedIn defaults
+/article-writer:settings show linkedin
+
+# Change LinkedIn word target
+/article-writer:settings set platform_defaults.linkedin.max_words 800
+
+# Reset one platform to defaults
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/config.ts reset-platform linkedin
+```
+
+### Queue Filtering
+
+```bash
+# List only LinkedIn posts
+/article-writer:queue list platform:linkedin
+
+# View platform breakdown
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --platform
+```
 
 ---
 

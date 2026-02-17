@@ -1,7 +1,7 @@
 {
   "name": "article-writer",
-  "description": "Create publication-ready technical articles with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation or autonomous batch processing from a task queue.",
-  "version": "1.0.0",
+  "description": "Create publication-ready technical articles and social media posts (LinkedIn, Instagram, X/Twitter) with author voice profiles, web research, runnable code examples, and multi-language output. Supports interactive single-article creation, social media post generation, or autonomous batch processing from a task queue.",
+  "version": "1.1.0",
   "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
@@ -25,7 +25,12 @@
     "multi-language",
     "multilingual",
     "examples",
-    "agent"
+    "agent",
+    "social-media",
+    "linkedin",
+    "instagram",
+    "twitter",
+    "x"
   ],
   "category": "content-creation",
   "tags": [

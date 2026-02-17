@@ -63,6 +63,22 @@ function showStatus(): void {
     }
   }
 
+  // By platform
+  const platformRows = db.query("SELECT platform, COUNT(*) as count FROM articles GROUP BY platform ORDER BY count DESC").all() as any[];
+  if (platformRows.length > 1 || (platformRows.length === 1 && platformRows[0].platform !== "blog")) {
+    const platformLabels: Record<string, string> = { blog: "Blog", linkedin: "LinkedIn", instagram: "Instagram", x: "X/Twitter" };
+    console.log("\n📱 By Platform:");
+    for (const r of platformRows) {
+      console.log(`   ${platformLabels[r.platform] || r.platform}: ${r.count}`);
+    }
+  }
+
+  // Derived posts count
+  const derivedCount = (db.query("SELECT COUNT(*) as c FROM articles WHERE derived_from IS NOT NULL").get() as any).c;
+  if (derivedCount > 0) {
+    console.log(`\n🔗 Derived from blog posts: ${derivedCount}`);
+  }
+
   // By area (pending only)
   const areaRows = db.query("SELECT area, COUNT(*) as count FROM articles WHERE status='pending' GROUP BY area ORDER BY count DESC LIMIT 5").all() as any[];
   if (areaRows.length > 0) {
@@ -110,6 +126,9 @@ function listArticles(filter?: string): void {
     } else if (filter.startsWith("lang:")) {
       conditions.push("author_languages LIKE ?");
       params.push(`%${filter.slice(5)}%`);
+    } else if (filter.startsWith("platform:")) {
+      conditions.push("LOWER(platform) = LOWER(?)");
+      params.push(filter.slice(9));
     }
   } else {
     conditions.push("status = 'pending'");
@@ -129,10 +148,16 @@ function listArticles(filter?: string): void {
     review: "👀", published: "✅", archived: "📦",
   };
 
+  const platformIcons: Record<string, string> = {
+    blog: "", linkedin: "[LI] ", instagram: "[IG] ", x: "[X] ",
+  };
+
   for (const row of rows.slice(0, 20)) {
     const icon = icons[row.status] || "📄";
+    const pIcon = platformIcons[row.platform] || "";
     const langs = row.author_languages ? JSON.parse(row.author_languages).join(", ") : "default";
-    console.log(`${icon} [${row.id}] ${row.title}`);
+    const derivedTag = row.derived_from ? ` (from #${row.derived_from})` : "";
+    console.log(`${icon} ${pIcon}[${row.id}] ${row.title}${derivedTag}`);
     console.log(`   ${row.area} | ${row.difficulty} | ${row.content_type}`);
     console.log(`   Author: ${row.author_name || row.author_id || "(default)"} | Languages: ${langs}`);
   }
@@ -157,10 +182,18 @@ function showArticle(id: number): void {
 
   const article = rowToArticle(row);
 
+  const platformLabels: Record<string, string> = { blog: "Blog", linkedin: "LinkedIn", instagram: "Instagram", x: "X/Twitter" };
+
   console.log(`\n📄 Article #${article.id}`);
   console.log("─".repeat(50));
   console.log(`Title: ${article.title}`);
   console.log(`Status: ${article.status}`);
+  if (article.platform && article.platform !== "blog") {
+    console.log(`Platform: ${platformLabels[article.platform] || article.platform}`);
+  }
+  if (article.derived_from) {
+    console.log(`Derived from: Article #${article.derived_from}`);
+  }
   console.log(`Subject: ${article.subject}`);
   console.log(`Area: ${article.area}`);
   console.log(`Difficulty: ${article.difficulty}`);
@@ -202,6 +235,18 @@ function showArticle(id: number): void {
   if (article.written_at) console.log(`   Written: ${article.written_at}`);
   if (article.published_at) console.log(`   Published: ${article.published_at}`);
   if (article.updated_at) console.log(`   Updated: ${article.updated_at}`);
+
+  if (article.platform_data) {
+    console.log("\n📱 Platform Data:");
+    const pd = article.platform_data;
+    if (pd.hook) console.log(`   Hook: ${pd.hook.substring(0, 80)}...`);
+    if (pd.word_count) console.log(`   Word count: ${pd.word_count}`);
+    if (pd.hashtags) console.log(`   Hashtags: ${Array.isArray(pd.hashtags) ? pd.hashtags.join(", ") : pd.hashtags}`);
+    if (pd.caption) console.log(`   Caption: ${pd.caption.char_count || "?"} chars`);
+    if (pd.carousel) console.log(`   Carousel: ${pd.carousel.slide_count || pd.carousel.slides?.length || "?"} slides`);
+    if (pd.tweet) console.log(`   Tweet: ${pd.tweet.char_count || "?"} chars`);
+    if (pd.thread) console.log(`   Thread: ${pd.thread.tweet_count || pd.thread.tweets?.length || "?"} tweets`);
+  }
 
   if (article.error_note) {
     console.log(`\n⚠️  Error: ${article.error_note}`);
@@ -306,7 +351,7 @@ Usage: bun run queue.ts <command> [args]
 Commands:
   status              Show queue summary
   list [filter]       List articles
-                      Filters: pending, draft, area:X, author:X, lang:X
+                      Filters: pending, draft, area:X, author:X, lang:X, platform:X
   show <id>           Show article details
   update <id> <f:v>   Update field
   next [n]            Get next n pending as JSON

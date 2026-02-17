@@ -244,14 +244,92 @@ function showAuthor(authorId: string): void {
 // Settings
 // ============================================
 
-function showSettings(companionProjectType?: string): void {
+function showSettings(typeOrPlatform?: string): void {
   ensureDb();
 
-  if (companionProjectType) {
-    showCompanionProjectDefaults(companionProjectType);
+  const platformNames = ["linkedin", "instagram", "x"];
+  if (typeOrPlatform && platformNames.includes(typeOrPlatform)) {
+    showPlatformDefaults(typeOrPlatform);
+  } else if (typeOrPlatform) {
+    showCompanionProjectDefaults(typeOrPlatform);
   } else {
     showAllSettings();
   }
+}
+
+function showPlatformDefaults(platform: string): void {
+  const db = getDb();
+  const settings = getSettings(db);
+
+  if (!settings) {
+    console.error("❌ Settings not found in database.");
+    db.close();
+    process.exit(1);
+  }
+
+  const pd = settings.platform_defaults?.[platform];
+
+  if (!pd) {
+    console.error(`❌ No defaults configured for platform: ${platform}`);
+    db.close();
+    process.exit(1);
+  }
+
+  const labels: Record<string, string> = { linkedin: "LinkedIn", instagram: "Instagram", x: "X/Twitter" };
+  printHeader(`PLATFORM DEFAULTS: ${labels[platform] || platform.toUpperCase()}`);
+  printDivider();
+
+  console.log("");
+
+  // Tone adjustment
+  if (pd.tone_adjustment) {
+    console.log("  Tone Adjustment:");
+    console.log(`    Formality offset: ${pd.tone_adjustment.formality_offset >= 0 ? "+" : ""}${pd.tone_adjustment.formality_offset}`);
+    console.log(`    Opinionated offset: ${pd.tone_adjustment.opinionated_offset >= 0 ? "+" : ""}${pd.tone_adjustment.opinionated_offset}`);
+  }
+
+  // Length limits
+  if (pd.max_words || pd.min_words || pd.hard_max_words) {
+    console.log("\n  Length Limits:");
+    if (pd.min_words) console.log(`    Min words: ${pd.min_words}`);
+    if (pd.max_words) console.log(`    Default max words: ${pd.max_words}`);
+    if (pd.hard_max_words) console.log(`    Hard max words: ${pd.hard_max_words}`);
+  }
+
+  if (pd.caption_max_chars) {
+    console.log("\n  Caption Limits:");
+    console.log(`    Max characters: ${pd.caption_max_chars}`);
+    if (pd.caption_visible_chars) console.log(`    Visible before fold: ${pd.caption_visible_chars}`);
+  }
+
+  if (pd.tweet_max_chars) {
+    console.log("\n  Tweet Limits:");
+    console.log(`    Max characters per tweet: ${pd.tweet_max_chars}`);
+  }
+
+  // Structure
+  if (pd.hook_lines) console.log(`\n  Hook lines: ${pd.hook_lines}`);
+  if (pd.cta_required !== undefined) console.log(`  CTA required: ${pd.cta_required ? "Yes" : "No"}`);
+  if (pd.emojis_encouraged !== undefined) console.log(`  Emojis encouraged: ${pd.emojis_encouraged ? "Yes" : "No"}`);
+
+  // Hashtags
+  if (pd.hashtag_count) {
+    console.log(`\n  Hashtags: ${pd.hashtag_count.min}-${pd.hashtag_count.max}`);
+  }
+
+  // Carousel / Thread
+  if (pd.carousel_slides) {
+    console.log(`\n  Carousel Slides: ${pd.carousel_slides.min}-${pd.carousel_slides.max} (default ${pd.carousel_slides.default})`);
+  }
+  if (pd.thread_tweets) {
+    console.log(`\n  Thread Tweets: ${pd.thread_tweets.min}-${pd.thread_tweets.max} (default ${pd.thread_tweets.default})`);
+  }
+
+  console.log("");
+  console.log(`  To modify: /article-writer:settings set platform_defaults.${platform}.<key> <value>`);
+  console.log(`  Example: /article-writer:settings set platform_defaults.${platform}.max_words 800`);
+  printDivider();
+  db.close();
 }
 
 function showAllSettings(): void {
@@ -303,6 +381,35 @@ function showAllSettings(): void {
     }
 
     console.log("  └────────────┴─────────────────────────────────┴───────────┘");
+  }
+
+  // Platform defaults summary
+  if (settings.platform_defaults && Object.keys(settings.platform_defaults).length > 0) {
+    console.log("\n  Platform Defaults (Social Media):");
+    console.log("  ┌────────────┬─────────────┬────────────────────────────────────┐");
+    console.log("  │ Platform   │ Tone Adjust │ Key Limits                         │");
+    console.log("  ├────────────┼─────────────┼────────────────────────────────────┤");
+
+    const platformLabels: Record<string, string> = { linkedin: "LinkedIn", instagram: "Instagram", x: "X/Twitter" };
+
+    for (const [key, label] of Object.entries(platformLabels)) {
+      const pd = settings.platform_defaults[key];
+      if (pd) {
+        const toneAdj = pd.tone_adjustment
+          ? `F${pd.tone_adjustment.formality_offset >= 0 ? "+" : ""}${pd.tone_adjustment.formality_offset}, O${pd.tone_adjustment.opinionated_offset >= 0 ? "+" : ""}${pd.tone_adjustment.opinionated_offset}`
+          : "none";
+        let limits = "";
+        if (pd.max_words) limits += `${pd.max_words}w`;
+        if (pd.caption_max_chars) limits += `${pd.caption_max_chars}ch`;
+        if (pd.tweet_max_chars) limits += `${pd.tweet_max_chars}ch/tweet`;
+        if (pd.hashtag_count) limits += ` #${pd.hashtag_count.min}-${pd.hashtag_count.max}`;
+        const limitsDisplay = limits.padEnd(35);
+        console.log(`  │ ${label.padEnd(10)} │ ${toneAdj.padEnd(11)} │ ${limitsDisplay}│`);
+      }
+    }
+
+    console.log("  └────────────┴─────────────┴────────────────────────────────────┘");
+    console.log("\n  To see platform details: /article-writer:settings show linkedin");
   }
 
   console.log("\n  To see type details: /article-writer:settings show <type>");
@@ -447,6 +554,22 @@ function showQueueSummary(): void {
     for (const r of authorRows) {
       console.log(`    • ${r.author}: ${r.count}`);
     }
+  }
+
+  // By platform
+  const platformRows = db.query("SELECT platform, COUNT(*) as count FROM articles GROUP BY platform ORDER BY count DESC").all() as any[];
+  if (platformRows.length > 1 || (platformRows.length === 1 && platformRows[0].platform !== "blog")) {
+    const platformLabels: Record<string, string> = { blog: "Blog", linkedin: "LinkedIn", instagram: "Instagram", x: "X/Twitter" };
+    console.log("\n  By Platform:");
+    for (const r of platformRows) {
+      console.log(`    • ${platformLabels[r.platform] || r.platform}: ${r.count}`);
+    }
+  }
+
+  // Derived posts
+  const derivedCount = (db.query("SELECT COUNT(*) as c FROM articles WHERE derived_from IS NOT NULL").get() as any).c;
+  if (derivedCount > 0) {
+    console.log(`\n  Derived from blog posts: ${derivedCount}`);
   }
 
   // Top areas

@@ -31,6 +31,7 @@ All data is stored in a single SQLite database (`.article_writer/article_writer.
 - **Multi-Language**: Write in primary language, auto-translate to others
 - **Web Research**: Automatic source gathering and citation
 - **Verified Examples**: Full runnable applications that are actually tested before completion
+- **Social Media**: Create platform-optimized posts for LinkedIn, Instagram, and X/Twitter
 - **Batch Processing**: Queue and process multiple articles
 - **SQLite Backend**: Zero external dependencies, WAL mode, FTS5 full-text search
 
@@ -72,6 +73,30 @@ Creates: `.article_writer/` folder with SQLite database, schemas, and default se
 /article-writer:article implementing rate limiting in Laravel
 ```
 
+## Social Media Posts
+
+Create platform-optimized content for LinkedIn, Instagram, and X/Twitter — standalone or derived from blog articles.
+
+```bash
+# Standalone posts
+/article-writer:social linkedin "Why rate limiting matters"
+/article-writer:social instagram "5 Laravel tips"
+/article-writer:social x "The future of PHP"
+
+# Derive from existing blog article (all 3 platforms)
+/article-writer:social all derive 42
+```
+
+Each platform has distinct formatting, length limits, and tone adjustments applied automatically to the author's base voice:
+
+| Platform | Length | Tone Shift |
+|----------|--------|------------|
+| LinkedIn | 200-1300 words | Slightly more formal |
+| Instagram | 2200 char caption + carousel | More casual, opinionated |
+| X/Twitter | 280 char tweets / threads | Casual, punchy, opinionated |
+
+Derived posts are stored in a `social/` subfolder inside the source blog article's folder.
+
 ## Commands Reference
 
 | Command | Description | Details |
@@ -85,6 +110,7 @@ Creates: `.article_writer/` folder with SQLite database, schemas, and default se
 | `/article-writer:settings show <type>` | Show companion project type defaults | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:settings set` | Modify a setting | [docs/COMMANDS.md#settings](docs/COMMANDS.md#article-writersettings) |
 | `/article-writer:article <topic>` | Create single article | [docs/COMMANDS.md#article](docs/COMMANDS.md#article-writerarticle) |
+| `/article-writer:social <platform> <topic>` | Create social media posts | [docs/COMMANDS.md#social](docs/COMMANDS.md#article-writersocial) |
 | `/article-writer:next` | Get next pending article | [docs/COMMANDS.md#next](docs/COMMANDS.md#article-writernext) |
 | `/article-writer:queue status` | Show queue summary | [docs/COMMANDS.md#queue](docs/COMMANDS.md#article-writerqueue) |
 | `/article-writer:batch <n>` | Process n articles | [docs/COMMANDS.md#batch](docs/COMMANDS.md#article-writerbatch) |
@@ -96,7 +122,7 @@ Creates: `.article_writer/` folder with SQLite database, schemas, and default se
 |-------|---------|--------------|
 | `authors` | Author profiles | `/article-writer:author list` |
 | `settings` | Companion project defaults + article limits | `/article-writer:settings show` |
-| `articles` | Article queue | `/article-writer:queue status` |
+| `articles` | Article queue (blog + social) | `/article-writer:queue status` |
 | `metadata` | Version and timestamp tracking | (internal) |
 | `articles_fts` | Full-text search index | (internal) |
 
@@ -294,8 +320,8 @@ Resets to plugin defaults.
 | Table | Key Columns | Description |
 |-------|-------------|-------------|
 | `authors` | id (PK), name, languages (JSON), tone_formality, tone_opinionated, vocabulary (JSON), phrases (JSON), sort_order | Author profiles |
-| `articles` | id (PK), title, status, area, difficulty, author_id (FK), output_files (JSON), sources_used (JSON) | Article queue with CHECK constraints on all enums |
-| `settings` | id=1, article_limits (JSON), companion_project_defaults (JSON) | Singleton configuration |
+| `articles` | id (PK), title, status, area, difficulty, author_id (FK), platform, derived_from (FK), platform_data (JSON), output_files (JSON), sources_used (JSON) | Article queue with CHECK constraints on all enums |
+| `settings` | id=1, article_limits (JSON), companion_project_defaults (JSON), platform_defaults (JSON) | Singleton configuration |
 | `metadata` | id=1, version, last_updated | Plugin metadata |
 | `articles_fts` | title, subject, tags | FTS5 full-text search (auto-synced via triggers) |
 
@@ -315,6 +341,7 @@ Resets to plugin defaults.
 | `author-profile` | Author management | `skills/author-profile/SKILL.md` |
 | `voice-extractor` | Voice extraction from transcripts | `skills/voice-extractor/SKILL.md` |
 | `companion-project-creator` | Create complete companion projects | `skills/companion-project-creator/SKILL.md` |
+| `social-post-writer` | Social media post creation | `skills/social-post-writer/SKILL.md` |
 | `article-queue` | Queue operations | `skills/article-queue/SKILL.md` |
 
 ## Further Reading

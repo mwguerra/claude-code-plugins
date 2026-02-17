@@ -29,12 +29,100 @@ export function dbExists(): boolean {
 
 /**
  * Open the database with WAL mode and foreign keys enabled.
+ * Applies any pending migrations automatically.
  */
 export function getDb(): Database {
   const db = new Database(DB_PATH);
   db.run("PRAGMA journal_mode = WAL");
   db.run("PRAGMA foreign_keys = ON");
+  applyPendingMigrations(db);
   return db;
+}
+
+// ============================================
+// Schema Migrations
+// ============================================
+
+/**
+ * Compare two semver strings ("X.Y.Z"). Returns -1, 0, or 1.
+ */
+function semverCompare(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+  }
+  return 0;
+}
+
+/**
+ * Get the current schema version from the database.
+ */
+function getCurrentSchemaVersion(db: Database): string {
+  try {
+    const row = db.query("SELECT MAX(version) as version FROM schema_version").get() as any;
+    return row?.version || "1.0.0";
+  } catch {
+    return "1.0.0";
+  }
+}
+
+/**
+ * Migration to 1.1.0: Add social media platform support.
+ */
+function migrate_1_1_0(db: Database): void {
+  // Check if columns already exist (idempotent)
+  const tableInfo = db.query("PRAGMA table_info(articles)").all() as any[];
+  const existingColumns = tableInfo.map((col: any) => col.name);
+
+  if (!existingColumns.includes("platform")) {
+    db.run("ALTER TABLE articles ADD COLUMN platform TEXT NOT NULL DEFAULT 'blog'");
+  }
+  if (!existingColumns.includes("derived_from")) {
+    db.run("ALTER TABLE articles ADD COLUMN derived_from INTEGER REFERENCES articles(id)");
+  }
+  if (!existingColumns.includes("platform_data")) {
+    db.run("ALTER TABLE articles ADD COLUMN platform_data TEXT");
+  }
+
+  // Check settings table
+  const settingsInfo = db.query("PRAGMA table_info(settings)").all() as any[];
+  const settingsCols = settingsInfo.map((col: any) => col.name);
+
+  if (!settingsCols.includes("platform_defaults")) {
+    db.run("ALTER TABLE settings ADD COLUMN platform_defaults TEXT DEFAULT '{}'");
+  }
+
+  // Create indexes (IF NOT EXISTS is safe to repeat)
+  db.run("CREATE INDEX IF NOT EXISTS idx_articles_platform ON articles(platform)");
+  db.run("CREATE INDEX IF NOT EXISTS idx_articles_derived_from ON articles(derived_from)");
+
+  // Record version
+  db.run("INSERT OR IGNORE INTO schema_version (version) VALUES ('1.1.0')");
+
+  // Update metadata version
+  db.run("UPDATE metadata SET version = '1.1.0' WHERE id = 1 AND version = '1.0.0'");
+}
+
+/**
+ * Registry of migrations keyed by target version.
+ */
+const MIGRATIONS: { version: string; apply: (db: Database) => void }[] = [
+  { version: "1.1.0", apply: migrate_1_1_0 },
+];
+
+/**
+ * Apply all pending migrations in order.
+ */
+function applyPendingMigrations(db: Database): void {
+  const currentVersion = getCurrentSchemaVersion(db);
+
+  for (const migration of MIGRATIONS) {
+    if (semverCompare(currentVersion, migration.version) < 0) {
+      migration.apply(db);
+    }
+  }
 }
 
 /**
@@ -73,11 +161,12 @@ export function insertDefaultSettings(db: Database): void {
 
   const articleLimits = JSON.stringify(defaults.article_limits || { max_words: 3000 });
   const companionDefaults = JSON.stringify(defaults.companion_project_defaults || {});
+  const platformDefaults = JSON.stringify(defaults.platform_defaults || {});
 
   db.run(
-    `INSERT OR REPLACE INTO settings (id, article_limits, companion_project_defaults, updated_at)
-     VALUES (1, ?, ?, datetime('now'))`,
-    [articleLimits, companionDefaults]
+    `INSERT OR REPLACE INTO settings (id, article_limits, companion_project_defaults, platform_defaults, updated_at)
+     VALUES (1, ?, ?, ?, datetime('now'))`,
+    [articleLimits, companionDefaults, platformDefaults]
   );
 }
 
@@ -98,6 +187,7 @@ export function getSettings(db: Database): any | null {
   return {
     article_limits: JSON.parse(row.article_limits || "{}"),
     companion_project_defaults: JSON.parse(row.companion_project_defaults || "{}"),
+    platform_defaults: safeParseJson(row.platform_defaults, {}),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -193,6 +283,9 @@ export function articleToRow(article: any): any {
     author_name: article.author?.name || null,
     author_languages: article.author?.languages ? JSON.stringify(article.author.languages) : null,
     status: article.status || "pending",
+    platform: article.platform || "blog",
+    derived_from: article.derived_from || null,
+    platform_data: article.platform_data ? JSON.stringify(article.platform_data) : null,
     output_folder: article.output_folder || null,
     output_files: article.output_files ? JSON.stringify(article.output_files) : null,
     sources_used: article.sources_used ? JSON.stringify(article.sources_used) : null,
@@ -226,6 +319,11 @@ export function rowToArticle(row: any): any {
     status: row.status,
   };
 
+  // Platform fields
+  article.platform = row.platform || "blog";
+  if (row.derived_from) article.derived_from = row.derived_from;
+  if (row.platform_data) article.platform_data = safeParseJson(row.platform_data);
+
   // Reconstruct author reference
   if (row.author_id) {
     article.author = { id: row.author_id };
@@ -244,6 +342,43 @@ export function rowToArticle(row: any): any {
   if (row.error_note) article.error_note = row.error_note;
 
   return article;
+}
+
+// ============================================
+// Platform Helpers
+// ============================================
+
+/** Valid platform values */
+export const VALID_PLATFORMS = ["blog", "linkedin", "instagram", "x"] as const;
+export type Platform = (typeof VALID_PLATFORMS)[number];
+
+/**
+ * Get defaults for a specific platform from settings.
+ */
+export function getPlatformDefaults(db: Database, platform: string): any {
+  const settings = getSettings(db);
+  if (!settings?.platform_defaults) return null;
+  return settings.platform_defaults[platform] || null;
+}
+
+/**
+ * Compute effective tone by applying platform offset to author's base tone.
+ * Result is clamped to [1, 10].
+ */
+export function getEffectiveTone(
+  author: { tone?: { formality?: number; opinionated?: number } },
+  platformDefaults: { tone_adjustment?: { formality_offset?: number; opinionated_offset?: number } } | null
+): { formality: number; opinionated: number } {
+  const baseFormality = author.tone?.formality ?? 5;
+  const baseOpinionated = author.tone?.opinionated ?? 5;
+
+  const fOffset = platformDefaults?.tone_adjustment?.formality_offset ?? 0;
+  const oOffset = platformDefaults?.tone_adjustment?.opinionated_offset ?? 0;
+
+  return {
+    formality: Math.max(1, Math.min(10, baseFormality + fOffset)),
+    opinionated: Math.max(1, Math.min(10, baseOpinionated + oOffset)),
+  };
 }
 
 // ============================================

@@ -17,6 +17,7 @@ import {
 
 // Valid enum values from schema
 const ENUMS = {
+  platform: ["blog", "linkedin", "instagram", "x"],
   status: ["pending", "in_progress", "draft", "review", "published", "archived"],
   difficulty: ["Beginner", "Intermediate", "Advanced", "All Levels"],
   area: [
@@ -103,7 +104,7 @@ function closePrompt(): void {
 // Validation Functions
 // ============================================
 
-function validateArticle(article: any, authors: any[]): Issue[] {
+function validateArticle(article: any, authors: any[], articles?: any[]): Issue[] {
   const issues: Issue[] = [];
   const itemName = `Article #${article.id}`;
 
@@ -292,6 +293,100 @@ function validateArticle(article: any, authors: any[]): Issue[] {
         });
       }
     });
+  }
+
+  // Check platform enum
+  if (article.platform && !ENUMS.platform.includes(article.platform)) {
+    issues.push({
+      type: "invalid_enum",
+      item: itemName,
+      field: "platform",
+      message: `Invalid platform '${article.platform}'`,
+      currentValue: article.platform,
+      enumOptions: ENUMS.platform,
+      suggestedFix: "blog",
+      table: "articles",
+      rowId: article.id,
+      column: "platform",
+    });
+  }
+
+  // Check derived_from FK: if set, referenced article must exist and be a blog article
+  if (article.derived_from) {
+    const sourceArticle = articles ? articles.find((a: any) => a.id === article.derived_from) : null;
+    if (!sourceArticle) {
+      issues.push({
+        type: "invalid_format",
+        item: itemName,
+        field: "derived_from",
+        message: `derived_from references non-existent article #${article.derived_from}`,
+        currentValue: article.derived_from,
+        suggestedFix: null,
+        table: "articles",
+        rowId: article.id,
+        column: "derived_from",
+      });
+    } else if (sourceArticle.platform && sourceArticle.platform !== "blog") {
+      issues.push({
+        type: "invalid_format",
+        item: itemName,
+        field: "derived_from",
+        message: `derived_from should reference a blog article, but #${article.derived_from} is platform '${sourceArticle.platform}'`,
+        currentValue: article.derived_from,
+        table: "articles",
+        rowId: article.id,
+        column: "derived_from",
+      });
+    }
+  }
+
+  // Check platform_data JSON structure matches platform
+  if (article.platform_data && typeof article.platform_data === "object") {
+    if (article.platform === "instagram") {
+      if (!article.platform_data.caption) {
+        issues.push({
+          type: "missing",
+          item: itemName,
+          field: "platform_data.caption",
+          message: `Instagram platform_data should have 'caption' field`,
+          table: "articles",
+          rowId: article.id,
+          column: "platform_data",
+          isJsonColumn: true,
+          jsonPath: "caption",
+        });
+      }
+    }
+    if (article.platform === "x") {
+      if (!article.platform_data.tweet) {
+        issues.push({
+          type: "missing",
+          item: itemName,
+          field: "platform_data.tweet",
+          message: `X/Twitter platform_data should have 'tweet' field`,
+          table: "articles",
+          rowId: article.id,
+          column: "platform_data",
+          isJsonColumn: true,
+          jsonPath: "tweet",
+        });
+      }
+    }
+    if (article.platform === "linkedin") {
+      if (!article.platform_data.hook && !article.platform_data.body) {
+        issues.push({
+          type: "missing",
+          item: itemName,
+          field: "platform_data.hook",
+          message: `LinkedIn platform_data should have 'hook' or 'body' field`,
+          table: "articles",
+          rowId: article.id,
+          column: "platform_data",
+          isJsonColumn: true,
+          jsonPath: "hook",
+        });
+      }
+    }
   }
 
   // Check companion_project structure (JSON column)
@@ -537,6 +632,51 @@ function validateSettings(settings: any): Issue[] {
         isJsonColumn: true,
         jsonPath: `${type}.file_structure`,
       });
+    }
+  }
+
+  // Validate platform_defaults
+  if (settings.platform_defaults && typeof settings.platform_defaults === "object") {
+    const validPlatforms = ["linkedin", "instagram", "x"];
+    for (const [platform, defaults] of Object.entries(settings.platform_defaults)) {
+      if (!validPlatforms.includes(platform)) {
+        issues.push({
+          type: "invalid_enum",
+          item: itemName,
+          field: `platform_defaults.${platform}`,
+          message: `Unknown platform '${platform}' in platform_defaults`,
+          currentValue: platform,
+          enumOptions: validPlatforms,
+          table: "settings",
+          rowId: 1,
+          column: "platform_defaults",
+          isJsonColumn: true,
+          jsonPath: platform,
+        });
+        continue;
+      }
+
+      const pd = defaults as any;
+      if (pd.tone_adjustment) {
+        if (pd.tone_adjustment.formality_offset !== undefined) {
+          const v = pd.tone_adjustment.formality_offset;
+          if (typeof v !== "number" || v < -5 || v > 5) {
+            issues.push({
+              type: "invalid_format",
+              item: itemName,
+              field: `platform_defaults.${platform}.tone_adjustment.formality_offset`,
+              message: `formality_offset should be a number between -5 and 5`,
+              currentValue: v,
+              suggestedFix: Math.max(-5, Math.min(5, Number(v) || 0)),
+              table: "settings",
+              rowId: 1,
+              column: "platform_defaults",
+              isJsonColumn: true,
+              jsonPath: `${platform}.tone_adjustment.formality_offset`,
+            });
+          }
+        }
+      }
     }
   }
 
@@ -843,7 +983,7 @@ async function doctor(): Promise<void> {
   console.log("\nValidating articles...");
 
   for (const article of articles) {
-    const issues = validateArticle(article, authors);
+    const issues = validateArticle(article, authors, articles);
 
     for (const issue of issues) {
       allIssues.push(issue);

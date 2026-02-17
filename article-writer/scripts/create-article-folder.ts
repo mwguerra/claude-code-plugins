@@ -10,20 +10,47 @@ import { getDb, dbExists, getDefaultAuthor, rowToArticle } from "./db";
 
 const args = process.argv.slice(2);
 const fromQueueIdx = args.indexOf("--from-queue");
+const platformIdx = args.indexOf("--platform");
+const deriveFromIdx = args.indexOf("--derive-from");
+
 let folderPath = args[0];
 let articleId: number | null = null;
+let platform: string = "blog";
+let deriveFromId: number | null = null;
+
+// Parse flags
+const flagIndices = new Set<number>();
 
 if (fromQueueIdx !== -1 && args[fromQueueIdx + 1]) {
   articleId = parseInt(args[fromQueueIdx + 1], 10);
-  folderPath = args.filter((_, i) => i !== fromQueueIdx && i !== fromQueueIdx + 1)[0];
+  flagIndices.add(fromQueueIdx);
+  flagIndices.add(fromQueueIdx + 1);
 }
 
+if (platformIdx !== -1 && args[platformIdx + 1]) {
+  platform = args[platformIdx + 1];
+  flagIndices.add(platformIdx);
+  flagIndices.add(platformIdx + 1);
+}
+
+if (deriveFromIdx !== -1 && args[deriveFromIdx + 1]) {
+  deriveFromId = parseInt(args[deriveFromIdx + 1], 10);
+  flagIndices.add(deriveFromIdx);
+  flagIndices.add(deriveFromIdx + 1);
+}
+
+// Get folder path (first non-flag argument)
+folderPath = args.filter((_, i) => !flagIndices.has(i))[0] || folderPath;
+
 if (!folderPath) {
-  console.error("Usage: bun run create-article-folder.ts <folder-path> [--from-queue <id>]");
+  console.error("Usage: bun run create-article-folder.ts <folder-path> [--from-queue <id>] [--platform <blog|linkedin|instagram|x>] [--derive-from <id>]");
   process.exit(1);
 }
 
-const dirs = [
+const isSocial = platform !== "blog";
+
+// For social platforms, use lighter folder structure
+const blogDirs = [
   "00_context",
   "01_planning",
   "02_research",
@@ -33,6 +60,14 @@ const dirs = [
   "05_assets/images",
   "code",
 ];
+
+const socialDirs = [
+  "00_context",
+  "01_planning",
+  "02_research",
+];
+
+const dirs = isSocial ? socialDirs : blogDirs;
 
 const files: Record<string, string> = {
   "00_context/editorial_context.md": `# Editorial Context
@@ -329,14 +364,35 @@ async function exists(path: string): Promise<boolean> {
 
 async function create() {
   try {
-    // Create directories
-    for (const dir of dirs) {
-      await mkdir(join(folderPath, dir), { recursive: true });
+    // For derived posts, create social/ subfolder inside existing blog article folder
+    let effectivePath = folderPath;
+    if (deriveFromId !== null && isSocial && dbExists()) {
+      try {
+        const db = getDb();
+        const sourceRow = db.query("SELECT output_folder FROM articles WHERE id = ?").get(deriveFromId) as any;
+        if (sourceRow?.output_folder) {
+          effectivePath = join(sourceRow.output_folder, "social");
+          console.log(`📁 Creating social/ subfolder in existing article: ${sourceRow.output_folder}`);
+        }
+        db.close();
+      } catch (e) {
+        console.warn("⚠️ Could not load source article folder, using provided path");
+      }
     }
 
-    // Create template files
+    // Create directories
+    for (const dir of dirs) {
+      await mkdir(join(effectivePath, dir), { recursive: true });
+    }
+
+    // Create template files (skip blog-only templates for social platforms)
     for (const [file, content] of Object.entries(files)) {
-      await writeFile(join(folderPath, file), content);
+      // Skip blog-only files for social platforms
+      if (isSocial) {
+        const blogOnlyPrefixes = ["03_drafts/", "04_review/", "05_assets/", "code/"];
+        if (blogOnlyPrefixes.some(prefix => file.startsWith(prefix))) continue;
+      }
+      await writeFile(join(effectivePath, file), content);
     }
 
     // Copy author profile from database
@@ -346,7 +402,7 @@ async function create() {
         const author = getDefaultAuthor(db);
         if (author) {
           await writeFile(
-            join(folderPath, "00_context/author_profile.json"),
+            join(effectivePath, "00_context/author_profile.json"),
             JSON.stringify(author, null, 2)
           );
           console.log(`📋 Copied author profile: ${author.name}`);
@@ -357,7 +413,7 @@ async function create() {
       }
     } else {
       await writeFile(
-        join(folderPath, "00_context/author_profile.json"),
+        join(effectivePath, "00_context/author_profile.json"),
         JSON.stringify({ note: "Run /article-writer:author add to create an author" }, null, 2)
       );
     }
@@ -405,7 +461,7 @@ ${article.series_potential}
 ## Relevance
 ${article.relevance}
 `;
-          await writeFile(join(folderPath, "00_context/editorial_context.md"), context);
+          await writeFile(join(effectivePath, "00_context/editorial_context.md"), context);
           console.log(`📝 Loaded context for article #${articleId}`);
         }
         db.close();
@@ -414,8 +470,8 @@ ${article.relevance}
       }
     }
 
-    console.log(`✅ Created: ${folderPath}`);
-    console.log(JSON.stringify({ success: true, path: folderPath, articleId }));
+    console.log(`✅ Created: ${effectivePath}`);
+    console.log(JSON.stringify({ success: true, path: effectivePath, articleId, platform, deriveFromId }));
   } catch (e) {
     console.error("❌ Error:", e);
     process.exit(1);

@@ -1,5 +1,5 @@
 -- Article Writer SQLite Schema
--- Version: 1.0.0
+-- Version: 1.1.0
 -- All tables for the article-writer plugin.
 -- Replaces: article_tasks.json, authors.json, settings.json
 
@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS schema_version (
 );
 
 INSERT OR IGNORE INTO schema_version (version) VALUES ('1.0.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('1.1.0');
 
 -- Authors table
 CREATE TABLE IF NOT EXISTS authors (
@@ -80,6 +81,9 @@ CREATE TABLE IF NOT EXISTS articles (
   output_files TEXT,       -- JSON array of {language, path, translated_at}
   sources_used TEXT,       -- JSON array of {url, title, summary, usage, accessed_at, type}
   companion_project TEXT,  -- JSON object (type, path, description, technologies, etc.)
+  platform TEXT NOT NULL DEFAULT 'blog' CHECK(platform IN ('blog', 'linkedin', 'instagram', 'x')),
+  derived_from INTEGER REFERENCES articles(id),
+  platform_data TEXT,      -- JSON: platform-specific structured content
   created_at TEXT DEFAULT (datetime('now')),
   written_at TEXT,
   published_at TEXT,
@@ -92,6 +96,7 @@ CREATE TABLE IF NOT EXISTS settings (
   id INTEGER PRIMARY KEY CHECK(id = 1) DEFAULT 1,
   article_limits TEXT DEFAULT '{"max_words":3000}',  -- JSON object
   companion_project_defaults TEXT NOT NULL,           -- JSON object
+  platform_defaults TEXT DEFAULT '{}',               -- JSON: per-platform settings
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -103,7 +108,7 @@ CREATE TABLE IF NOT EXISTS metadata (
   last_updated TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-INSERT OR IGNORE INTO metadata (id, version) VALUES (1, '1.0.0');
+INSERT OR IGNORE INTO metadata (id, version) VALUES (1, '1.1.0');
 
 -- FTS5 virtual table for full-text search on articles
 CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
@@ -138,4 +143,6 @@ CREATE INDEX IF NOT EXISTS idx_articles_area ON articles(area);
 CREATE INDEX IF NOT EXISTS idx_articles_difficulty ON articles(difficulty);
 CREATE INDEX IF NOT EXISTS idx_articles_author_id ON articles(author_id);
 CREATE INDEX IF NOT EXISTS idx_articles_estimated_effort ON articles(estimated_effort);
+CREATE INDEX IF NOT EXISTS idx_articles_platform ON articles(platform);
+CREATE INDEX IF NOT EXISTS idx_articles_derived_from ON articles(derived_from);
 CREATE INDEX IF NOT EXISTS idx_authors_sort_order ON authors(sort_order);

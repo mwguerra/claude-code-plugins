@@ -15,6 +15,7 @@
  *   --difficulty       Article counts by difficulty
  *   --author           Article counts by author
  *   --effort           Article counts by estimated effort
+ *   --platform         Article counts by platform
  *   --remaining        Count of remaining articles
  *   --completion       Completion statistics
  *   --stuck            Show articles stuck in_progress
@@ -169,6 +170,15 @@ function getNext5Articles(): void {
   db.close();
 }
 
+function getPlatformCounts(): void {
+  const db = getDb();
+  const rows = db.query("SELECT platform, COUNT(*) as count FROM articles GROUP BY platform ORDER BY count DESC").all() as any[];
+  for (const r of rows) {
+    console.log(`${r.platform}: ${r.count}`);
+  }
+  db.close();
+}
+
 function getSummary(): void {
   console.log("=== Article Queue Statistics ===");
   console.log("");
@@ -185,6 +195,9 @@ function getSummary(): void {
   console.log("");
   console.log("--- By Author ---");
   getAuthorCounts();
+  console.log("");
+  console.log("--- By Platform ---");
+  getPlatformCounts();
 }
 
 function getJsonStats(): void {
@@ -215,6 +228,9 @@ function getJsonStats(): void {
   const byEffort: any = {};
   (db.query("SELECT estimated_effort, COUNT(*) as c FROM articles GROUP BY estimated_effort").all() as any[]).forEach(r => byEffort[r.estimated_effort] = r.c);
 
+  const byPlatform: any = {};
+  (db.query("SELECT platform, COUNT(*) as c FROM articles GROUP BY platform ORDER BY c DESC").all() as any[]).forEach(r => byPlatform[r.platform] = r.c);
+
   const stuckRows = db.query("SELECT id, title, error_note FROM articles WHERE status='in_progress'").all() as any[];
   const stuckArticles = stuckRows.map(r => ({ id: r.id, title: r.title, error: r.error_note }));
 
@@ -231,6 +247,7 @@ function getJsonStats(): void {
     by_difficulty: byDifficulty,
     by_author: byAuthor,
     by_effort: byEffort,
+    by_platform: byPlatform,
     stuck_articles: stuckArticles,
     next_article: nextArticle,
     next_5_articles: next5,
@@ -397,6 +414,7 @@ Read-only Modes:
   --difficulty       Article counts by difficulty
   --author           Article counts by author
   --effort           Article counts by estimated effort
+  --platform         Article counts by platform
   --remaining        Count of remaining articles
   --completion       Completion statistics
   --stuck            Show articles stuck in_progress
@@ -474,6 +492,9 @@ switch (mode) {
     break;
   case "--effort":
     getEffortCounts();
+    break;
+  case "--platform":
+    getPlatformCounts();
     break;
   case "--remaining":
     getRemainingCount();

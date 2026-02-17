@@ -276,7 +276,22 @@
           "format": "date-time",
           "description": "Last modification timestamp"
         },
-        "error_note": { "type": "string" }
+        "error_note": { "type": "string" },
+        "platform": {
+          "type": "string",
+          "enum": ["blog", "linkedin", "instagram", "x"],
+          "default": "blog",
+          "description": "Target platform for the content"
+        },
+        "derived_from": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "ID of the source blog article this post was derived from"
+        },
+        "platform_data": {
+          "type": "object",
+          "description": "Platform-specific structured content (hook, body, CTA, carousel slides, tweets, etc.)"
+        }
       },
       "additionalProperties": false
     }

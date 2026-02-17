@@ -56,6 +56,15 @@
         }
       }
     },
+    "platform_defaults": {
+      "type": "object",
+      "description": "Default settings for each social media platform. Controls tone adjustments, length limits, and format constraints.",
+      "properties": {
+        "linkedin": { "$ref": "#/$defs/platform_config" },
+        "instagram": { "$ref": "#/$defs/platform_config" },
+        "x": { "$ref": "#/$defs/platform_config" }
+      }
+    },
     "metadata": {
       "type": "object",
       "properties": {
@@ -70,6 +79,52 @@
     }
   },
   "$defs": {
+    "platform_config": {
+      "type": "object",
+      "description": "Configuration for a social media platform",
+      "properties": {
+        "max_words": { "type": "integer", "description": "Default word count target" },
+        "hard_max_words": { "type": "integer", "description": "Absolute maximum word count" },
+        "min_words": { "type": "integer", "description": "Minimum word count" },
+        "hook_lines": { "type": "integer", "description": "Number of hook lines at start" },
+        "hashtag_count": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" }
+          }
+        },
+        "cta_required": { "type": "boolean", "description": "Whether a call-to-action is required" },
+        "caption_max_chars": { "type": "integer", "description": "Maximum caption characters (Instagram)" },
+        "caption_visible_chars": { "type": "integer", "description": "Visible characters before truncation (Instagram)" },
+        "emojis_encouraged": { "type": "boolean", "description": "Whether emojis are encouraged" },
+        "carousel_slides": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" },
+            "default": { "type": "integer" }
+          }
+        },
+        "tweet_max_chars": { "type": "integer", "description": "Maximum characters per tweet (X)" },
+        "thread_tweets": {
+          "type": "object",
+          "properties": {
+            "min": { "type": "integer" },
+            "max": { "type": "integer" },
+            "default": { "type": "integer" }
+          }
+        },
+        "tone_adjustment": {
+          "type": "object",
+          "description": "Offsets applied to author's base tone for this platform",
+          "properties": {
+            "formality_offset": { "type": "integer", "minimum": -5, "maximum": 5 },
+            "opinionated_offset": { "type": "integer", "minimum": -5, "maximum": 5 }
+          }
+        }
+      }
+    },
     "companion_project_defaults": {
       "type": "object",
       "description": "Default values for a companion project type",

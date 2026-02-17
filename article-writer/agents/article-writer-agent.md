@@ -421,6 +421,52 @@ After batch:
 4. List errors
 5. Suggest next actions
 
+## Social Media Post Workflow
+
+The agent can also process social media posts (LinkedIn, Instagram, X/Twitter). These follow a lighter workflow than blog articles.
+
+### Social Post Processing
+
+```
+a. Load article from queue (check platform field)
+b. If platform != 'blog': use social workflow
+c. Load platform defaults: bun run show.ts settings <platform>
+d. Calculate effective tone: author.tone + platform.tone_adjustment
+e. If derived_from is set: read source blog article
+f. Update status: pending → in_progress
+g. Process using Skill(social-post-writer):
+   - Plan adaptation (derive) or Plan (standalone)
+   - Research (light, standalone only)
+   - Draft platform-specific content
+   - Review against platform constraints
+   - Translate to other languages
+h. On success: set status to draft, update output_files, platform_data
+```
+
+### Social Commands
+
+```bash
+# Create standalone social post
+/article-writer:social linkedin "Why rate limiting matters"
+/article-writer:social instagram "5 Laravel tips"
+
+# Derive from existing blog article
+/article-writer:social linkedin derive 42
+/article-writer:social all derive 42    # All 3 platforms
+
+# Filter social posts in queue
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/queue.ts list platform:linkedin
+bun run "${CLAUDE_PLUGIN_ROOT}"/scripts/article-stats.ts --platform
+```
+
+### Social Post Output
+
+Social posts are stored as articles with `platform` set to "linkedin", "instagram", or "x". They have:
+- No companion project
+- `platform_data` JSON with structured content
+- Lighter folder structure (no code/, 03_drafts/, etc.)
+- Derived posts live in `social/` subfolder of source article
+
 ## Status Flow
 
 ```

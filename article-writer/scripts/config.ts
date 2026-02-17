@@ -91,6 +91,25 @@ function setSetting(path: string, valueStr: string): void {
       db.run("UPDATE settings SET article_limits = ?, updated_at = datetime('now') WHERE id = 1",
         [JSON.stringify(articleLimits)]);
     }
+  } else if (path.startsWith("platform_defaults.") || path === "platform_defaults") {
+    // Update platform_defaults column
+    const platformDefaults = settings.platform_defaults || {};
+    if (path === "platform_defaults") {
+      db.run("UPDATE settings SET platform_defaults = ?, updated_at = datetime('now') WHERE id = 1",
+        [JSON.stringify(newValue)]);
+    } else {
+      const subPath = path.replace("platform_defaults.", "");
+      const currentValue = getNestedValue(platformDefaults, subPath);
+
+      console.log(`\n📝 Setting Configuration\n`);
+      console.log(`  Path: platform_defaults.${subPath}`);
+      console.log(`  Current value: ${JSON.stringify(currentValue)}`);
+      console.log(`  New value: ${JSON.stringify(newValue)}`);
+
+      setNestedValue(platformDefaults, subPath, newValue);
+      db.run("UPDATE settings SET platform_defaults = ?, updated_at = datetime('now') WHERE id = 1",
+        [JSON.stringify(platformDefaults)]);
+    }
   } else {
     // Update companion_project_defaults column
     const fullPath = path.startsWith("companion_project_defaults.") ? path.replace("companion_project_defaults.", "") : path;
@@ -128,11 +147,12 @@ function resetSettings(): void {
     const defaults = JSON.parse(readFileSync(defaultSettingsPath, "utf-8"));
     const articleLimits = JSON.stringify(defaults.article_limits || { max_words: 3000 });
     const companionDefaults = JSON.stringify(defaults.companion_project_defaults || {});
+    const platformDefaults = JSON.stringify(defaults.platform_defaults || {});
 
     const db = getDb();
     db.run(
-      "UPDATE settings SET article_limits = ?, companion_project_defaults = ?, updated_at = datetime('now') WHERE id = 1",
-      [articleLimits, companionDefaults]
+      "UPDATE settings SET article_limits = ?, companion_project_defaults = ?, platform_defaults = ?, updated_at = datetime('now') WHERE id = 1",
+      [articleLimits, companionDefaults, platformDefaults]
     );
     touchMetadata(db);
     console.log("✅ Reset settings to defaults");
@@ -177,6 +197,44 @@ function resetExampleType(type: string): void {
     db.close();
   } else {
     console.error(`❌ No default configuration for type: ${type}`);
+  }
+}
+
+function resetPlatformDefaults(platform: string): void {
+  const validPlatforms = ["linkedin", "instagram", "x"];
+
+  if (!validPlatforms.includes(platform)) {
+    console.error(`❌ Unknown platform: ${platform}`);
+    console.log(`\n   Valid platforms: ${validPlatforms.join(", ")}`);
+    process.exit(1);
+  }
+
+  ensureDb();
+  console.log(`\n🔄 Resetting ${platform} Platform Defaults\n`);
+
+  const defaultSettingsPath = join(PLUGIN_ROOT, "schemas", "settings.sample.json");
+  const defaults = JSON.parse(readFileSync(defaultSettingsPath, "utf-8"));
+
+  if (defaults.platform_defaults?.[platform]) {
+    const db = getDb();
+    const settings = getSettings(db);
+    if (!settings) {
+      console.error("❌ Settings not found in database.");
+      db.close();
+      process.exit(1);
+    }
+
+    const platformDefaults = settings.platform_defaults || {};
+    platformDefaults[platform] = defaults.platform_defaults[platform];
+    db.run(
+      "UPDATE settings SET platform_defaults = ?, updated_at = datetime('now') WHERE id = 1",
+      [JSON.stringify(platformDefaults)]
+    );
+    touchMetadata(db);
+    console.log(`✅ Reset platform_defaults.${platform} to defaults`);
+    db.close();
+  } else {
+    console.error(`❌ No default configuration for platform: ${platform}`);
   }
 }
 
@@ -332,12 +390,15 @@ Commands:
   add-phrase <id> <signature|avoid> <phrase>  Add a phrase to author
   reset                                 Reset all settings to defaults
   reset-type <type>                     Reset one companion project type to defaults
+  reset-platform <platform>             Reset one platform's defaults (linkedin|instagram|x)
 
 Settings Paths:
   article_limits.max_words              e.g., 3000
   code.technologies                     e.g., '["Laravel 12", "Pest 4"]'
   code.has_tests                        e.g., true
   code.scaffold_command                 e.g., "composer create-project..."
+  platform_defaults.linkedin.max_words  e.g., 800
+  platform_defaults.x.thread_tweets.default  e.g., 10
 
 Author Paths:
   name                                  Author display name
@@ -402,6 +463,14 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       resetExampleType(args[1]);
+      break;
+
+    case "reset-platform":
+      if (!args[1]) {
+        console.error("❌ Usage: bun run config.ts reset-platform <platform>");
+        process.exit(1);
+      }
+      resetPlatformDefaults(args[1]);
       break;
 
     default:

@@ -277,8 +277,33 @@
       "notes": "Document thoroughly as the example type may not be obvious."
     }
   },
+  "platform_defaults": {
+    "linkedin": {
+      "max_words": 600,
+      "hard_max_words": 1300,
+      "min_words": 200,
+      "hook_lines": 3,
+      "hashtag_count": { "min": 3, "max": 5 },
+      "cta_required": true,
+      "tone_adjustment": { "formality_offset": 1, "opinionated_offset": 0 }
+    },
+    "instagram": {
+      "caption_max_chars": 2200,
+      "caption_visible_chars": 125,
+      "hashtag_count": { "min": 20, "max": 30 },
+      "emojis_encouraged": true,
+      "carousel_slides": { "min": 2, "max": 10, "default": 7 },
+      "tone_adjustment": { "formality_offset": -2, "opinionated_offset": 1 }
+    },
+    "x": {
+      "tweet_max_chars": 280,
+      "thread_tweets": { "min": 5, "max": 15, "default": 8 },
+      "hashtag_count": { "min": 1, "max": 3 },
+      "tone_adjustment": { "formality_offset": -1, "opinionated_offset": 1 }
+    }
+  },
   "metadata": {
-    "version": "1.0.0",
-    "last_updated": "2025-01-15T00:00:00Z"
+    "version": "1.1.0",
+    "last_updated": "2026-02-17T00:00:00Z"
   }
 }

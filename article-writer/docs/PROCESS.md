@@ -409,6 +409,78 @@ content/articles/2025_01_15_rate-limiting/
 
 ---
 
+## Social Media Posts
+
+In addition to blog articles, the article-writer supports creating social media content for LinkedIn, Instagram, and X/Twitter.
+
+### Creating Social Posts
+
+```bash
+# Standalone from a topic
+/article-writer:social linkedin "Why rate limiting matters"
+/article-writer:social instagram "5 Laravel tips"
+/article-writer:social x "The future of PHP"
+
+# Derive from an existing blog article
+/article-writer:social linkedin derive 42
+/article-writer:social all derive 42    # All 3 platforms
+```
+
+### Social Post Workflow
+
+Social posts follow a lighter workflow than blog articles:
+
+```
+Standalone: Initialize → Plan → Research (light) → Draft → Review → Translate → Finalize
+Derive:     Initialize → Read Source → Plan Adaptation → Draft → Review → Translate → Finalize
+```
+
+Key differences from blog articles:
+- **No companion project** — social posts link to the blog's if derived
+- **Lighter folder structure** — only `00_context/`, `01_planning/`, `02_research/`
+- **Voice adjustment** — author's base tone is shifted per platform
+- **Platform constraints** — character limits, hashtag counts, structural requirements
+
+### Social Post Output
+
+**Standalone posts** get their own article folder (lighter structure):
+```
+content/articles/YYYY_MM_DD_slug/
+├── 00_context/author_profile.json
+├── 01_planning/outline.md
+├── 02_research/research_notes.md
+└── {slug}.linkedin.{lang}.md
+```
+
+**Derived posts** are stored in the source article's `social/` subfolder:
+```
+content/articles/YYYY_MM_DD_rate-limiting/
+├── ... (existing blog article files) ...
+└── social/
+    ├── rate-limiting.linkedin.pt_BR.md
+    ├── rate-limiting.instagram.pt_BR.md
+    ├── rate-limiting.instagram.carousel.pt_BR.md
+    ├── rate-limiting.x.tweet.pt_BR.md
+    └── rate-limiting.x.thread.pt_BR.md
+```
+
+### Platform Settings
+
+Each platform has configurable defaults:
+
+```bash
+# View platform settings
+/article-writer:settings show linkedin
+/article-writer:settings show instagram
+/article-writer:settings show x
+
+# Modify platform settings
+/article-writer:settings set platform_defaults.linkedin.max_words 800
+/article-writer:settings set platform_defaults.x.thread_tweets.default 10
+```
+
+---
+
 ## Queue Management
 
 ### View Queue Status
