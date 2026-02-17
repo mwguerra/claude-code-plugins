@@ -587,6 +587,47 @@
         "laravel-echo",
         "production-deployment"
       ]
+    },
+    {
+      "name": "secretary",
+      "source": "./secretary",
+      "version": "1.0.0",
+      "description": "Queue-based personal workflow assistant. Captures decisions, commitments, ideas, and session data via ultra-fast hooks (< 50ms), processes them in a background worker with AI extraction, and syncs to Obsidian vault. Replaces my-workflow with zero-latency capture architecture.",
+      "keywords": [
+        "secretary",
+        "workflow",
+        "productivity",
+        "queue",
+        "background-worker",
+        "commitments",
+        "decisions",
+        "ideas",
+        "goals",
+        "briefing",
+        "github",
+        "obsidian",
+        "tracking",
+        "sessions",
+        "patterns",
+        "knowledge-graph",
+        "encrypted-memory",
+        "cron"
+      ],
+      "category": "productivity",
+      "tags": [
+        "workflow-management",
+        "personal-assistant",
+        "queue-processing",
+        "background-worker",
+        "commitments",
+        "decisions",
+        "goals",
+        "github-integration",
+        "obsidian-integration",
+        "encrypted-memory",
+        "productivity",
+        "briefings"
+      ]
     }
   ]
 }

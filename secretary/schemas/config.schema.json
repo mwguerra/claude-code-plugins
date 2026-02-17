@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Secretary Plugin Configuration",
+  "description": "Configuration for the Secretary workflow management plugin",
+  "type": "object",
+  "properties": {
+    "briefing": {
+      "type": "object",
+      "description": "Session start briefing settings",
+      "properties": {
+        "showOnStart": { "type": "boolean", "default": true },
+        "includePendingCommitments": { "type": "boolean", "default": true },
+        "includeRecentDecisions": { "type": "boolean", "default": true },
+        "includeGoalProgress": { "type": "boolean", "default": true },
+        "includeGitHub": { "type": "boolean", "default": true },
+        "daysBack": { "type": "integer", "default": 7, "minimum": 1, "maximum": 90 }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "What to capture from conversations",
+      "properties": {
+        "captureCommits": { "type": "boolean", "default": true },
+        "captureDecisions": { "type": "boolean", "default": true },
+        "captureCommitments": { "type": "boolean", "default": true },
+        "captureIdeas": { "type": "boolean", "default": true }
+      }
+    },
+    "vault": {
+      "type": "object",
+      "description": "Obsidian vault integration",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "secretaryFolder": { "type": "string", "default": "secretary" },
+        "syncOnWorkerRun": { "type": "boolean", "default": true }
+      }
+    },
+    "github": {
+      "type": "object",
+      "description": "GitHub integration for briefings",
+      "properties": {
+        "username": { "type": "string", "default": "" },
+        "trackIssues": { "type": "boolean", "default": true },
+        "trackPRs": { "type": "boolean", "default": true },
+        "trackReviews": { "type": "boolean", "default": true },
+        "cacheMinutes": { "type": "integer", "default": 15, "minimum": 5, "maximum": 120 }
+      }
+    },
+    "ai": {
+      "type": "object",
+      "description": "AI extraction settings",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "model": { "type": "string", "enum": ["haiku", "sonnet"], "default": "haiku" },
+        "maxBudget": { "type": "string", "default": "0.50" },
+        "timeout": { "type": "integer", "default": 20, "minimum": 5, "maximum": 60 }
+      }
+    },
+    "worker": {
+      "type": "object",
+      "description": "Background worker settings",
+      "properties": {
+        "cronEnabled": { "type": "boolean", "default": true },
+        "maxItemsPerRun": { "type": "integer", "default": 50, "minimum": 1, "maximum": 200 },
+        "retryLimit": { "type": "integer", "default": 3, "minimum": 1, "maximum": 10 },
+        "ttlHours": { "type": "integer", "default": 24, "minimum": 1, "maximum": 168 }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "description": "Encrypted memory settings",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true }
+      }
+    },
+    "patterns": {
+      "type": "object",
+      "description": "Behavior pattern detection settings",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "minConfidence": { "type": "number", "default": 0.6, "minimum": 0, "maximum": 1 },
+        "minEvidence": { "type": "integer", "default": 3, "minimum": 1 }
+      }
+    }
+  }
+}
