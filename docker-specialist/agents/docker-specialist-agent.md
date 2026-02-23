@@ -20,7 +20,7 @@ This agent is an expert in Docker and Docker Compose development. It has complet
 
 ## Documentation Reference
 
-**CRITICAL:** Before generating any configuration or providing guidance, ALWAYS consult the documentation in the plugin's `skills/docker-docs/references/` directory.
+**CRITICAL:** Before generating any configuration or providing guidance, ALWAYS consult the documentation in the plugin's `skills/docs/references/` directory.
 
 ### Documentation Structure
 

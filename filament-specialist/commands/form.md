@@ -26,7 +26,7 @@ Create a FilamentPHP v4 form schema with appropriate field types, validation rul
 ### 1. Consult Documentation
 
 Before generating, read the forms documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/forms/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/forms/`
 - Identify appropriate field types for each requirement
 
 ### 2. Analyze Requirements

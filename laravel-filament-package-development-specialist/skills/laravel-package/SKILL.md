@@ -1,5 +1,5 @@
 ---
-name: laravel-package-scaffold
+name: laravel-package
 description: Scaffold Laravel packages with ServiceProvider, Facade, Config, and test setup
 allowed-tools: Bash(python3:*), Write, Read, Glob
 ---

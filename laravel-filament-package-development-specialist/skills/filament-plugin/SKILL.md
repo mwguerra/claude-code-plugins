@@ -1,5 +1,5 @@
 ---
-name: filament-plugin-scaffold
+name: filament-plugin
 description: Scaffold Filament plugins with Plugin class, ServiceProvider, Resources, and Pest tests
 allowed-tools: Bash(python3:*), Write, Read, Glob
 ---

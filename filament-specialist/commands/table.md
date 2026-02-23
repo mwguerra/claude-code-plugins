@@ -29,9 +29,9 @@ Create a FilamentPHP v4 table configuration with columns, filters, actions, and 
 ### 1. Consult Documentation
 
 Before generating, read the tables documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/tables/`
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/tables/02-columns/`
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/tables/03-filters/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/tables/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/tables/02-columns/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/tables/03-filters/`
 
 ### 2. Analyze Requirements
 

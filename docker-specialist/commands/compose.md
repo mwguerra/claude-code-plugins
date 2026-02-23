@@ -20,11 +20,11 @@ Gather information about:
 ## 2. Consult Documentation
 
 Read relevant documentation:
-- `skills/docker-docs/references/03-compose-fundamentals.md` for structure
-- `skills/docker-docs/references/04-networking.md` for networks
-- `skills/docker-docs/references/05-databases.md` for database services
-- `skills/docker-docs/references/06-services.md` for dependencies
-- `skills/docker-docs/references/08-volumes.md` for persistence
+- `skills/docs/references/03-compose-fundamentals.md` for structure
+- `skills/docs/references/04-networking.md` for networks
+- `skills/docs/references/05-databases.md` for database services
+- `skills/docs/references/06-services.md` for dependencies
+- `skills/docs/references/08-volumes.md` for persistence
 
 ## 3. Generate Configuration
 

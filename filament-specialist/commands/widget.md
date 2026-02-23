@@ -32,7 +32,7 @@ Create FilamentPHP v4 dashboard widgets for stats, charts, tables, or custom con
 ### 1. Consult Documentation
 
 Before generating, read the widgets documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/widgets/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/widgets/`
 
 ### 2. Analyze Requirements
 

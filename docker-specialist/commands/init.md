@@ -18,10 +18,10 @@ First, examine the current project to determine:
 ## 2. Consult Documentation
 
 Read the relevant documentation files:
-- `skills/docker-docs/references/02-dockerfile.md` for Dockerfile patterns
-- `skills/docker-docs/references/03-compose-fundamentals.md` for compose structure
-- `skills/docker-docs/references/05-databases.md` if database is needed
-- `skills/docker-docs/references/10-architecture.md` for project structure
+- `skills/docs/references/02-dockerfile.md` for Dockerfile patterns
+- `skills/docs/references/03-compose-fundamentals.md` for compose structure
+- `skills/docs/references/05-databases.md` if database is needed
+- `skills/docs/references/10-architecture.md` for project structure
 
 ## 3. Generate Files
 

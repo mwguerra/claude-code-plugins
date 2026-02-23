@@ -21,7 +21,7 @@ This agent is an expert in FilamentPHP v4 development. It has complete access to
 
 ## Documentation Reference
 
-**CRITICAL:** Before generating any code or providing guidance, ALWAYS consult the documentation in the plugin's `skills/filament-docs/references/` directory.
+**CRITICAL:** Before generating any code or providing guidance, ALWAYS consult the documentation in the plugin's `skills/docs/references/` directory.
 
 ### Documentation Structure
 

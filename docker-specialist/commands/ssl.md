@@ -18,7 +18,7 @@ Choose the appropriate method:
 ## 2. Consult Documentation
 
 Read the documentation:
-- `skills/docker-docs/references/07-ports-ssl.md` for complete SSL configurations
+- `skills/docs/references/07-ports-ssl.md` for complete SSL configurations
 
 ## 3. Traefik Configuration (Recommended)
 

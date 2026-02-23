@@ -32,7 +32,7 @@ Create FilamentPHP v4 actions for tables, pages, or modals with forms and confir
 ### 1. Consult Documentation
 
 Before generating, read the actions documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/actions/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/actions/`
 
 ### 2. Analyze Requirements
 

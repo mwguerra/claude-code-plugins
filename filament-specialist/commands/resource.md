@@ -32,9 +32,9 @@ Create a complete FilamentPHP v4 resource including form schema, table configura
 ### 1. Consult Documentation
 
 Before generating any code, read the relevant documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/general/03-resources/` for resource patterns
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/forms/` for form fields
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/tables/` for table columns
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/general/03-resources/` for resource patterns
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/forms/` for form fields
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/tables/` for table columns
 
 ### 2. Analyze the Model
 

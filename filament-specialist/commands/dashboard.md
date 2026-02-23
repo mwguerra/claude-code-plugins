@@ -29,8 +29,8 @@ Create FilamentPHP v4 dashboard pages with tabbed navigation, color-coded messag
 ### 1. Consult Documentation
 
 Before generating, read the dashboard and widgets documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/general/06-navigation/`
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/widgets/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/general/06-navigation/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/widgets/`
 
 ### 2. Analyze Requirements
 

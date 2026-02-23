@@ -33,7 +33,7 @@ Parse the error or issue description to identify:
 ### 2. Consult Documentation
 
 Read relevant documentation files:
-- `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/`
+- `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/`
 - Focus on the component/feature mentioned in the error
 
 ### 3. Common Issue Categories

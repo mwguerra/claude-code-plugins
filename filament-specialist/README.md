@@ -115,7 +115,7 @@ The plugin includes a specialized agent (`filament-specialist-agent`) that can b
 
 All FilamentPHP v4 documentation is stored in:
 ```
-skills/filament-docs/references/
+skills/docs/references/
 ├── actions/           # Action buttons and modals
 ├── forms/             # Form field types
 ├── general/

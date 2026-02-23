@@ -14,7 +14,7 @@ The user is looking for information about: $ARGUMENTS
 
 ## 2. Documentation Index
 
-Find relevant documentation in `skills/docker-docs/references/`:
+Find relevant documentation in `skills/docs/references/`:
 
 | Topic | File |
 |-------|------|

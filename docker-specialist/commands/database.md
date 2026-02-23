@@ -19,7 +19,7 @@ Identify the required database:
 ## 2. Consult Documentation
 
 Read the documentation:
-- `skills/docker-docs/references/05-databases.md` for complete configurations
+- `skills/docs/references/05-databases.md` for complete configurations
 
 ## 3. Apply Best Practices
 

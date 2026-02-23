@@ -20,7 +20,7 @@ Determine:
 ## 2. Consult Documentation
 
 Read the documentation:
-- `skills/docker-docs/references/02-dockerfile.md` for complete Dockerfile patterns
+- `skills/docs/references/02-dockerfile.md` for complete Dockerfile patterns
 
 ## 3. Apply Best Practices
 

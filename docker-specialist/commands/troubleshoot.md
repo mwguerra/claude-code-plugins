@@ -29,9 +29,9 @@ docker stats --no-stream
 ## 2. Consult Documentation
 
 Read the documentation:
-- `skills/docker-docs/references/17-troubleshooting.md` for common issues
-- `skills/docker-docs/references/15-port-conflicts.md` for port problems
-- `skills/docker-docs/references/16-restart-strategies.md` for restart issues
+- `skills/docs/references/17-troubleshooting.md` for common issues
+- `skills/docs/references/15-port-conflicts.md` for port problems
+- `skills/docs/references/16-restart-strategies.md` for restart issues
 
 ## 3. Common Issues and Solutions
 

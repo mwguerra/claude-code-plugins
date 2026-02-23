@@ -1,5 +1,5 @@
 ---
-name: pest-testing-setup
+name: pest-testing
 description: Set up Pest testing with Orchestra Testbench for Laravel packages
 allowed-tools: Bash(python3:*), Bash(composer:*), Write, Read, Glob
 ---

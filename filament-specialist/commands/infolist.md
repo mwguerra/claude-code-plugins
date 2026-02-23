@@ -23,7 +23,7 @@ Create FilamentPHP v4 infolists for displaying read-only data in view pages and 
 ### 1. Consult Documentation
 
 Before generating, read the infolists documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/infolists/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/infolists/`
 
 ### 2. Analyze Requirements
 

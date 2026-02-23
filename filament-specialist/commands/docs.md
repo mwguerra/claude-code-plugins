@@ -35,7 +35,7 @@ Identify:
 
 ### 2. Search Documentation
 
-Search in `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/`
+Search in `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/`
 
 #### Documentation Structure
 

@@ -29,7 +29,7 @@ Generate comprehensive Pest tests for FilamentPHP v4 resources including CRUD op
 ### 1. Consult Documentation
 
 Before generating, read the testing documentation:
-- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/filament-docs/references/general/10-testing/`
+- Read `/home/mwguerra/projects/mwguerra/claude-code-plugins/filament-specialist/skills/docs/references/general/10-testing/`
 
 ### 2. Analyze Resource
 
