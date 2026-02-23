@@ -1,6 +1,6 @@
 ---
 description: Get the next pending article from the queue to work on
-allowed-tools: Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(queue), Bash(bun:*)
 ---
 
 # Next Article

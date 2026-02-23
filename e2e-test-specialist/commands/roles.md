@@ -1,6 +1,6 @@
 ---
 description: Test all pages and flows for each user role, verifying proper access control
-allowed-tools: Skill(e2e-test-plan), Skill(e2e-role-test), mcp__playwright__*, Read(*), Glob(*)
+allowed-tools: Skill(test-plan), Skill(role-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--roles admin,user,guest] [--credentials path/to/credentials.json]
 ---
 
@@ -31,7 +31,7 @@ This command reads the test plan from `docs/detailed-test-list.md` to determine 
 1. **Check for Test Plan**
    - Look for `docs/detailed-test-list.md`
    - If the file exists, read the role definitions and credentials from it
-   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
 
 2. **Read Role Information from Plan**
    - Extract the "Test User Accounts" table from the plan

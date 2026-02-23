@@ -10,7 +10,7 @@ Generate comprehensive Pest 4 tests for Livewire components with full coverage o
 
 ## Syntax
 ```bash
-guerra:test-livewire [options] [component]
+test-specialist:livewire [options] [component]
 ```
 
 ## Options

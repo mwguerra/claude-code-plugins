@@ -12,17 +12,17 @@ Generate comprehensive landing page proposals tailored to each persona.
 
 ### `create` - Create landing page proposals
 ```
-/pd-landing create [--persona <n>|all] [--template saas|product|service]
+/post-development:landing create [--persona <n>|all] [--template saas|product|service]
 ```
 
 ### `list` - List existing proposals
 ```
-/pd-landing list [--status draft|ready]
+/post-development:landing list [--status draft|ready]
 ```
 
 ### `export` - Export landing page specs
 ```
-/pd-landing export [--format json|html|figma] [--persona <n>]
+/post-development:landing export [--format json|html|figma] [--persona <n>]
 ```
 
 ## Instructions

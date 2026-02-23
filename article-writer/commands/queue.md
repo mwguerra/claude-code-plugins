@@ -1,6 +1,6 @@
 ---
 description: View article queue status, list pending/completed articles with filters, and show task details
-allowed-tools: Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(queue), Bash(bun:*)
 argument-hint: <status | list [filter] | show ID>
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: Test all pages for errors, missing elements, and broken interactions
-allowed-tools: Skill(e2e-test-plan), Skill(e2e-page-test), mcp__playwright__*, Read(*), Glob(*)
+allowed-tools: Skill(test-plan), Skill(page-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--pages /path1,/path2] [--viewport desktop|tablet|mobile]
 ---
 
@@ -31,7 +31,7 @@ This command reads the test plan from `docs/detailed-test-list.md` to determine 
 1. **Check for Test Plan**
    - Look for `docs/detailed-test-list.md`
    - If the file exists, read the page inventory from it
-   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
 
 2. **Read Page List from Plan**
    - Extract the navigation registry from Section 0

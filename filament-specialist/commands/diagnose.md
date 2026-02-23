@@ -1,6 +1,6 @@
 ---
 description: Diagnose FilamentPHP v4 errors and issues using official documentation to find solutions
-allowed-tools: Skill(filament-docs), Bash(php:*), Bash(composer:*), Glob(*), Grep(*)
+allowed-tools: Skill(docs), Bash(php:*), Bash(composer:*), Glob(*), Grep(*)
 argument-hint: <error-message-or-issue-description>
 ---
 

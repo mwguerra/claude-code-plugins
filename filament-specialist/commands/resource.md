@@ -1,6 +1,6 @@
 ---
 description: Generate a complete FilamentPHP v4 resource with form schema, table config, relation managers, and Pest tests
-allowed-tools: Skill(filament-resource), Skill(filament-docs), Skill(filament-forms), Skill(filament-tables), Skill(filament-testing), Bash(php:*)
+allowed-tools: Skill(resource), Skill(docs), Skill(forms), Skill(tables), Skill(testing), Bash(php:*)
 argument-hint: <ModelName> [--generate] [--simple] [--soft-deletes] [--view]
 ---
 

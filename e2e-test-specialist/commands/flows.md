@@ -1,6 +1,6 @@
 ---
 description: Test complete user flows end-to-end (login, registration, checkout, etc.)
-allowed-tools: Skill(e2e-test-plan), Skill(e2e-flow-test), mcp__playwright__*, Read(*), Glob(*)
+allowed-tools: Skill(test-plan), Skill(flow-test), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--flows login,register,checkout] [--role user]
 ---
 
@@ -31,7 +31,7 @@ This command reads the test plan from `docs/detailed-test-list.md` to determine 
 1. **Check for Test Plan**
    - Look for `docs/detailed-test-list.md`
    - If the file exists, read the flow definitions from it
-   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
 
 2. **Read Flow Definitions from Plan**
    - Extract flow tests from sections (Authentication, Multi-User Interaction, etc.)

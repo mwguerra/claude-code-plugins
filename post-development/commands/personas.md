@@ -12,22 +12,22 @@ Create detailed personas, target audience segments, and marketing strategies wit
 
 ### `create` - Create new personas
 ```
-/pd-personas create [--type b2b|b2c|b2g|b2d] [--count 3]
+/post-development:personas create [--type b2b|b2c|b2g|b2d] [--count 3]
 ```
 
 ### `list` - List existing personas
 ```
-/pd-personas list [--verbose]
+/post-development:personas list [--verbose]
 ```
 
 ### `strategy` - Generate marketing strategy for persona
 ```
-/pd-personas strategy [--persona <name>] [--all]
+/post-development:personas strategy [--persona <name>] [--all]
 ```
 
 ### `cta` - Generate CTAs for personas
 ```
-/pd-personas cta [--persona <name>] [--style aggressive|subtle|educational]
+/post-development:personas cta [--persona <name>] [--style aggressive|subtle|educational]
 ```
 
 ## Instructions

@@ -1,6 +1,6 @@
 ---
 description: Create a detailed E2E test plan covering all pages, roles, and flows
-allowed-tools: Skill(e2e-test-plan), Glob(*), Grep(*), Read(*), Write(*), Bash(php:*), Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(find:*)
+allowed-tools: Skill(test-plan), Glob(*), Grep(*), Read(*), Write(*), Bash(php:*), Bash(ls:*), Bash(cat:*), Bash(grep:*), Bash(find:*)
 argument-hint: [--output path/to/plan.md] [--force] [--quick]
 ---
 

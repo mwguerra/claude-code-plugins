@@ -1,6 +1,6 @@
 ---
 description: Create a new technical article with web research, practical companion projects, and multi-language output
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(queue), Bash(bun:*)
 argument-hint: <topic | from-queue ID> [--author ID]
 ---
 

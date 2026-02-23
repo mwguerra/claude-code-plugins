@@ -1,6 +1,6 @@
 ---
 description: Process multiple articles from the queue autonomously with filtering by count, area, author, or difficulty
-allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(article-writer), Skill(author-profile), Skill(companion-project-creator), Skill(queue), Bash(bun:*)
 argument-hint: <count | all | area:NAME | author:ID | difficulty:LEVEL>
 ---
 

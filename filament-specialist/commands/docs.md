@@ -1,6 +1,6 @@
 ---
 description: Search FilamentPHP v4 official documentation for patterns, methods, and implementation examples
-allowed-tools: Skill(filament-docs), Glob(*), Grep(*)
+allowed-tools: Skill(docs), Glob(*), Grep(*)
 argument-hint: <topic-or-search-query>
 ---
 

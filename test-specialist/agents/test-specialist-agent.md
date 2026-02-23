@@ -112,9 +112,9 @@ This agent automates the creation and management of tests following best practic
 
 This agent works with the following guerra namespace commands:
 - `guerra:generate-pest-test` - Generate new Pest 4 tests
-- `guerra:test-policies` - Generate policy tests
-- `guerra:test-filament` - Generate Filament resource tests
-- `guerra:test-livewire` - Generate Livewire component tests
+- `test-specialist:policies` - Generate policy tests
+- `test-specialist:filament` - Generate Filament resource tests
+- `test-specialist:livewire` - Generate Livewire component tests
 - `guerra:analyze-coverage` - Analyze test coverage
 - `guerra:run-test-suite` - Execute comprehensive test suite
 
@@ -134,25 +134,25 @@ When generating tests, always consult documentation in this order:
 guerra:generate-pest-test --full --analyze
 
 # Generate policy tests for all models
-guerra:test-policies --models=all
+test-specialist:policies --models=all
 
 # Generate Filament resource tests
-guerra:test-filament --resources=all
+test-specialist:filament --resources=all
 
 # Generate Livewire component tests
-guerra:test-livewire --components=all
+test-specialist:livewire --components=all
 ```
 
 ### Testing Specific Features
 ```bash
 # Test a specific policy
-guerra:test-policies --policy=PostPolicy
+test-specialist:policies --policy=PostPolicy
 
 # Test page access for roles
-guerra:test-filament --access --roles=admin,editor
+test-specialist:filament --access --roles=admin,editor
 
 # Test Livewire interactions
-guerra:test-livewire --component=CreatePost --interactions
+test-specialist:livewire --component=CreatePost --interactions
 ```
 
 ## Quality Checks

@@ -12,17 +12,17 @@ Generate social media ads tailored to your personas and platforms.
 
 ### `create` - Create ads for platforms
 ```
-/pd-ads create [--platform instagram|facebook|linkedin|twitter|all] [--persona <n>]
+/post-development:ads create [--platform instagram|facebook|linkedin|twitter|all] [--persona <n>]
 ```
 
 ### `list` - List existing ads
 ```
-/pd-ads list [--platform <platform>] [--status draft|ready|exported]
+/post-development:ads list [--platform <platform>] [--status draft|ready|exported]
 ```
 
 ### `export` - Export ads for use
 ```
-/pd-ads export [--platform <platform>] [--format json|csv|zip]
+/post-development:ads export [--platform <platform>] [--format json|csv|zip]
 ```
 
 ## Instructions

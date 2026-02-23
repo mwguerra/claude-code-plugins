@@ -1,6 +1,6 @@
 ---
 description: Create FilamentPHP v4 dashboard pages with single-tab or multi-tab layouts, message callouts, and widgets
-allowed-tools: Skill(filament-dashboard), Skill(filament-widgets), Skill(filament-docs), Bash(php:*)
+allowed-tools: Skill(dashboard), Skill(widgets), Skill(docs), Bash(php:*)
 argument-hint: <page-name> [--panel Admin] [--tabs overview,users,revenue] [--single]
 ---
 

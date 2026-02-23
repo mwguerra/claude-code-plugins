@@ -1,6 +1,6 @@
 ---
 description: Create social media posts for LinkedIn, Instagram, or X/Twitter - standalone or derived from blog articles
-allowed-tools: Skill(social-post-writer), Skill(author-profile), Skill(article-queue), Bash(bun:*)
+allowed-tools: Skill(social-post-writer), Skill(author-profile), Skill(queue), Bash(bun:*)
 argument-hint: <linkedin|instagram|x|all> <topic | derive ID> [--author ID]
 user-invocable: true
 ---

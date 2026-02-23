@@ -12,17 +12,17 @@ Analyze your project and generate comprehensive SEO data for all public pages.
 
 ### `analyze` - Analyze project for SEO opportunities
 ```
-/pd-seo analyze [--docs path/to/docs] [--pages path/to/pages]
+/post-development:seo analyze [--docs path/to/docs] [--pages path/to/pages]
 ```
 
 ### `generate` - Generate SEO data for pages
 ```
-/pd-seo generate [--page /specific/route] [--all]
+/post-development:seo generate [--page /specific/route] [--all]
 ```
 
 ### `export` - Export SEO data in various formats
 ```
-/pd-seo export [--format json|html|sitemap]
+/post-development:seo export [--format json|html|sitemap]
 ```
 
 ## Instructions

@@ -1,6 +1,6 @@
 ---
 description: Create FilamentPHP v4 form schemas with field types, validation rules, sections, and relationship fields
-allowed-tools: Skill(filament-forms), Skill(filament-docs), Bash(php:*)
+allowed-tools: Skill(forms), Skill(docs), Bash(php:*)
 argument-hint: <description> [--resource ResourceName] [--for model|action|standalone]
 ---
 

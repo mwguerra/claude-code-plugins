@@ -12,22 +12,22 @@ Generate 3 high-quality showcase articles about your application for content mar
 
 ### `create` - Create articles
 ```
-/pd-articles create [--count 3] [--style technical|casual|story]
+/post-development:articles create [--count 3] [--style technical|casual|story]
 ```
 
 ### `list` - List existing articles
 ```
-/pd-articles list [--status draft|ready|published]
+/post-development:articles list [--status draft|ready|published]
 ```
 
 ### `edit` - Edit specific article
 ```
-/pd-articles edit [--article 1|2|3]
+/post-development:articles edit [--article 1|2|3]
 ```
 
 ### `export` - Export articles
 ```
-/pd-articles export [--format markdown|html|docx] [--article 1|2|3|all]
+/post-development:articles export [--format markdown|html|docx] [--article 1|2|3|all]
 ```
 
 ## Instructions

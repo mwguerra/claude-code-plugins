@@ -26,34 +26,34 @@ Use this skill when:
 - Discover public routes
 - Extract product information from docs
 
-### 2. SEO Analysis (`/pd-seo`)
+### 2. SEO Analysis (`/post-development:seo`)
 - Generate meta tags for all pages
 - Create keyword strategies
 - Produce Open Graph specifications
 - Generate sitemap
 
-### 3. Screenshot Capture (`/pd-screenshots`)
+### 3. Screenshot Capture (`/post-development:screenshots`)
 - Capture all public pages
 - Multiple viewports (desktop, tablet, mobile)
 - Light and dark mode
 - Focus on key sections
 
-### 4. Persona Creation (`/pd-personas`)
+### 4. Persona Creation (`/post-development:personas`)
 - Create detailed buyer personas
 - Develop marketing strategies
 - Generate CTAs for all channels
 
-### 5. Ad Generation (`/pd-ads`)
+### 5. Ad Generation (`/post-development:ads`)
 - Instagram, Facebook, LinkedIn, Twitter
 - Multiple ad formats per platform
 - A/B variations
 
-### 6. Article Writing (`/pd-articles`)
+### 6. Article Writing (`/post-development:articles`)
 - 3 showcase articles
 - Different angles (story, tutorial, case study)
 - SEO optimized
 
-### 7. Landing Pages (`/pd-landing`)
+### 7. Landing Pages (`/post-development:landing`)
 - Persona-specific designs
 - All sections specified
 - Copy and image recommendations
@@ -62,22 +62,22 @@ Use this skill when:
 
 ### Initialize
 ```
-/post-dev init --base-url http://localhost:3000
+/post-development:run init --base-url http://localhost:3000
 ```
 
 ### Run All Tasks
 ```
-/post-dev run
+/post-development:run run
 ```
 
 ### Run Specific Task
 ```
-/post-dev run --task seo
+/post-development:run run --task seo
 ```
 
 ### Check Status
 ```
-/post-dev status
+/post-development:run status
 ```
 
 ## Output Directory Structure
@@ -130,19 +130,19 @@ Tasks run in dependency order:
 
 ```bash
 # 1. Initialize project
-/post-dev init --base-url http://localhost:3000
+/post-development:run init --base-url http://localhost:3000
 
 # 2. Run everything
-/post-dev run
+/post-development:run run
 
 # 3. Or run tasks individually
-/post-dev seo
-/post-dev screenshots
-/post-dev personas
-/post-dev ads
-/post-dev articles
-/post-dev landing
+/post-development:run seo
+/post-development:run screenshots
+/post-development:run personas
+/post-development:run ads
+/post-development:run articles
+/post-development:run landing
 
 # 4. Check progress anytime
-/post-dev status
+/post-development:run status
 ```

@@ -1,6 +1,6 @@
 ---
 description: Run comprehensive E2E tests with Playwright - test all pages, all roles, all flows in a visible browser
-allowed-tools: Skill(e2e-test-plan), Skill(e2e-page-test), Skill(e2e-role-test), Skill(e2e-flow-test), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read(*), Glob(*)
+allowed-tools: Skill(test-plan), Skill(page-test), Skill(role-test), Skill(flow-test), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read(*), Glob(*)
 argument-hint: <base-url> [--roles role1,role2] [--viewport desktop|tablet|mobile] [--headless]
 ---
 
@@ -31,7 +31,7 @@ This command reads the test plan from `docs/detailed-test-list.md`. If the plan 
 1. **Check for Test Plan**
    - Look for `docs/detailed-test-list.md`
    - If the file exists, read and use it for test execution
-   - If the file does NOT exist, invoke `Skill(e2e-test-plan)` to generate it first
+   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
 
 2. **Plan Generation (if missing)**
    - Invoke the e2e-test-plan skill

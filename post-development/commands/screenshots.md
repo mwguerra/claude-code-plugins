@@ -12,22 +12,22 @@ Capture screenshots of your application for marketing materials, documentation, 
 
 ### `init` - Initialize screenshot plan
 ```
-/pd-screenshots init [--base-url http://localhost:3000]
+/post-development:screenshots init [--base-url http://localhost:3000]
 ```
 
 ### `capture` - Run screenshot capture
 ```
-/pd-screenshots capture [--id specific-id] [--status pending] [--parallel]
+/post-development:screenshots capture [--id specific-id] [--status pending] [--parallel]
 ```
 
 ### `quick` - Quick single-page capture
 ```
-/pd-screenshots quick <url> [--viewport desktop|mobile] [--mode light|dark|both]
+/post-development:screenshots quick <url> [--viewport desktop|mobile] [--mode light|dark|both]
 ```
 
 ### `status` - View capture status
 ```
-/pd-screenshots status [--verbose]
+/post-development:screenshots status [--verbose]
 ```
 
 ## Instructions

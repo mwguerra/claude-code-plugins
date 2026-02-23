@@ -10,7 +10,7 @@ Generate comprehensive Pest 4 tests for Laravel authorization policies, ensuring
 
 ## Syntax
 ```bash
-guerra:test-policies [options] [policy]
+test-specialist:policies [options] [policy]
 ```
 
 ## Options

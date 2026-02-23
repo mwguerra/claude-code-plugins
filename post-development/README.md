@@ -35,7 +35,7 @@ A comprehensive post-development toolkit that automates the creation of marketin
 
 ```bash
 # In your project directory
-/post-dev init --base-url http://localhost:3000
+/post-development:run init --base-url http://localhost:3000
 ```
 
 This creates a `.post-development/` directory with configuration files.
@@ -43,7 +43,7 @@ This creates a `.post-development/` directory with configuration files.
 ### Run All Tasks
 
 ```bash
-/post-dev run
+/post-development:run run
 ```
 
 This executes all tasks in dependency order:
@@ -57,22 +57,22 @@ This executes all tasks in dependency order:
 ### Check Status
 
 ```bash
-/post-dev status
+/post-development:run status
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/post-dev init` | Initialize post-development structure |
-| `/post-dev run` | Run all tasks |
-| `/post-dev status` | Show task status |
-| `/pd-seo` | SEO analysis commands |
-| `/pd-screenshots` | Screenshot capture commands |
-| `/pd-personas` | Persona generation commands |
-| `/pd-ads` | Ad creation commands |
-| `/pd-articles` | Article writing commands |
-| `/pd-landing` | Landing page design commands |
+| `/post-development:run init` | Initialize post-development structure |
+| `/post-development:run run` | Run all tasks |
+| `/post-development:run status` | Show task status |
+| `/post-development:seo` | SEO analysis commands |
+| `/post-development:screenshots` | Screenshot capture commands |
+| `/post-development:personas` | Persona generation commands |
+| `/post-development:ads` | Ad creation commands |
+| `/post-development:articles` | Article writing commands |
+| `/post-development:landing` | Landing page design commands |
 
 ## Output Structure
 
@@ -134,7 +134,7 @@ npx playwright install chromium
 Set your application's URL:
 
 ```bash
-/post-dev init --base-url http://localhost:3000
+/post-development:run init --base-url http://localhost:3000
 ```
 
 ### Screenshot Viewports

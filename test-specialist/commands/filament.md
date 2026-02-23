@@ -10,7 +10,7 @@ Generate comprehensive Pest 4 tests for Filament admin panels, resources, pages,
 
 ## Syntax
 ```bash
-guerra:test-filament [options] [target]
+test-specialist:filament [options] [target]
 ```
 
 ## Options

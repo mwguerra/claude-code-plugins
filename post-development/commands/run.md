@@ -14,32 +14,32 @@ Master command to orchestrate all post-development tasks for app launch preparat
 Creates the `.post-development` folder structure and master plan.
 
 ```
-/post-dev init [--base-url http://localhost:3000] [--project-type saas|ecommerce|blog|portfolio]
+/post-development:run init [--base-url http://localhost:3000] [--project-type saas|ecommerce|blog|portfolio]
 ```
 
 ### `run` - Execute all pending tasks
 Runs all tasks in dependency order. **Auto-initializes if not already set up** — discovers the project, creates the directory structure, and populates the master plan before executing.
 
 ```
-/post-dev run [--task seo|screenshots|personas|ads|articles|landing] [--parallel] [--force]
+/post-development:run run [--task seo|screenshots|personas|ads|articles|landing] [--parallel] [--force]
 ```
 
 ### `status` - Check task status
 Shows progress of all post-development tasks.
 
 ```
-/post-dev status [--verbose] [--task <task-id>]
+/post-development:run status [--verbose] [--task <task-id>]
 ```
 
 ### Individual Task Commands
 
 ```
-/post-dev seo          # Run SEO analysis only
-/post-dev screenshots  # Capture screenshots only
-/post-dev personas     # Create personas only
-/post-dev ads          # Generate ads only
-/post-dev articles     # Write articles only
-/post-dev landing      # Create landing pages only
+/post-development:run seo          # Run SEO analysis only
+/post-development:run screenshots  # Capture screenshots only
+/post-development:run personas     # Create personas only
+/post-development:run ads          # Generate ads only
+/post-development:run articles     # Write articles only
+/post-development:run landing      # Create landing pages only
 ```
 
 ## Instructions
@@ -302,14 +302,14 @@ After each operation, report:
 
 ```bash
 # Just run everything — auto-discovers and initializes
-/post-dev run
+/post-development:run run
 
 # Or initialize first with explicit options
-/post-dev init --base-url http://localhost:3000
+/post-development:run init --base-url http://localhost:3000
 
 # Run a specific task (auto-inits if needed)
-/post-dev seo
+/post-development:run seo
 
 # Check progress
-/post-dev status
+/post-development:run status
 ```
