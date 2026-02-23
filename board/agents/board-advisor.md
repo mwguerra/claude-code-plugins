@@ -191,7 +191,7 @@ sqlite3 .board/board.db "SELECT 'DEC-' || printf('%03d', COALESCE(MAX(CAST(SUBST
 
 4. Present the Decision Record to the user in clean markdown format
 
-5. Remind the user: "You can track this outcome later with `/board followup DEC-XXX --outcome success|partial|fail`"
+5. Remind the user: "You can track this outcome later with `/board:board followup DEC-XXX --outcome success|partial|fail`"
 
 ## Conversation Style
 

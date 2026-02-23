@@ -37,7 +37,7 @@ Check for existing session:
 cat .taskmanager/prd-state.json 2>/dev/null
 ```
 
-Handle resume/fresh start as with `/prd`.
+Handle resume/fresh start as with `/prd-builder:prd`.
 
 ### 2. Capture Feature Description
 
@@ -120,7 +120,7 @@ Save to: `docs/prd/prd-{slug}.md`
 
 ### 7. TaskManager Integration
 
-Same as `/prd`:
+Same as `/prd-builder:prd`:
 - Offer to generate tasks
 - Parse feature into implementation subtasks
 - Optionally start autonomous execution

@@ -12,16 +12,16 @@ Generate comprehensive Pest tests for FilamentPHP v4 resources including CRUD op
 
 ```bash
 # Generate all tests for a resource
-/filament:test PostResource
+/filament-specialist:test PostResource
 
 # Generate specific test type
-/filament:test PostResource --type create
+/filament-specialist:test PostResource --type create
 
 # Generate tests with authorization checks
-/filament:test PostResource --with-auth
+/filament-specialist:test PostResource --with-auth
 
 # Generate all test types
-/filament:test PostResource --type all
+/filament-specialist:test PostResource --type all
 ```
 
 ## Process
@@ -55,7 +55,7 @@ Test file at `tests/Feature/Filament/{Resource}Test.php`
 
 ## Example Output
 
-For `/filament:test PostResource --type all --with-auth`:
+For `/filament-specialist:test PostResource --type all --with-auth`:
 
 ```php
 <?php

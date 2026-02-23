@@ -356,7 +356,7 @@ At the end of the process, provide:
 
 This skill works best when combined with:
 
-- **taskmanager**: For detailed task tracking (`/taskmanager:plan`, `/taskmanager:run-tasks`)
+- **taskmanager**: For detailed task tracking (`/taskmanager:plan`, `/taskmanager:run`)
 - **test-specialist**: For Pest test generation
 - **code:cleanup**: For cleaning code before commits
 

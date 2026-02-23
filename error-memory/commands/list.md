@@ -13,7 +13,7 @@ List all errors stored in the error memory database with optional filtering.
 ## Usage
 
 ```
-/error:list [--project <name>] [--tag <tag>] [--source <source>] [--max <n>]
+/error-memory:list [--project <name>] [--tag <tag>] [--source <source>] [--max <n>]
 ```
 
 ## Process
@@ -54,8 +54,8 @@ For each error, display:
 ## Examples
 
 ```
-/error:list
-/error:list --project task-manager
-/error:list --tag database
-/error:list --source playwright --max 5
+/error-memory:list
+/error-memory:list --project task-manager
+/error-memory:list --tag database
+/error-memory:list --source playwright --max 5
 ```

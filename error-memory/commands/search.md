@@ -13,7 +13,7 @@ Search the error memory database for similar errors and their solutions.
 ## Usage
 
 ```
-/error:search <error message or keywords>
+/error-memory:search <error message or keywords>
 ```
 
 ## Process
@@ -32,7 +32,7 @@ bash $CLAUDE_PLUGIN_ROOT/scripts/search.sh "<query>" --max 5
 
 3. If a good match is found, present the solution to the user and explain how it applies to their current error.
 
-4. If no match is found, inform the user this appears to be a new error and suggest logging it after it's solved with `/error:log`.
+4. If no match is found, inform the user this appears to be a new error and suggest logging it after it's solved with `/error-memory:log`.
 
 ## Output Format
 
@@ -46,5 +46,5 @@ Present results clearly showing:
 ## Example
 
 ```
-/error:search SQLSTATE[HY000]: Connection refused
+/error-memory:search SQLSTATE[HY000]: Connection refused
 ```

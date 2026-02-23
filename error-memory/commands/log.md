@@ -9,7 +9,7 @@ Log a new error and its solution to build up the error memory database.
 ## Usage
 
 ```
-/error:log
+/error-memory:log
 ```
 
 This command is interactive - Claude will gather the required information from the current context and ask for any missing details.

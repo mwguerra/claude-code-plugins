@@ -12,22 +12,22 @@ Edit an existing note's frontmatter or append content. Automatically updates the
 
 ```bash
 # View current content
-/obsidian:update "Laravel Queue Configuration" --show
+/obsidian-vault:update "Laravel Queue Configuration" --show
 
 # Update title
-/obsidian:update technologies/laravel-queues.md --title "Laravel Queue & Horizon Setup"
+/obsidian-vault:update technologies/laravel-queues.md --title "Laravel Queue & Horizon Setup"
 
 # Update description
-/obsidian:update "Laravel Queue Configuration" --description "Complete guide to Redis queues with Horizon"
+/obsidian-vault:update "Laravel Queue Configuration" --description "Complete guide to Redis queues with Horizon"
 
 # Add tags
-/obsidian:update "Laravel Queue Configuration" --add-tags "horizon,redis"
+/obsidian-vault:update "Laravel Queue Configuration" --add-tags "horizon,redis"
 
 # Add related notes
-/obsidian:update "Laravel Queue Configuration" --add-related "technologies/redis,projects/my-app"
+/obsidian-vault:update "Laravel Queue Configuration" --add-related "technologies/redis,projects/my-app"
 
 # Append content
-/obsidian:update "Laravel Queue Configuration" --append "## New Section\n\nAdditional content here."
+/obsidian-vault:update "Laravel Queue Configuration" --append "## New Section\n\nAdditional content here."
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/update-note.sh" $ARGUMENTS`

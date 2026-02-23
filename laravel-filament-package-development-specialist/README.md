@@ -26,12 +26,12 @@ A comprehensive Claude Code plugin for creating, developing, and testing Laravel
 
 ## Commands
 
-### `/create-laravel-package`
+### `/laravel-filament-package-development-specialist:create-laravel-package`
 
 Create a new Laravel package with full structure.
 
 ```
-/create-laravel-package mwguerra/my-package --with-pest --with-facade
+/laravel-filament-package-development-specialist:create-laravel-package mwguerra/my-package --with-pest --with-facade
 ```
 
 **Options:**
@@ -41,12 +41,12 @@ Create a new Laravel package with full structure.
 - `--with-command` - Include artisan command
 - `--all` - Include all optional features
 
-### `/create-filament-plugin`
+### `/laravel-filament-package-development-specialist:create-filament-plugin`
 
 Create a new Filament **v4** plugin.
 
 ```
-/create-filament-plugin mwguerra/filament-blog --with-resource Post --with-widget
+/laravel-filament-package-development-specialist:create-filament-plugin mwguerra/filament-blog --with-resource Post --with-widget
 ```
 
 **Options:**
@@ -55,12 +55,12 @@ Create a new Filament **v4** plugin.
 - `--with-widget` - Include a sample Widget
 - `--no-pest` - Exclude PestPHP testing
 
-### `/setup-pest-testing`
+### `/laravel-filament-package-development-specialist:setup-pest-testing`
 
 Add PestPHP testing to an existing package.
 
 ```
-/setup-pest-testing mwguerra/my-package --filament --with-ci
+/laravel-filament-package-development-specialist:setup-pest-testing mwguerra/my-package --filament --with-ci
 ```
 
 **Options:**
@@ -68,28 +68,28 @@ Add PestPHP testing to an existing package.
 - `--with-coverage` - Add code coverage configuration
 - `--with-ci` - Add GitHub Actions CI workflow
 
-### `/run-package-tests`
+### `/laravel-filament-package-development-specialist:run-package-tests`
 
 Run tests for a package.
 
 ```
-/run-package-tests mwguerra/my-package --coverage
+/laravel-filament-package-development-specialist:run-package-tests mwguerra/my-package --coverage
 ```
 
-### `/package-status`
+### `/laravel-filament-package-development-specialist:package-status`
 
 Check the status and configuration of a package.
 
 ```
-/package-status mwguerra/my-package
+/laravel-filament-package-development-specialist:package-status mwguerra/my-package
 ```
 
-### `/add-filament-resource`
+### `/laravel-filament-package-development-specialist:add-filament-resource`
 
 Add a Filament Resource to an existing plugin.
 
 ```
-/add-filament-resource mwguerra/filament-blog BlogPost --with-model
+/laravel-filament-package-development-specialist:add-filament-resource mwguerra/filament-blog BlogPost --with-model
 ```
 
 ## Skills

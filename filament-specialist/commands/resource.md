@@ -12,19 +12,19 @@ Create a complete FilamentPHP v4 resource including form schema, table configura
 
 ```bash
 # Basic resource
-/filament:resource Post
+/filament-specialist:resource Post
 
 # Generate from model (auto-detect fields)
-/filament:resource Post --generate
+/filament-specialist:resource Post --generate
 
 # Simple resource (modal forms)
-/filament:resource Post --simple
+/filament-specialist:resource Post --simple
 
 # With soft deletes support
-/filament:resource Post --soft-deletes
+/filament-specialist:resource Post --soft-deletes
 
 # View-only resource
-/filament:resource Post --view
+/filament-specialist:resource Post --view
 ```
 
 ## Process
@@ -102,7 +102,7 @@ Generated files:
 
 ## Example Output
 
-For `/filament:resource Post`:
+For `/filament-specialist:resource Post`:
 
 ```php
 // app/Filament/Resources/PostResource.php

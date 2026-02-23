@@ -12,16 +12,16 @@ Create a FilamentPHP v4 table configuration with columns, filters, actions, and 
 
 ```bash
 # Describe the table you need
-/filament:table "posts with title, author, status badge, published date, and actions"
+/filament-specialist:table "posts with title, author, status badge, published date, and actions"
 
 # For a specific resource
-/filament:table "orders with customer, items count, total, status" --resource OrderResource
+/filament-specialist:table "orders with customer, items count, total, status" --resource OrderResource
 
 # For a widget
-/filament:table "recent orders showing last 5" --for widget
+/filament-specialist:table "recent orders showing last 5" --for widget
 
 # For a relation manager
-/filament:table "comments with author, content, date" --for relation-manager
+/filament-specialist:table "comments with author, content, date" --for relation-manager
 ```
 
 ## Process
@@ -79,7 +79,7 @@ Complete table configuration code with:
 
 ## Example Output
 
-For `/filament:table "posts with title, author, status badge, published date, and actions"`:
+For `/filament-specialist:table "posts with title, author, status badge, published date, and actions"`:
 
 ```php
 use Filament\Tables;

@@ -9,7 +9,7 @@ Display statistics and insights about the error memory database.
 ## Usage
 
 ```
-/error:stats
+/error-memory:stats
 ```
 
 ## Process

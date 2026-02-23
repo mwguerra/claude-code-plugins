@@ -177,14 +177,14 @@ Reference: `17-troubleshooting.md`
 
 The following commands are available for specific tasks:
 
-- `/docker:init` - Initialize Docker environment for a project
-- `/docker:dockerfile` - Generate optimized Dockerfile
-- `/docker:compose` - Generate compose configuration
-- `/docker:database` - Set up database container
-- `/docker:ssl` - Configure SSL/TLS
-- `/docker:troubleshoot` - Diagnose Docker issues
-- `/docker:commands` - Show essential commands
-- `/docker:docs` - Search documentation
+- `/docker-specialist:init` - Initialize Docker environment for a project
+- `/docker-specialist:dockerfile` - Generate optimized Dockerfile
+- `/docker-specialist:compose` - Generate compose configuration
+- `/docker-specialist:database` - Set up database container
+- `/docker-specialist:ssl` - Configure SSL/TLS
+- `/docker-specialist:troubleshoot` - Diagnose Docker issues
+- `/docker-specialist:commands` - Show essential commands
+- `/docker-specialist:docs` - Search documentation
 
 ## Output Standards
 

@@ -108,7 +108,7 @@ If generating tasks:
 - Use `/taskmanager:plan docs/prd/prd-{slug}.md`
 
 If starting tasks:
-- After plan is created, invoke `/taskmanager:run-tasks`
+- After plan is created, invoke `/taskmanager:run`
 
 ### 8. Cleanup
 
@@ -129,7 +129,7 @@ After successful PRD generation:
 
 If user wants to stop mid-interview:
 - Save current state
-- Inform user they can resume with `/prd` later
+- Inform user they can resume with `/prd-builder:prd` later
 
 If state file is corrupted:
 - Offer to start fresh

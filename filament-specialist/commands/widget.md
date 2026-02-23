@@ -12,19 +12,19 @@ Create FilamentPHP v4 dashboard widgets for stats, charts, tables, or custom con
 
 ```bash
 # Stats widget
-/filament:widget "overview stats with total users, orders, and revenue"
+/filament-specialist:widget "overview stats with total users, orders, and revenue"
 
 # Chart widget
-/filament:widget "monthly revenue line chart" --type chart
+/filament-specialist:widget "monthly revenue line chart" --type chart
 
 # Table widget
-/filament:widget "latest 5 orders" --type table
+/filament-specialist:widget "latest 5 orders" --type table
 
 # Custom widget
-/filament:widget "pending tasks checklist" --type custom
+/filament-specialist:widget "pending tasks checklist" --type custom
 
 # Resource widget
-/filament:widget "post statistics" --resource PostResource
+/filament-specialist:widget "post statistics" --resource PostResource
 ```
 
 ## Process

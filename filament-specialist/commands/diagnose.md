@@ -12,13 +12,13 @@ Diagnose and fix FilamentPHP v4 issues by consulting official documentation and 
 
 ```bash
 # Diagnose an error
-/filament:diagnose "Target class [App\Filament\Resources\PostResource] does not exist"
+/filament-specialist:diagnose "Target class [App\Filament\Resources\PostResource] does not exist"
 
 # Diagnose a behavior issue
-/filament:diagnose "form fields not saving to database"
+/filament-specialist:diagnose "form fields not saving to database"
 
 # Diagnose a display issue
-/filament:diagnose "table not showing any records"
+/filament-specialist:diagnose "table not showing any records"
 ```
 
 ## Process

@@ -13,7 +13,7 @@ Migrate errors from the old `solved-errors.md` markdown format to the new JSON d
 ## Usage
 
 ```
-/error:migrate [--dry-run] [--file <path>]
+/error-memory:migrate [--dry-run] [--file <path>]
 ```
 
 ## Process
@@ -77,11 +77,11 @@ The migration script expects the old markdown format:
 
 ```bash
 # Preview migration
-/error:migrate --dry-run
+/error-memory:migrate --dry-run
 
 # Migrate from default file
-/error:migrate
+/error-memory:migrate
 
 # Migrate from custom file
-/error:migrate --file ~/my-errors.md
+/error-memory:migrate --file ~/my-errors.md
 ```

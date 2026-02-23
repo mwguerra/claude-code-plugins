@@ -1,6 +1,6 @@
 ---
 name: prd-interview
-description: This skill should be used when conducting PRD interviews, creating product requirements documents, planning new features, documenting bug fixes, or when using commands like "/prd", "/prd:feature", "/prd:bugfix", or "/prd:refine". Provides comprehensive interview frameworks and question templates for building thorough PRDs.
+description: This skill should be used when conducting PRD interviews, creating product requirements documents, planning new features, documenting bug fixes, or when using commands like "/prd-builder:prd", "/prd-builder:feature", "/prd-builder:bugfix", or "/prd-builder:refine". Provides comprehensive interview frameworks and question templates for building thorough PRDs.
 ---
 
 # PRD Interview Skill
@@ -78,7 +78,7 @@ Save interview progress to: `.taskmanager/prd-state.json`
 
 ### Resuming Sessions
 
-When `/prd` or similar is invoked:
+When `/prd-builder:prd` or similar is invoked:
 1. Check for existing state in `.taskmanager/prd-state.json`
 2. If found, ask user: "Resume previous session for '{slug}' or start fresh?"
 3. If resuming, continue from `currentCategory`
@@ -159,11 +159,11 @@ Feature: User Authentication
 ### Automatic Execution
 
 After generating tasks, ask: "Tasks created. Start autonomous execution?"
-If yes, invoke `/taskmanager:run-tasks` to begin implementation.
+If yes, invoke `/taskmanager:run` to begin implementation.
 
 ## PRD Types
 
-### Full Product PRD (`/prd`)
+### Full Product PRD (`/prd-builder:prd`)
 
 Complete interview covering all 8 categories in depth:
 - 10-15 question rounds
@@ -171,7 +171,7 @@ Complete interview covering all 8 categories in depth:
 - Full Mermaid diagrams
 - Complete task breakdown
 
-### Feature PRD (`/prd:feature`)
+### Feature PRD (`/prd-builder:feature`)
 
 Lighter interview focused on implementation:
 - 5-8 question rounds
@@ -179,7 +179,7 @@ Lighter interview focused on implementation:
 - Focus on Technical, UX, Testing
 - Assume product context exists
 
-### Bug Fix PRD (`/prd:bugfix`)
+### Bug Fix PRD (`/prd-builder:bugfix`)
 
 Problem-focused documentation:
 - 3-5 question rounds
@@ -188,7 +188,7 @@ Problem-focused documentation:
 - Regression testing strategy
 - Skip Business, minimize UX
 
-### Refine PRD (`/prd:refine`)
+### Refine PRD (`/prd-builder:refine`)
 
 Enhance existing PRDs:
 1. Read and analyze existing PRD

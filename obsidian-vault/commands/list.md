@@ -12,22 +12,22 @@ List notes in your Obsidian vault, optionally filtered by category.
 
 ```bash
 # List all notes
-/obsidian:list
+/obsidian-vault:list
 
 # List notes in a category
-/obsidian:list technologies
-/obsidian:list projects
-/obsidian:list journal/commits
+/obsidian-vault:list technologies
+/obsidian-vault:list projects
+/obsidian-vault:list journal/commits
 
 # Sort by different fields
-/obsidian:list --sort title
-/obsidian:list technologies --sort created
+/obsidian-vault:list --sort title
+/obsidian-vault:list technologies --sort created
 
 # Show statistics
-/obsidian:list --stats
+/obsidian-vault:list --stats
 
 # Limit results
-/obsidian:list --limit 10
+/obsidian-vault:list --limit 10
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/list-notes.sh" $ARGUMENTS`

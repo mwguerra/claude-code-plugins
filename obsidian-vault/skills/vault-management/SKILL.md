@@ -66,15 +66,15 @@ updated: YYYY-MM-DD
 
 | Command | Purpose |
 |---------|---------|
-| `/obsidian:init` | Set up vault configuration and structure |
-| `/obsidian:add <category> <title>` | Create a new note |
-| `/obsidian:search <query>` | Find notes by title, content, or tags |
-| `/obsidian:update <note>` | Edit note frontmatter or append content |
-| `/obsidian:import <file>` | Import external files with frontmatter |
-| `/obsidian:list [category]` | List notes, optionally by category |
-| `/obsidian:tags [--stats]` | View tags and usage statistics |
-| `/obsidian:link <note1> <note2>` | Create bidirectional related links |
-| `/obsidian:archive <note>` | Move note to archive |
+| `/obsidian-vault:init` | Set up vault configuration and structure |
+| `/obsidian-vault:add <category> <title>` | Create a new note |
+| `/obsidian-vault:search <query>` | Find notes by title, content, or tags |
+| `/obsidian-vault:update <note>` | Edit note frontmatter or append content |
+| `/obsidian-vault:import <file>` | Import external files with frontmatter |
+| `/obsidian-vault:list [category]` | List notes, optionally by category |
+| `/obsidian-vault:tags [--stats]` | View tags and usage statistics |
+| `/obsidian-vault:link <note1> <note2>` | Create bidirectional related links |
+| `/obsidian-vault:archive <note>` | Move note to archive |
 
 ## Auto-Capture Behavior
 

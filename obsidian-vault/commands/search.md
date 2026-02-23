@@ -12,22 +12,22 @@ Find notes in your Obsidian vault by title, content, or tags.
 
 ```bash
 # Search everywhere (title, content, tags)
-/obsidian:search rate limiting
+/obsidian-vault:search rate limiting
 
 # Search titles only
-/obsidian:search --title "Laravel Queue"
+/obsidian-vault:search --title "Laravel Queue"
 
 # Search content only
-/obsidian:search --content Redis configuration
+/obsidian-vault:search --content Redis configuration
 
 # Search by tag
-/obsidian:search --tag laravel
+/obsidian-vault:search --tag laravel
 
 # Search within a category
-/obsidian:search --category projects authentication
+/obsidian-vault:search --category projects authentication
 
 # Limit results
-/obsidian:search rate limiting --limit 10
+/obsidian-vault:search rate limiting --limit 10
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/search-vault.sh" $ARGUMENTS`
@@ -61,14 +61,14 @@ Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/search-vault.sh" $ARGUMENTS`
 
 ```bash
 # Find all Laravel-related notes
-/obsidian:search laravel
+/obsidian-vault:search laravel
 
 # Find commit documentation for rate limiting
-/obsidian:search --category journal/commits rate limiting
+/obsidian-vault:search --category journal/commits rate limiting
 
 # Find all notes tagged with 'api'
-/obsidian:search --tag api
+/obsidian-vault:search --tag api
 
 # Find notes mentioning Redis in their content
-/obsidian:search --content Redis
+/obsidian-vault:search --content Redis
 ```

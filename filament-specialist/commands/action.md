@@ -12,19 +12,19 @@ Create FilamentPHP v4 actions for tables, pages, or modals with forms and confir
 
 ```bash
 # Simple action
-/filament:action "publish post"
+/filament-specialist:action "publish post"
 
 # Action with modal form
-/filament:action "send email to user with subject and message" --modal
+/filament-specialist:action "send email to user with subject and message" --modal
 
 # Bulk action
-/filament:action "export selected records to CSV" --type bulk
+/filament-specialist:action "export selected records to CSV" --type bulk
 
 # Page header action
-/filament:action "import data from CSV file" --type header --modal
+/filament-specialist:action "import data from CSV file" --type header --modal
 
 # Action with confirmation
-/filament:action "archive old records" --confirmation
+/filament-specialist:action "archive old records" --confirmation
 ```
 
 ## Process

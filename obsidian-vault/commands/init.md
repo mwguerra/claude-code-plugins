@@ -12,13 +12,13 @@ Set up the obsidian-vault plugin configuration and folder structure.
 
 ```bash
 # Initialize with default vault path (~/guerra_vault)
-/obsidian:init
+/obsidian-vault:init
 
 # Initialize with custom vault path
-/obsidian:init --vault ~/my-vault
+/obsidian-vault:init --vault ~/my-vault
 
 # Check current setup without making changes
-/obsidian:init --check
+/obsidian-vault:init --check
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/init.sh" $ARGUMENTS`
@@ -66,7 +66,7 @@ guerra_vault/
 
 ## Re-running Init
 
-Running `/obsidian:init` again is safe:
+Running `/obsidian-vault:init` again is safe:
 - Creates any missing folders
 - Skips existing files (won't overwrite your data)
 - Updates config file with current settings
@@ -74,5 +74,5 @@ Running `/obsidian:init` again is safe:
 ## After Initialization
 
 1. **Open in Obsidian**: Open the vault folder in Obsidian app
-2. **Add your first note**: `/obsidian:add technologies "Getting Started"`
+2. **Add your first note**: `/obsidian-vault:add technologies "Getting Started"`
 3. **Auto-capture enabled**: Commits, tasks, and components will be documented automatically

@@ -109,13 +109,13 @@ Use consistent tags for better searchability:
 
 | Command | Purpose |
 |---------|---------|
-| `/error:search <query>` | Search for similar errors |
-| `/error:log` | Log a new error interactively |
-| `/error:list` | List all stored errors |
-| `/error:show <id>` | View full error details |
-| `/error:stats` | View database statistics |
-| `/error:migrate` | Import from old solved-errors.md |
-| `/error:init` | Initialize the database |
+| `/error-memory:search <query>` | Search for similar errors |
+| `/error-memory:log` | Log a new error interactively |
+| `/error-memory:list` | List all stored errors |
+| `/error-memory:show <id>` | View full error details |
+| `/error-memory:stats` | View database statistics |
+| `/error-memory:migrate` | Import from old solved-errors.md |
+| `/error-memory:init` | Initialize the database |
 
 ## Proactive Error Handling
 
@@ -149,7 +149,7 @@ The error memory system enhances the existing CLAUDE.md instruction to log error
 - Usage tracking and statistics
 - Automatic error detection via hooks
 
-The old `solved-errors.md` can be migrated with `/error:migrate`.
+The old `solved-errors.md` can be migrated with `/error-memory:migrate`.
 
 ## Additional Resources
 

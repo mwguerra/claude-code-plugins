@@ -12,16 +12,16 @@ Create FilamentPHP v4 dashboard pages with tabbed navigation, color-coded messag
 
 ```bash
 # Multi-tab dashboard
-/filament:dashboard "Analytics" --tabs overview,users,revenue
+/filament-specialist:dashboard "Analytics" --tabs overview,users,revenue
 
 # Single-tab dashboard (no tabs UI)
-/filament:dashboard "BillingOverview" --single
+/filament-specialist:dashboard "BillingOverview" --single
 
 # Dashboard in specific panel
-/filament:dashboard "SupportDashboard" --panel Support --tabs tickets,agents,metrics
+/filament-specialist:dashboard "SupportDashboard" --panel Support --tabs tickets,agents,metrics
 
 # With detailed tab configuration
-/filament:dashboard "ReportingDashboard" --tabs "overview:Overview:heroicon-o-home,sales:Sales:heroicon-o-currency-dollar"
+/filament-specialist:dashboard "ReportingDashboard" --tabs "overview:Overview:heroicon-o-home,sales:Sales:heroicon-o-currency-dollar"
 ```
 
 ## Process
@@ -367,17 +367,17 @@ After generation, verify:
 
 ## Integration with Widgets
 
-After creating the dashboard page, use `/filament:widget` to generate widgets:
+After creating the dashboard page, use `/filament-specialist:widget` to generate widgets:
 
 ```bash
 # Stats overview for dashboard
-/filament:widget "Dashboard stats" --type stats
+/filament-specialist:widget "Dashboard stats" --type stats
 
 # Chart for analytics tab
-/filament:widget "Revenue chart" --type chart
+/filament-specialist:widget "Revenue chart" --type chart
 
 # Table widget for recent items
-/filament:widget "Latest orders" --type table
+/filament-specialist:widget "Latest orders" --type table
 ```
 
 Then add the widget class references to the appropriate tabs.

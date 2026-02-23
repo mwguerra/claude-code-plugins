@@ -12,13 +12,13 @@ Create a FilamentPHP v4 form schema with appropriate field types, validation rul
 
 ```bash
 # Describe the form you need
-/filament:form "user registration with name, email, password, and profile picture"
+/filament-specialist:form "user registration with name, email, password, and profile picture"
 
 # For a specific resource
-/filament:form "product with name, price, description, category, and images" --resource ProductResource
+/filament-specialist:form "product with name, price, description, category, and images" --resource ProductResource
 
 # For a modal action
-/filament:form "send email with subject, recipient, and body" --for action
+/filament-specialist:form "send email with subject, recipient, and body" --for action
 ```
 
 ## Process
@@ -78,7 +78,7 @@ Complete form schema code with:
 
 ## Example Output
 
-For `/filament:form "user registration with name, email, password, and profile picture"`:
+For `/filament-specialist:form "user registration with name, email, password, and profile picture"`:
 
 ```php
 use Filament\Forms;

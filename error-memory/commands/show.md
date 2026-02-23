@@ -13,7 +13,7 @@ Display the full details of a specific error from the database.
 ## Usage
 
 ```
-/error:show <error-id>
+/error-memory:show <error-id>
 ```
 
 ## Process
@@ -64,5 +64,5 @@ bash $CLAUDE_PLUGIN_ROOT/scripts/show-error.sh <error-id>
 ## Example
 
 ```
-/error:show err-abc123def
+/error-memory:show err-abc123def
 ```

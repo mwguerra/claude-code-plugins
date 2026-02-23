@@ -150,13 +150,13 @@ Reference: `07-job-control.md`, `03-exit-codes.md`
 
 The following commands are available for specific tasks:
 
-- `/terminal:docs` - Search terminal documentation
-- `/terminal:escape` - ANSI escape sequence reference
-- `/terminal:signals` - Signal handling guide
-- `/terminal:modes` - Terminal modes explanation
-- `/terminal:streams` - I/O streams reference
-- `/terminal:shell` - Shell configuration help
-- `/terminal:cross-platform` - Cross-platform compatibility guide
+- `/terminal-specialist:docs` - Search terminal documentation
+- `/terminal-specialist:escape` - ANSI escape sequence reference
+- `/terminal-specialist:signals` - Signal handling guide
+- `/terminal-specialist:modes` - Terminal modes explanation
+- `/terminal-specialist:streams` - I/O streams reference
+- `/terminal-specialist:shell` - Shell configuration help
+- `/terminal-specialist:cross-platform` - Cross-platform compatibility guide
 
 ## Output Standards
 

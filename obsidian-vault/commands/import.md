@@ -12,19 +12,19 @@ Import external markdown files or folders into your Obsidian vault. Automaticall
 
 ```bash
 # Import a single file
-/obsidian:import ./README.md --to projects/my-app
+/obsidian-vault:import ./README.md --to projects/my-app
 
 # Import to auto-detected category
-/obsidian:import ./docs/api.md
+/obsidian-vault:import ./docs/api.md
 
 # Import a folder (non-recursive)
-/obsidian:import ./docs --to references
+/obsidian-vault:import ./docs --to references
 
 # Import a folder recursively
-/obsidian:import ./documentation --to references --recursive
+/obsidian-vault:import ./documentation --to references --recursive
 
 # Import without adding frontmatter
-/obsidian:import ./notes.md --to references --no-frontmatter
+/obsidian-vault:import ./notes.md --to references --no-frontmatter
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/import-files.sh" $ARGUMENTS`
@@ -59,17 +59,17 @@ If `--to` is not specified:
 
 ```bash
 # Import project documentation
-/obsidian:import ~/projects/my-app/README.md --to projects/my-app
+/obsidian-vault:import ~/projects/my-app/README.md --to projects/my-app
 
 # Import a docs folder
-/obsidian:import ~/projects/my-app/docs --to projects/my-app/docs --recursive
+/obsidian-vault:import ~/projects/my-app/docs --to projects/my-app/docs --recursive
 
 # Import cheatsheets
-/obsidian:import ~/Downloads/laravel-cheatsheet.md --to references
+/obsidian-vault:import ~/Downloads/laravel-cheatsheet.md --to references
 ```
 
 ## After Importing
 
 - Review imported files in Obsidian
-- Update tags with `/obsidian:update`
-- Link related notes with `/obsidian:link`
+- Update tags with `/obsidian-vault:update`
+- Link related notes with `/obsidian-vault:link`

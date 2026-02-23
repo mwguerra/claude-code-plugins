@@ -12,16 +12,16 @@ Search and reference the official FilamentPHP v4 documentation to find patterns,
 
 ```bash
 # Search for a topic
-/filament:docs "form validation"
+/filament-specialist:docs "form validation"
 
 # Find specific component docs
-/filament:docs "TextInput"
+/filament-specialist:docs "TextInput"
 
 # Search for patterns
-/filament:docs "relationship select"
+/filament-specialist:docs "relationship select"
 
 # Find examples
-/filament:docs "file upload with preview"
+/filament-specialist:docs "file upload with preview"
 ```
 
 ## Process

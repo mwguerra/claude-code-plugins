@@ -12,13 +12,13 @@ Create related links between two notes. By default, creates bidirectional links 
 
 ```bash
 # Create bidirectional link
-/obsidian:link "Laravel Queue Configuration" "Redis Caching Guide"
+/obsidian-vault:link "Laravel Queue Configuration" "Redis Caching Guide"
 
 # Link by path
-/obsidian:link technologies/laravel-queues.md technologies/redis.md
+/obsidian-vault:link technologies/laravel-queues.md technologies/redis.md
 
 # One-way link (only adds to first note)
-/obsidian:link "Laravel Queue Configuration" "Redis Caching Guide" --one-way
+/obsidian-vault:link "Laravel Queue Configuration" "Redis Caching Guide" --one-way
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/link-notes.sh" $ARGUMENTS`

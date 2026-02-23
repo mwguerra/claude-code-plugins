@@ -16,10 +16,10 @@ An interactive Product Requirements Document (PRD) builder for Claude Code that 
 
 | Command | Description |
 |---------|-------------|
-| `/prd` | Start a comprehensive product PRD interview |
-| `/prd:feature` | Create a feature-focused PRD (lighter weight) |
-| `/prd:bugfix` | Document a bug fix with problem analysis |
-| `/prd:refine` | Analyze and enhance an existing PRD |
+| `/prd-builder:prd` | Start a comprehensive product PRD interview |
+| `/prd-builder:feature` | Create a feature-focused PRD (lighter weight) |
+| `/prd-builder:bugfix` | Document a bug fix with problem analysis |
+| `/prd-builder:refine` | Analyze and enhance an existing PRD |
 
 ## Interview Categories
 
@@ -44,13 +44,13 @@ An interactive Product Requirements Document (PRD) builder for Claude Code that 
 /prd
 
 # Create a feature PRD
-/prd:feature
+/prd-builder:feature
 
 # Document a bug fix
-/prd:bugfix
+/prd-builder:bugfix
 
 # Improve an existing PRD
-/prd:refine docs/prd/prd-user-auth.md
+/prd-builder:refine docs/prd/prd-user-auth.md
 ```
 
 ## TaskManager Integration
@@ -81,7 +81,7 @@ The plugin includes a `prd-interviewer` agent that triggers automatically when y
 Long interviews can be resumed:
 
 1. State is saved to `.taskmanager/prd-state.json` after each question round
-2. If you stop mid-interview, running `/prd` again offers to resume
+2. If you stop mid-interview, running `/prd-builder:prd` again offers to resume
 3. Choose "Start fresh" to begin a new interview instead
 
 ## PRD Document Structure

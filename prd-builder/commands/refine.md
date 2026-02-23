@@ -32,7 +32,7 @@ If multiple PRDs found, ask user to select:
 - List available PRDs as options
 
 If no PRDs found:
-- "No existing PRDs found in docs/prd/. Would you like to create a new one with /prd instead?"
+- "No existing PRDs found in docs/prd/. Would you like to create a new one with /prd-builder:prd instead?"
 
 ### 2. Read and Analyze PRD
 

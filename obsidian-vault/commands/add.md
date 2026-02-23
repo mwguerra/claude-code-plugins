@@ -12,17 +12,17 @@ Create a new note in your Obsidian vault with proper frontmatter.
 
 ```bash
 # Basic usage
-/obsidian:add technologies "Laravel Queue Configuration"
+/obsidian-vault:add technologies "Laravel Queue Configuration"
 
 # With description and tags
-/obsidian:add projects "My SaaS App" --description "Main project documentation" --tags "saas,laravel,api"
+/obsidian-vault:add projects "My SaaS App" --description "Main project documentation" --tags "saas,laravel,api"
 
 # With related notes
-/obsidian:add ideas "Rate Limiting Improvements" --related "projects/my-saas-app,technologies/redis"
+/obsidian-vault:add ideas "Rate Limiting Improvements" --related "projects/my-saas-app,technologies/redis"
 
 # Claude Code components
-/obsidian:add claude-code/agents "Code Reviewer Agent"
-/obsidian:add claude-code/hooks "Pre-commit Linting"
+/obsidian-vault:add claude-code/agents "Code Reviewer Agent"
+/obsidian-vault:add claude-code/hooks "Pre-commit Linting"
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/add-note.sh" $ARGUMENTS`
@@ -71,5 +71,5 @@ updated: 2026-01-27
 
 The command outputs the file path so you can:
 - Open it in Obsidian
-- Continue editing with `/obsidian:update`
-- Link it from other notes with `/obsidian:link`
+- Continue editing with `/obsidian-vault:update`
+- Link it from other notes with `/obsidian-vault:link`

@@ -224,7 +224,7 @@ The Board doesn't just give you an answer — it gives you **perspectives you'd 
 >
 > **Next Action:** Calculate your exact runway in months. If it's under 6, the timeline shifts. Open a spreadsheet tonight.
 
-*Decision recorded as DEC-001. Track the outcome later with `/board followup DEC-001 --outcome success|partial|fail`*
+*Decision recorded as DEC-001. Track the outcome later with `/board:board followup DEC-001 --outcome success|partial|fail`*
 
 ---
 
@@ -232,16 +232,16 @@ The Board doesn't just give you an answer — it gives you **perspectives you'd 
 
 | Command | What It Does |
 |---------|-------------|
-| `/board ask "question"` | Full deliberation (add `--mode conflict\|ultra` for variants) |
-| `/board quick "question"` | Fast 5-minute take, essentials only |
-| `/board premortem "decision"` | Assume it failed in 2 years — explain why |
-| `/board review weekly\|monthly\|quarterly` | Periodic review of recent decisions |
-| `/board compass` | Life direction check — where are you focusing? blind spots? |
-| `/board history [--stats\|--patterns]` | View past decisions and analytics |
-| `/board followup DEC-XXX --outcome success\|partial\|fail` | Record what actually happened |
-| `/board config show\|weights\|mode\|councils` | View and change settings |
-| `/board init` | Initialize the database (auto-runs if needed) |
-| `/board help` | This screen |
+| `/board:board ask "question"` | Full deliberation (add `--mode conflict\|ultra` for variants) |
+| `/board:board quick "question"` | Fast 5-minute take, essentials only |
+| `/board:board premortem "decision"` | Assume it failed in 2 years — explain why |
+| `/board:board review weekly\|monthly\|quarterly` | Periodic review of recent decisions |
+| `/board:board compass` | Life direction check — where are you focusing? blind spots? |
+| `/board:board history [--stats\|--patterns]` | View past decisions and analytics |
+| `/board:board followup DEC-XXX --outcome success\|partial\|fail` | Record what actually happened |
+| `/board:board config show\|weights\|mode\|councils` | View and change settings |
+| `/board:board init` | Initialize the database (auto-runs if needed) |
+| `/board:board help` | This screen |
 
 ### Natural Language
 

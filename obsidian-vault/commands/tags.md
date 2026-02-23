@@ -12,16 +12,16 @@ View and analyze tags across your Obsidian vault.
 
 ```bash
 # List all unique tags
-/obsidian:tags
+/obsidian-vault:tags
 
 # Show tag usage statistics (count per tag)
-/obsidian:tags --stats
+/obsidian-vault:tags --stats
 
 # Find notes with a specific tag
-/obsidian:tags --find laravel
+/obsidian-vault:tags --find laravel
 
 # Limit results
-/obsidian:tags --stats --limit 20
+/obsidian-vault:tags --stats --limit 20
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/manage-tags.sh" $ARGUMENTS`

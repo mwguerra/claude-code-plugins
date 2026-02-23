@@ -12,10 +12,10 @@ Create FilamentPHP v4 infolists for displaying read-only data in view pages and 
 
 ```bash
 # Describe the infolist you need
-/filament:infolist "post details with title, content, author, status, and dates"
+/filament-specialist:infolist "post details with title, content, author, status, and dates"
 
 # For a specific resource
-/filament:infolist "order details with customer, items, total, status" --resource OrderResource
+/filament-specialist:infolist "order details with customer, items, total, status" --resource OrderResource
 ```
 
 ## Process
@@ -64,7 +64,7 @@ Complete infolist code with:
 
 ## Example Output
 
-For `/filament:infolist "post details with title, content, author, status, and dates"`:
+For `/filament-specialist:infolist "post details with title, content, author, status, and dates"`:
 
 ```php
 <?php

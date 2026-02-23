@@ -126,7 +126,7 @@ For each page/feature:
 ```
 /taskmanager:init          - Initialize task tracking
 /taskmanager:plan          - Create task plan from analysis
-/taskmanager:run-tasks     - Execute tasks automatically
+/taskmanager:run     - Execute tasks automatically
 /taskmanager:dashboard     - View progress
 ```
 

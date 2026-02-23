@@ -18,22 +18,22 @@ Ultra-specialized Claude Code plugin for FilamentPHP v4 development. This plugin
 
 | Command | Description |
 |---------|-------------|
-| `/filament:resource <Model>` | Generate a complete resource with form, table, and tests |
-| `/filament:form <description>` | Create a form schema with fields and validation |
-| `/filament:table <description>` | Build a table configuration with columns and filters |
-| `/filament:action <description>` | Generate actions (row, bulk, header, page) |
-| `/filament:widget <description>` | Create dashboard widgets (stats, chart, table, custom) |
-| `/filament:infolist <description>` | Design infolists for view pages |
-| `/filament:test <Resource>` | Generate Pest tests for a resource |
-| `/filament:diagnose <error>` | Diagnose and fix FilamentPHP issues |
-| `/filament:docs <topic>` | Search official documentation |
+| `/filament-specialist:resource <Model>` | Generate a complete resource with form, table, and tests |
+| `/filament-specialist:form <description>` | Create a form schema with fields and validation |
+| `/filament-specialist:table <description>` | Build a table configuration with columns and filters |
+| `/filament-specialist:action <description>` | Generate actions (row, bulk, header, page) |
+| `/filament-specialist:widget <description>` | Create dashboard widgets (stats, chart, table, custom) |
+| `/filament-specialist:infolist <description>` | Design infolists for view pages |
+| `/filament-specialist:test <Resource>` | Generate Pest tests for a resource |
+| `/filament-specialist:diagnose <error>` | Diagnose and fix FilamentPHP issues |
+| `/filament-specialist:docs <topic>` | Search official documentation |
 
 ## Usage Examples
 
 ### Generate a Resource
 
 ```bash
-/filament:resource Post --generate
+/filament-specialist:resource Post --generate
 ```
 
 Creates:
@@ -45,7 +45,7 @@ Creates:
 ### Create a Form
 
 ```bash
-/filament:form "product with name, price, description, category, and images"
+/filament-specialist:form "product with name, price, description, category, and images"
 ```
 
 Generates a complete form schema with:
@@ -58,7 +58,7 @@ Generates a complete form schema with:
 ### Build a Table
 
 ```bash
-/filament:table "orders with customer, items count, total, status badge"
+/filament-specialist:table "orders with customer, items count, total, status badge"
 ```
 
 Creates table configuration with:
@@ -71,7 +71,7 @@ Creates table configuration with:
 ### Generate Actions
 
 ```bash
-/filament:action "send email with subject and body" --modal
+/filament-specialist:action "send email with subject and body" --modal
 ```
 
 Creates an action with:
@@ -83,7 +83,7 @@ Creates an action with:
 ### Create Widgets
 
 ```bash
-/filament:widget "monthly revenue chart" --type chart
+/filament-specialist:widget "monthly revenue chart" --type chart
 ```
 
 Generates:
@@ -94,7 +94,7 @@ Generates:
 ### Diagnose Issues
 
 ```bash
-/filament:diagnose "form fields not saving to database"
+/filament-specialist:diagnose "form fields not saving to database"
 ```
 
 - Analyzes the issue

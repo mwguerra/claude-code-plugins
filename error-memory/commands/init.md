@@ -9,7 +9,7 @@ Initialize the error memory database structure. This creates the necessary confi
 ## Usage
 
 ```
-/error:init
+/error-memory:init
 ```
 
 ## Process
@@ -59,7 +59,7 @@ Running init multiple times is safe:
 ## Example
 
 ```
-/error:init
+/error-memory:init
 
 Output:
 Error Memory Initialization

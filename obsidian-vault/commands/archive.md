@@ -12,12 +12,12 @@ Move a note to the `_archive/` folder. Archived notes are preserved but hidden f
 
 ```bash
 # Archive a note
-/obsidian:archive "Old Project Notes"
-/obsidian:archive technologies/outdated-guide.md
+/obsidian-vault:archive "Old Project Notes"
+/obsidian-vault:archive technologies/outdated-guide.md
 
 # Restore from archive
-/obsidian:archive "Old Project Notes" --restore
-/obsidian:archive --restore outdated-guide.md
+/obsidian-vault:archive "Old Project Notes" --restore
+/obsidian-vault:archive --restore outdated-guide.md
 ```
 
 Runs: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/archive-note.sh" $ARGUMENTS`
@@ -57,7 +57,7 @@ guerra_vault/
 
 ```bash
 # List archived notes
-/obsidian:list _archive
+/obsidian-vault:list _archive
 ```
 
 ## Why Archive Instead of Delete?
