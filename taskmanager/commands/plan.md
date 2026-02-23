@@ -33,13 +33,21 @@ CREATE TABLE tasks (
     description TEXT,
     details TEXT,
     test_strategy TEXT,
-    status TEXT NOT NULL DEFAULT 'planned',
-    type TEXT NOT NULL DEFAULT 'feature',
-    priority TEXT NOT NULL DEFAULT 'medium',
-    complexity_scale TEXT,
+    status TEXT NOT NULL DEFAULT 'planned'
+        CHECK (status IN ('draft', 'planned', 'in-progress', 'blocked', 'paused', 'done', 'canceled', 'duplicate', 'needs-review')),
+    type TEXT NOT NULL DEFAULT 'feature'
+        CHECK (type IN ('feature', 'bug', 'chore', 'analysis', 'spike')),
+    priority TEXT NOT NULL DEFAULT 'medium'
+        CHECK (priority IN ('low', 'medium', 'high', 'critical')),
+    complexity_scale TEXT CHECK (complexity_scale IN ('XS', 'S', 'M', 'L', 'XL')),
     complexity_reasoning TEXT,
     complexity_expansion_prompt TEXT,
     estimate_seconds INTEGER,
+    duration_seconds INTEGER,
+    owner TEXT,
+    started_at TEXT,
+    completed_at TEXT,
+    archived_at TEXT,
     tags TEXT DEFAULT '[]',
     dependencies TEXT DEFAULT '[]',
     dependency_analysis TEXT,
@@ -53,6 +61,14 @@ CREATE TABLE tasks (
     updated_at TEXT DEFAULT (datetime('now'))
 );
 ```
+
+**IMPORTANT — Valid values enforced by CHECK constraints:**
+- **`status`**: `draft`, `planned`, `in-progress`, `blocked`, `paused`, `done`, `canceled`, `duplicate`, `needs-review`
+- **`type`**: `feature`, `bug`, `chore`, `analysis`, `spike` — there is NO `epic` type; top-level tasks (epics) use `type = 'feature'` or `'chore'`
+- **`priority`**: `low`, `medium`, `high`, `critical`
+- **`complexity_scale`**: `XS`, `S`, `M`, `L`, `XL`
+- **`moscow`**: `must`, `should`, `could`, `wont`
+- **`business_value`**: integer 1–5
 
 **Schema reference for milestones table:**
 ```sql

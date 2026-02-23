@@ -73,6 +73,19 @@ When modifying tasks in the database:
    - Hierarchical relationships via `parent_id`
 3. Use INSERT or UPDATE statements to modify tasks.
 
+#### Valid field values (enforced by CHECK constraints)
+
+These are the ONLY allowed values. Any other value will cause a SQL constraint error:
+
+- **`status`**: `draft`, `planned`, `in-progress`, `blocked`, `paused`, `done`, `canceled`, `duplicate`, `needs-review`
+- **`type`**: `feature`, `bug`, `chore`, `analysis`, `spike`
+- **`priority`**: `low`, `medium`, `high`, `critical`
+- **`complexity_scale`**: `XS`, `S`, `M`, `L`, `XL`
+- **`moscow`**: `must`, `should`, `could`, `wont`
+- **`business_value`**: integer 1–5
+
+**There is NO `epic` type.** "Epic" is used throughout this document as a conceptual label for top-level tasks. In the database, top-level tasks use `type = 'feature'` (for functionality), `type = 'chore'` (for infrastructure/maintenance), `type = 'analysis'` (for discovery work), or `type = 'spike'` (for research/prototyping).
+
 IDs:
 
 - Top-level tasks: `"1"`, `"2"`, `"3"` ...
