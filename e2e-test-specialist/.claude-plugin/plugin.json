@@ -16,16 +16,5 @@
     "end-to-end",
     "visual-testing",
     "role-based-testing"
-  ],
-  "category": "testing",
-  "tags": [
-    "e2e-testing",
-    "playwright",
-    "browser-testing",
-    "visual-testing",
-    "role-based-testing",
-    "flow-testing",
-    "page-testing",
-    "automation"
   ]
 }

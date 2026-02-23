@@ -17,15 +17,5 @@
     "automation",
     "php",
     "tdd"
-  ],
-  "category": "testing",
-  "tags": [
-    "pest-testing",
-    "php-testing",
-    "laravel-testing",
-    "livewire-testing",
-    "filament-testing",
-    "code-coverage",
-    "test-generation"
   ]
 }

@@ -20,15 +20,5 @@
     "deployment",
     "refactoring",
     "verification"
-  ],
-  "category": "development-tools",
-  "tags": [
-    "code-cleanup",
-    "production-ready",
-    "testing",
-    "verification",
-    "pest",
-    "playwright",
-    "deployment"
   ]
 }

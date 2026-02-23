@@ -19,17 +19,5 @@
     "php",
     "livewire",
     "widgets"
-  ],
-  "category": "laravel",
-  "tags": [
-    "filamentphp",
-    "filament-v4",
-    "laravel",
-    "admin-panel",
-    "resources",
-    "forms",
-    "tables",
-    "widgets",
-    "infolists"
   ]
 }

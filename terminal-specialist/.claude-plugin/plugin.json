@@ -28,16 +28,5 @@
     "console",
     "cross-platform",
     "cli"
-  ],
-  "category": "development-tools",
-  "tags": [
-    "terminal",
-    "shell",
-    "cli-development",
-    "tty-pty",
-    "ansi-escape",
-    "signals",
-    "cross-platform",
-    "streams"
   ]
 }

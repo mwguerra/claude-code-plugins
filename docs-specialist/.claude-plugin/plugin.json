@@ -18,15 +18,5 @@
     "validation",
     "generation",
     "markdown"
-  ],
-  "category": "documentation",
-  "tags": [
-    "documentation",
-    "auto-generation",
-    "drift-detection",
-    "templates",
-    "sync",
-    "markdown",
-    "code-docs"
   ]
 }

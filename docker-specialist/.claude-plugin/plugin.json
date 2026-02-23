@@ -24,16 +24,5 @@
     "nginx",
     "ssl",
     "tls"
-  ],
-  "category": "devops",
-  "tags": [
-    "docker",
-    "docker-compose",
-    "containers",
-    "ssl-tls",
-    "traefik",
-    "nginx",
-    "databases",
-    "devops"
   ]
 }

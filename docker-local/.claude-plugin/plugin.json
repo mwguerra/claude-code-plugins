@@ -24,17 +24,5 @@
     "xdebug",
     "multi-project",
     "mailpit"
-  ],
-  "category": "devops",
-  "tags": [
-    "docker-local",
-    "laravel-docker",
-    "local-development",
-    "docker-environment",
-    "php-development",
-    "mysql",
-    "postgresql",
-    "redis",
-    "traefik"
   ]
 }

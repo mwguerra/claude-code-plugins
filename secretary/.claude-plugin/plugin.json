@@ -26,20 +26,5 @@
     "knowledge-graph",
     "encrypted-memory",
     "cron"
-  ],
-  "category": "productivity",
-  "tags": [
-    "workflow-management",
-    "personal-assistant",
-    "queue-processing",
-    "background-worker",
-    "commitments",
-    "decisions",
-    "goals",
-    "github-integration",
-    "obsidian-integration",
-    "encrypted-memory",
-    "productivity",
-    "briefings"
   ]
 }

@@ -17,16 +17,5 @@
     "filament",
     "echo",
     "pusher"
-  ],
-  "category": "laravel",
-  "tags": [
-    "laravel-reverb",
-    "websockets",
-    "broadcasting",
-    "real-time",
-    "notifications",
-    "filament",
-    "laravel-echo",
-    "production-deployment"
   ]
 }

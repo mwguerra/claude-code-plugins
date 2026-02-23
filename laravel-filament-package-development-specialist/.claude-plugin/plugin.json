@@ -21,15 +21,5 @@
     "specialist",
     "github-actions",
     "ci-cd"
-  ],
-  "category": "laravel",
-  "tags": [
-    "laravel-packages",
-    "filament-plugins",
-    "package-development",
-    "pest-testing",
-    "github-actions",
-    "ci-cd",
-    "scaffolding"
   ]
 }
