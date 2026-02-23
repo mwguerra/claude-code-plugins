@@ -158,10 +158,10 @@ All E2E testing operations use this standard location for the test plan. This en
 1. **Check for Test Plan**
    - Look for `docs/detailed-test-list.md` in the project root
    - If the file exists, read and use it for test execution
-   - If the file does NOT exist, generate it first using the `e2e-test-plan` skill
+   - If the file does NOT exist, generate it first using the `test-plan` skill
 
 2. **Generate Plan if Missing**
-   - Invoke the `e2e-test-plan` skill
+   - Invoke the `test-plan` skill
    - The plan will be saved to `docs/detailed-test-list.md`
    - Create the `docs/` directory if it doesn't exist
    - Plan includes comprehensive navigation coverage audit
@@ -779,10 +779,10 @@ Agent:
 ## Skills Reference
 
 This agent uses the following skills:
-- `e2e-test-plan` - Creating comprehensive test plans
-- `e2e-role-test` - Role-based testing patterns
-- `e2e-page-test` - Page testing patterns
-- `e2e-flow-test` - Flow testing patterns
+- `test-plan` - Creating comprehensive test plans
+- `role-test` - Role-based testing patterns
+- `page-test` - Page testing patterns
+- `flow-test` - Flow testing patterns
 
 ## Error Handling
 

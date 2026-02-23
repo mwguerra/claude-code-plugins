@@ -34,7 +34,7 @@ This command reads the test plan from `docs/detailed-test-list.md`. If the plan 
    - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
 
 2. **Plan Generation (if missing)**
-   - Invoke the e2e-test-plan skill
+   - Invoke the test-plan skill
    - Wait for plan to be saved to `docs/detailed-test-list.md`
    - Then proceed with Phase 1
 

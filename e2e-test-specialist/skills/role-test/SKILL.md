@@ -13,7 +13,7 @@ This skill executes comprehensive role-based E2E testing using Playwright MCP. I
 
 **Plan file**: `tests/e2e-test-plan.md`
 
-This skill reads role definitions and test credentials from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `e2e-test-plan` skill first to generate it.
+This skill reads role definitions and test credentials from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `test-plan` skill first to generate it.
 
 ## Purpose
 

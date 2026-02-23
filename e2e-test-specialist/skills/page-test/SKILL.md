@@ -13,7 +13,7 @@ This skill systematically tests every page in an application using Playwright MC
 
 **Plan file**: `tests/e2e-test-plan.md`
 
-This skill reads the page inventory from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `e2e-test-plan` skill first to generate it.
+This skill reads the page inventory from the test plan at `tests/e2e-test-plan.md`. If the plan file doesn't exist, the calling command should invoke the `test-plan` skill first to generate it.
 
 ## Purpose
 

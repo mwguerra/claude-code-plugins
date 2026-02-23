@@ -12,7 +12,7 @@ Test complete user flows end-to-end using Playwright MCP. Executes multi-step jo
 
 **Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `docs/detailed-test-list.md` to determine which flows to test. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md` to determine which flows to test. If the plan file doesn't exist, this command will automatically invoke the `test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 

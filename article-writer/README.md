@@ -342,7 +342,7 @@ Resets to plugin defaults.
 | `voice-extractor` | Voice extraction from transcripts | `skills/voice-extractor/SKILL.md` |
 | `companion-project-creator` | Create complete companion projects | `skills/companion-project-creator/SKILL.md` |
 | `social-post-writer` | Social media post creation | `skills/social-post-writer/SKILL.md` |
-| `article-queue` | Queue operations | `skills/queue/SKILL.md` |
+| `queue` | Queue operations | `skills/queue/SKILL.md` |
 
 ## Further Reading
 

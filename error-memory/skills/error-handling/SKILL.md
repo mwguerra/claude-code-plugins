@@ -1,5 +1,5 @@
 ---
-name: Error Handling
+name: error-handling
 description: This skill should be used when encountering errors during development, when the user mentions an error, when debugging issues, or when asked to "fix an error", "debug this", "why is this failing", "solve this error". Provides intelligent error recognition, solution lookup from past errors, and error logging for future reference.
 version: 1.0.0
 ---

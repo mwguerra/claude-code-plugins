@@ -12,7 +12,7 @@ Test all pages and flows for each user role using Playwright MCP. Verifies prope
 
 **Plan file**: `docs/detailed-test-list.md`
 
-This command reads the test plan from `docs/detailed-test-list.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `e2e-test-plan` skill first to generate the plan before running tests.
+This command reads the test plan from `docs/detailed-test-list.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `test-plan` skill first to generate the plan before running tests.
 
 ## Usage
 

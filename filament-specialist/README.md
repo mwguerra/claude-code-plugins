@@ -141,14 +141,14 @@ skills/docs/references/
 
 The plugin provides specialized skills that can be invoked:
 
-- `filament-docs` - Search and reference documentation
-- `filament-resource` - Resource generation workflow
-- `filament-forms` - Form schema creation
-- `filament-tables` - Table configuration
-- `filament-actions` - Action generation
-- `filament-widgets` - Widget creation
-- `filament-infolists` - Infolist design
-- `filament-testing` - Test generation
+- `docs` - Search and reference documentation
+- `resource` - Resource generation workflow
+- `forms` - Form schema creation
+- `tables` - Table configuration
+- `actions` - Action generation
+- `widgets` - Widget creation
+- `infolists` - Infolist design
+- `testing` - Test generation
 
 ## Best Practices
 
