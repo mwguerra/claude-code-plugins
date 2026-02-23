@@ -1,5 +1,4 @@
 ---
-name: cron
 description: Setup, check, or remove the background worker cron job for automatic queue processing and vault sync
 allowed-tools: Read, Bash, Glob, Grep
 argument-hint: "<setup|status|remove>"

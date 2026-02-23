@@ -1,5 +1,4 @@
 ---
-name: sync
 description: Force vault sync and external change detection - sync database records to Obsidian vault notes and commit/push to git
 allowed-tools: Read, Bash, Glob, Grep
 argument-hint: "[vault|git|detect|acknowledge [id]|full]"

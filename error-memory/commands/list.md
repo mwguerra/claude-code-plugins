@@ -1,5 +1,4 @@
 ---
-name: list
 description: List all errors in the error memory database with optional filtering
 arguments:
   - name: filters

@@ -1,5 +1,4 @@
 ---
-name: briefing
 description: Generate a manual session briefing with pending work, commitments, goals, and GitHub items
 allowed-tools: Read, Bash, Glob, Grep
 ---

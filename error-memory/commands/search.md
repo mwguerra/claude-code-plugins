@@ -1,5 +1,4 @@
 ---
-name: search
 description: Search for similar errors in the error memory database
 arguments:
   - name: query

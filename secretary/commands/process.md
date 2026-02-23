@@ -1,5 +1,4 @@
 ---
-name: process
 description: Manually trigger queue processing - run the worker inline and show before/after queue depth
 allowed-tools: Read, Bash, Glob, Grep
 argument-hint: "[--limit N]"

@@ -1,5 +1,4 @@
 ---
-name: refine
 description: Analyze and enhance an existing PRD by identifying gaps and asking targeted questions to fill weak areas
 allowed-tools:
   - Read

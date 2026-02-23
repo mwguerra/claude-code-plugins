@@ -1,5 +1,4 @@
 ---
-name: log
 description: Log a new error and its solution to the error memory database
 ---
 

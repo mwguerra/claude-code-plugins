@@ -1,5 +1,4 @@
 ---
-name: status
 description: Display secretary dashboard with current session, queue depth, commitments, goals, and recent activity
 allowed-tools: Read, Bash, Glob, Grep
 ---

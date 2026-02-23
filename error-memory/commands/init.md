@@ -1,5 +1,4 @@
 ---
-name: init
 description: Initialize the error memory database
 ---
 

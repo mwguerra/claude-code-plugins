@@ -1,5 +1,4 @@
 ---
-name: review
 description: Generate weekly or monthly productivity reviews with metrics, accomplishments, and recommendations
 allowed-tools: Read, Bash, Glob, Grep
 argument-hint: "[weekly|monthly|custom <days>]"

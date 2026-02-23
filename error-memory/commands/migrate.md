@@ -1,5 +1,4 @@
 ---
-name: migrate
 description: Migrate errors from the old solved-errors.md format to the new database
 arguments:
   - name: options

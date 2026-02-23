@@ -1,5 +1,4 @@
 ---
-name: prd
 description: Start a comprehensive PRD interview to transform an idea into a complete Product Requirements Document
 allowed-tools:
   - Read

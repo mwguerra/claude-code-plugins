@@ -1,5 +1,4 @@
 ---
-name: goals
 description: Set and track goals, objectives, and milestones with progress visualization
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 argument-hint: "<action> [args]"

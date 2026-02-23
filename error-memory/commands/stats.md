@@ -1,5 +1,4 @@
 ---
-name: stats
 description: Show statistics about the error memory database
 ---
 

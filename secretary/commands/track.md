@@ -1,5 +1,4 @@
 ---
-name: track
 description: Manage commitments - add, complete, defer, edit, delete, and list action items and follow-ups
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 argument-hint: "<action> [args]"

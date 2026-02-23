@@ -1,5 +1,4 @@
 ---
-name: show
 description: Show full details of a specific error by ID
 arguments:
   - name: id

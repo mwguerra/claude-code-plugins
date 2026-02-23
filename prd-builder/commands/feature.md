@@ -1,5 +1,4 @@
 ---
-name: feature
 description: Create a feature-focused PRD with lighter interview process optimized for new features within existing products
 allowed-tools:
   - Read

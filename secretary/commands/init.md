@@ -1,5 +1,4 @@
 ---
-name: init
 description: Initialize the secretary plugin - create databases, config, vault structure, encryption key, and optionally migrate from my-workflow
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---

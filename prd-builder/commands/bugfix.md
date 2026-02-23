@@ -1,5 +1,4 @@
 ---
-name: bugfix
 description: Document a bug fix with problem analysis, root cause investigation, and regression testing strategy
 allowed-tools:
   - Read

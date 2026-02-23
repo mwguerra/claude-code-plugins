@@ -1,5 +1,4 @@
 ---
-name: patterns
 description: View and analyze detected behavior patterns - productivity insights, workflow habits, and time preferences
 allowed-tools: Read, Bash, Glob, Grep
 argument-hint: "[analyze|detail <id>|dismiss <id>]"

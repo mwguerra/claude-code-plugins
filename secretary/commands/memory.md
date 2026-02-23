@@ -1,5 +1,4 @@
 ---
-name: memory
 description: Manage encrypted memory entries - add, search, list, show, delete sensitive data with optional AES-256 encryption
 allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion
 argument-hint: "<action> [args]"
