@@ -1,0 +1,26 @@
+{
+  "name": "laravel-package-developer",
+  "description": "Scaffold and develop Laravel packages for Packagist with full testing and workbench support. Creates package structure, configures Pest v4 + Orchestra Testbench v10, sets up Workbench for interactive development, GitHub Actions CI, and manages the complete package lifecycle.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Marcelo Guerra",
+    "email": "mwguerra@gmail.com"
+  },
+  "keywords": [
+    "laravel",
+    "package",
+    "packagist",
+    "scaffold",
+    "pest",
+    "testbench",
+    "workbench",
+    "testing",
+    "composer",
+    "generator",
+    "development",
+    "github-actions",
+    "ci-cd",
+    "playwright"
+  ]
+}
