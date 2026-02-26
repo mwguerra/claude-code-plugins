@@ -40,7 +40,7 @@ fi
 # Process pending items (FIFO, priority first)
 # ============================================================================
 
-ITEMS=$(sqlite3 -separator '|' "$DB" "
+ITEMS_JSON=$(sqlite3 -json "$DB" "
     SELECT id, item_type, data, session_id, project
     FROM queue
     WHERE status = 'pending'
@@ -49,16 +49,24 @@ ITEMS=$(sqlite3 -separator '|' "$DB" "
     LIMIT $LIMIT
 " 2>/dev/null)
 
-if [[ -z "$ITEMS" ]]; then
+if [[ -z "$ITEMS_JSON" || "$ITEMS_JSON" == "[]" ]]; then
     debug_log "No pending items in queue"
     exit 0
 fi
 
+ITEM_COUNT=$(echo "$ITEMS_JSON" | jq 'length' 2>/dev/null || echo "0")
+
 PROCESSED=0
 FAILED=0
 
-while IFS='|' read -r queue_id item_type data session_id project; do
-    [[ -z "$queue_id" ]] && continue
+for (( idx=0; idx<ITEM_COUNT; idx++ )); do
+    queue_id=$(echo "$ITEMS_JSON" | jq -r ".[$idx].id" 2>/dev/null)
+    item_type=$(echo "$ITEMS_JSON" | jq -r ".[$idx].item_type" 2>/dev/null)
+    data=$(echo "$ITEMS_JSON" | jq -r ".[$idx].data" 2>/dev/null)
+    session_id=$(echo "$ITEMS_JSON" | jq -r ".[$idx].session_id // empty" 2>/dev/null)
+    project=$(echo "$ITEMS_JSON" | jq -r ".[$idx].project // empty" 2>/dev/null)
+
+    [[ -z "$queue_id" || "$queue_id" == "null" ]] && continue
 
     debug_log "Processing queue item $queue_id (type=$item_type)"
 
@@ -307,6 +315,6 @@ while IFS='|' read -r queue_id item_type data session_id project; do
         FAILED=$((FAILED + 1))
     fi
 
-done <<< "$ITEMS"
+done
 
 debug_log "process-queue.sh completed: $PROCESSED processed, $FAILED failed"
