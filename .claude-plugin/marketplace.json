@@ -371,8 +371,8 @@
     {
       "name": "e2e-test-specialist",
       "source": "./e2e-test-specialist",
-      "version": "1.0.0",
-      "description": "Ultra-specialized agent for E2E testing using Playwright MCP. Creates comprehensive test plans, tests all pages, verifies user flows by role, and ensures complete test coverage with visual browser testing.",
+      "version": "2.0.0",
+      "description": "Database-backed E2E testing for large suites (50+ phases, 1000+ steps). SQLite plan storage, tag-driven selection, heartbeat-based crash recovery, importable from existing markdown ledgers, and Playwright MCP execution with checkpoint persistence.",
       "keywords": [
         "e2e",
         "playwright",
@@ -380,19 +380,26 @@
         "browser",
         "automation",
         "end-to-end",
-        "visual-testing",
-        "role-based-testing"
+        "sqlite",
+        "resumable",
+        "crash-recovery",
+        "checkpoint",
+        "tags",
+        "ledger",
+        "directives",
+        "credentials",
+        "memories"
       ],
       "category": "testing",
       "tags": [
         "e2e-testing",
         "playwright",
         "browser-testing",
-        "visual-testing",
-        "role-based-testing",
-        "flow-testing",
-        "page-testing",
-        "automation"
+        "long-running-tests",
+        "session-resumability",
+        "sqlite-state",
+        "tag-based-selection",
+        "directive-enforcement"
       ]
     },
     {
@@ -467,38 +474,6 @@
         "planning",
         "documentation",
         "discovery"
-      ]
-    },
-    {
-      "name": "remotion",
-      "source": "./remotion",
-      "version": "1.0.0",
-      "description": "Expert Remotion video development assistant with comprehensive documentation. Covers compositions, animations, 3D content, audio/video handling, captions, charts, transitions, and all Remotion APIs for creating programmatic videos in React.",
-      "keywords": [
-        "remotion",
-        "video",
-        "react",
-        "animation",
-        "composition",
-        "3d",
-        "audio",
-        "captions",
-        "charts",
-        "transitions",
-        "lottie",
-        "programmatic-video"
-      ],
-      "category": "development-tools",
-      "tags": [
-        "remotion",
-        "video-development",
-        "react-video",
-        "animation",
-        "compositions",
-        "3d-content",
-        "audio-video",
-        "captions",
-        "programmatic-video"
       ]
     },
     {

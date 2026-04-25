@@ -1,135 +1,101 @@
 ---
-description: Capture screenshots of all pages at different viewports
-allowed-tools: mcp__playwright__*
-argument-hint: <base-url> [--output screenshots/] [--viewports desktop,tablet,mobile]
+description: Capture a screenshot in the active run and record it in the database
+allowed-tools: Bash(bash:*), Bash(sqlite3:*), Bash(mkdir:*), mcp__playwright__*, mcp__plugin_playwright_playwright__*, Read(*)
+argument-hint: [--label "page-home-initial"] [--full-page]
 ---
 
-# Capture Page Screenshots
+# /e2e-test-specialist:screenshot
 
-Capture screenshots of all pages at different viewport sizes using Playwright MCP.
-
-## Usage
-
-```bash
-/e2e-test-specialist:screenshot http://localhost:8000
-/e2e-test-specialist:screenshot http://localhost:8000 --output docs/screenshots
-/e2e-test-specialist:screenshot http://localhost:8000 --viewports desktop,mobile
-```
+Take a Playwright screenshot of the current browser state and record it in
+the `screenshots` table linked to the active run (and the active execution,
+if any).
 
 ## Process
 
-### Step 0: URL/Port Verification (CRITICAL FIRST)
+### 1. Resolve active run and current step
 
-**Before capturing any screenshots, verify the application is accessible at the correct URL.**
-
-1. **Navigate to Provided URL**
-   - Use `mcp__playwright__browser_navigate` to base URL
-   - Use `mcp__playwright__browser_snapshot` to capture state
-
-2. **Verify Correct Application**
-   - Check for expected app name/logo/navigation
-   - Ensure NOT a default server page ("Welcome to nginx!", "It works!")
-   - Ensure NOT a connection error page
-
-3. **Port Discovery (if verification fails)**
-   Try common ports: 8000, 8080, 3000, 5173, 5174, 5000, 4200
-
-4. **Proceed or Stop**
-   - If correct URL found: Update base URL and continue
-   - If no working URL found: **STOP** and report error
-
-### Step 1: Setup
-
-1. **Prepare Output Directory**
-   - Create screenshots folder
-   - Organize by viewport/page
-
-2. **Configure Viewports**
-   - Desktop: 1920x1080
-   - Tablet: 768x1024
-   - Mobile: 375x812
-
-### Step 2: Screenshot Capture
-
-For EACH page and viewport:
-
-1. **Resize Browser**
-   ```
-   mcp__playwright__browser_resize({ width, height })
-   ```
-
-2. **Navigate to Page**
-   ```
-   mcp__playwright__browser_navigate({ url })
-   ```
-
-3. **Wait for Load**
-   ```
-   mcp__playwright__browser_wait_for({ time: 2 })
-   ```
-
-4. **Capture Screenshot**
-   ```
-   mcp__playwright__browser_take_screenshot({
-     filename: "page-viewport.png",
-     fullPage: true
-   })
-   ```
-
-### Step 3: Report Generation
-
-Create index with all screenshots.
-
-## Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| base-url | Application URL | Required |
-| --output | Output directory | ./screenshots |
-| --viewports | Viewport sizes | all |
-| --full-page | Capture full page | true |
-
-## Viewport Sizes
-
-| Name | Width | Height |
-|------|-------|--------|
-| desktop | 1920 | 1080 |
-| tablet | 768 | 1024 |
-| mobile | 375 | 812 |
-
-## Output Structure
-
-```
-screenshots/
-├── desktop/
-│   ├── home.png
-│   ├── login.png
-│   ├── dashboard.png
-│   └── ...
-├── tablet/
-│   ├── home.png
-│   ├── login.png
-│   └── ...
-├── mobile/
-│   ├── home.png
-│   ├── login.png
-│   └── ...
-└── index.html
-```
-
-## Examples
-
-### All Viewports
 ```bash
-/e2e-test-specialist:screenshot http://localhost:8000
+source "${CLAUDE_PLUGIN_ROOT}/scripts/lib.sh"
+e2e_require_db
+
+ACTIVE_RUN="$(e2e_query_value 'SELECT active_run_id FROM state WHERE id=1;')"
+[[ -n "$ACTIVE_RUN" ]] || e2e_die "no active run"
+
+ACTIVE_EXEC="$(e2e_query_value '
+    SELECT current_execution_id FROM sessions
+     WHERE id=(SELECT active_session_id FROM state WHERE id=1);
+')"
 ```
 
-### Specific Viewports
+### 2. Build path
+
 ```bash
-/e2e-test-specialist:screenshot http://localhost:8000 --viewports desktop,mobile
+RUN_DIR="$E2E_ROOT_DIR/runs/$ACTIVE_RUN/screenshots"
+mkdir -p "$RUN_DIR"
+
+LABEL="${1:-screenshot}"
+TS="$(date -u +%Y%m%dT%H%M%SZ)"
+PATH_OUT="$RUN_DIR/${TS}_${LABEL//[^a-zA-Z0-9_-]/_}.png"
 ```
 
-### Custom Output
+### 3. Pre-flight: check for visible credentials
+
+Take a `mcp__playwright__browser_snapshot` first and feed its text content
+through the redaction detector:
+
 ```bash
-/e2e-test-specialist:screenshot http://localhost:8000 --output docs/images
+SNAPSHOT_TEXT="$(...captured from browser_snapshot...)"
+echo "$SNAPSHOT_TEXT" | python3 "${CLAUDE_PLUGIN_ROOT}/scripts/redact-screenshot.py"
+RC=$?
+if [[ $RC -ne 0 ]]; then
+    # Use AskUserQuestion: "Credentials are visible. Capture anyway?"
+    # If user says no, abort the screenshot.
+    :
+fi
 ```
+
+### 4. Capture via Playwright
+
+Use `mcp__playwright__browser_take_screenshot` with the `path` argument set
+to `$PATH_OUT`. If `--full-page` was passed, include `fullPage: true`.
+
+After the call, tick the heartbeat:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/heartbeat.sh"
+```
+
+### 5. Record in DB
+
+```bash
+SHOT_ID="$(e2e_next_id screenshots SHOT)"
+e2e_exec "
+    INSERT INTO screenshots (id, execution_id, run_id, path, label)
+    VALUES (
+        '$SHOT_ID',
+        NULLIF($(e2e_sql_quote "$ACTIVE_EXEC"), ''),
+        '$ACTIVE_RUN',
+        $(e2e_sql_quote "$PATH_OUT"),
+        $(e2e_sql_quote "$LABEL")
+    );
+"
+```
+
+### 6. Report
+
+```
+Screenshot saved.
+  path:        $PATH_OUT
+  shot_id:     $SHOT_ID
+  linked to:   exec=$ACTIVE_EXEC, run=$ACTIVE_RUN
+```
+
+## Notes
+
+- Naming convention from the original plugin is preserved: timestamp prefix,
+  slug-cased label.
+- Screenshots without an active execution still get recorded against the run
+  (manual snapshots are valid).
+- For full systematic capture during tests, the `/test` command takes
+  screenshots automatically at page loads, form submits, errors, and flow
+  completions. Use this command for ad-hoc captures.

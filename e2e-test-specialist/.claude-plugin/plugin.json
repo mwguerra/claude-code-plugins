@@ -1,7 +1,7 @@
 {
   "name": "e2e-test-specialist",
-  "description": "Ultra-specialized agent for E2E testing using Playwright MCP. Creates comprehensive test plans, tests all pages, verifies user flows by role, and ensures complete test coverage with visual browser testing.",
-  "version": "1.0.0",
+  "description": "Database-backed E2E testing for large suites (50+ phases, 1000+ steps). SQLite plan storage, tag-driven selection, heartbeat-based crash recovery, importable from existing markdown ledgers, and Playwright MCP execution with checkpoint persistence.",
+  "version": "2.0.0",
   "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",
@@ -14,7 +14,14 @@
     "browser",
     "automation",
     "end-to-end",
-    "visual-testing",
-    "role-based-testing"
+    "sqlite",
+    "resumable",
+    "crash-recovery",
+    "checkpoint",
+    "tags",
+    "ledger",
+    "directives",
+    "credentials",
+    "memories"
   ]
 }

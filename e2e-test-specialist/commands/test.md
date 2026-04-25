@@ -1,399 +1,322 @@
 ---
-description: Run comprehensive E2E tests with Playwright - test all pages, all roles, all flows in a visible browser
-allowed-tools: Skill(test-plan), Skill(page-test), Skill(role-test), Skill(flow-test), Bash(npm:*), Bash(npx:*), mcp__playwright__*, Read(*), Glob(*)
-argument-hint: <base-url> [--roles role1,role2] [--viewport desktop|tablet|mobile] [--headless]
+description: Execute pending steps in the active run, with checkpoint persistence and Playwright MCP integration
+allowed-tools: Bash(bash:*), Bash(sqlite3:*), Bash(ssh:*), Bash(curl:*), Bash(grep:*), Bash(cat:*), Bash(ls:*), Read(*), Write(*), AskUserQuestion, mcp__playwright__*, mcp__plugin_playwright_playwright__*
+argument-hint: [<test-id> | --phase P00,P01 | --tag wireguard,reverb | --resume | --next | --batch N]
 ---
 
-# Comprehensive E2E Test
+# /e2e-test-specialist:test
 
-Run comprehensive end-to-end tests using Playwright MCP. This command tests all pages, all user roles, and all critical flows in a visible browser.
+Execute steps from the database against the active run. Every step is
+wrapped in a checkpoint that survives session crashes — interrupting and
+resuming is always safe.
 
-## Standard Test Plan Location
+## When to use which flag
 
-**Plan file**: `docs/detailed-test-list.md`
+| Flag                   | Behavior                                                                                  |
+|------------------------|-------------------------------------------------------------------------------------------|
+| (no flag)              | Execute the next pending step (default)                                                   |
+| `<test-id>`            | Run the named test (all its steps), e.g. `T-04.03`                                        |
+| `--phase P04,P05`      | Run all tests in those phases (intersected with the run's filters)                        |
+| `--tag wireguard`      | Run all tests tagged with any of these tags (intersected with the run's filters)          |
+| `--resume`             | Continue from the last unfinished step (alias for default)                                |
+| `--next`               | Same as default                                                                            |
+| `--batch N`            | Run up to N tests, stopping on the first critical failure                                  |
 
-This command reads the test plan from `docs/detailed-test-list.md`. If the plan file doesn't exist, this command will automatically invoke the `/e2e-test-specialist:plan` command first to generate the plan before running tests.
-
-## Usage
+## Pre-flight (every invocation)
 
 ```bash
-/e2e-test-specialist:test http://localhost:8000
-/e2e-test-specialist:test http://localhost:3000 --roles admin,user,guest
-/e2e-test-specialist:test http://localhost:8000 --viewport mobile
+source "${CLAUDE_PLUGIN_ROOT}/scripts/lib.sh"
+e2e_require_db
+
+# Reap stale sessions and re-fetch state.
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/crash-recovery.sh" > /tmp/e2e-recovery.json
+
+ACTIVE_RUN="$(e2e_query_value 'SELECT active_run_id FROM state WHERE id=1;')"
+[[ -n "$ACTIVE_RUN" ]] || e2e_die "no active run — run /e2e-test-specialist:start first"
+
+ACTIVE_SESS="$(e2e_query_value 'SELECT active_session_id FROM state WHERE id=1;')"
+if [[ -z "$ACTIVE_SESS" ]]; then
+    # Run is alive but has no live session — open one (recovery path).
+    ACTIVE_SESS="$(e2e_session_start "$ACTIVE_RUN")"
+fi
+
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/heartbeat.sh"
 ```
 
-## Process
+## Parametrization (tests with `applies_to`)
 
-### Phase 0: Test Plan Verification (REQUIRED FIRST)
+Tests can declare they apply to multiple subjects (apps, infrastructure rows,
+roles, viewports). When `tests.applies_to` is non-empty, the executor expands
+each test into one *execution variant per subject* and renders any
+`test_steps.action_template` against the subject's fields.
 
-**CRITICAL**: Before any testing, check if the test plan exists.
+**Subject resolution.** `applies_to` is a JSON array of subject IDs:
 
-1. **Check for Test Plan**
-   - Look for `docs/detailed-test-list.md`
-   - If the file exists, read and use it for test execution
-   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
+| ID prefix          | Looked up in              | Synthetic? |
+|--------------------|---------------------------|------------|
+| `APP-NNN`          | `apps`                    | no         |
+| `INF-NNN`          | `infrastructure`          | no         |
+| `ROLE-{slug}`      | (synthetic — no table)    | yes — user populates `meta.role` later |
+| `VP-{slug}`        | (synthetic — `viewport`s) | yes — `desktop`/`tablet`/`mobile` from config |
 
-2. **Plan Generation (if missing)**
-   - Invoke the test-plan skill
-   - Wait for plan to be saved to `docs/detailed-test-list.md`
-   - Then proceed with Phase 1
+Resolved fields come from `v_subjects_resolved` (a view defined in `schema.sql`).
 
-### Phase 1: Discovery & Planning
+**Template rendering.** When a step has `action_template`, render it via:
 
-1. **Read the Test Plan**
-   - Read `docs/detailed-test-list.md`
-   - Extract navigation registry from Section 0
-   - Extract pages to test from the plan
-   - Extract user roles from the plan
-   - Extract critical flows from the plan
-
-2. **Verify Plan Content**
-   - Confirm navigation registry is complete
-   - Confirm pages are listed
-   - Confirm roles are defined with credentials
-   - Confirm flows are documented
-   - Set test priorities from plan
-
-### Phase 1.5: Docker-Local Detection (For Laravel Projects)
-
-**IMPORTANT**: For Laravel projects, check if docker-local is running before using localhost URLs.
-
-1. **Check for docker-local**
-   - Look for docker-local configuration files
-   - Check if `.env` contains docker-local settings
-   - Check if docker containers are running: `docker ps | grep docker-local`
-
-2. **Use .test Domains**
-   If docker-local is detected and running:
-   - Use the `.test` domain instead of `localhost`
-   - Check `.env` for `APP_URL` (e.g., `myapp.test`)
-   - DO NOT spin up new servers with `php artisan serve`
-   - docker-local already has everything running and configured
-
-3. **Update Base URL**
-   - If docker-local detected: Use `http://[project-name].test`
-   - If not detected: Continue with provided localhost URL
-
-### Phase 2: Environment Setup
-
-1. **Verify Browser**
-   - Check if Playwright browser is installed
-   - Install if needed using `mcp__playwright__browser_install`
-
-2. **Build Application Assets (IMPORTANT)**
-   Missing assets cause most E2E test failures. Before testing:
-   - Check for `package.json` in project root
-   - Run `npm install` if `node_modules` is missing
-   - Run `npm run build` to compile assets
-   - For Vite projects: assets go to `dist/` or `build/`
-   - For Laravel: run `npm run build` for frontend assets
-
-   Common build commands:
-   ```bash
-   npm install && npm run build
-   # or for development:
-   npm run dev
-   ```
-
-3. **Check for Existing Sessions**
-   - Use `mcp__playwright__browser_tabs` to check for running tests
-   - Open new tab if needed
-   - **IMPORTANT**: Wait at least 1 second between opening multiple tabs
-
-4. **Set Viewport**
-   - Use `mcp__playwright__browser_resize` for specified viewport
-   - Default: Desktop (1920x1080)
-
-### Phase 2.3: CSS/Tailwind Rendering Verification (CRITICAL)
-
-**ALWAYS verify that CSS and styling are rendering correctly before proceeding.**
-
-1. **Visual Rendering Check**
-   After navigating to the first page:
-   - Take a screenshot: `mcp__playwright__browser_take_screenshot`
-   - Check if the page looks styled (not raw HTML)
-   - Verify icons are displaying and sized correctly
-   - Check that Tailwind classes are being applied
-
-2. **CSS Issues Detection**
-   Look for these signs of CSS problems:
-   - Unstyled content (Times New Roman font, default link colors)
-   - Icons not showing or showing as squares/placeholders
-   - Missing background colors
-   - Elements not positioned correctly
-   - Mobile menu/navigation broken
-   - Buttons without styling
-
-3. **For Laravel Projects - Check Vite/Tailwind Config**
-   If CSS is not rendering:
-   - Check `vite.config.js` exists and is correct
-   - Check `tailwind.config.js` content paths
-   - Verify `resources/css/app.css` imports Tailwind
-   - Check `package.json` has required dependencies
-   - Run `npm install && npm run build`
-   - Check `public/build/manifest.json` exists
-
-4. **For Filament Projects - Check Custom Themes**
-   If this is a Filament panel:
-   - Check for custom theme at `resources/css/filament/[panel]/theme.css`
-   - Verify theme is registered in Panel Provider
-   - Check `tailwind.config.js` includes Filament content paths
-   - Run `php artisan filament:assets` if needed
-   - Verify Vite builds include Filament assets
-
-5. **For Other Projects - Tailwind/CSS Verification**
-   - Check build tool configuration (Vite, Webpack, etc.)
-   - Verify CSS files are being loaded (check Network tab)
-   - Check for PostCSS configuration if using Tailwind
-   - Verify Tailwind content paths include all component files
-
-6. **Fix and Retest**
-   If CSS issues detected:
-   - Identify the root cause
-   - Apply the fix (config change, rebuild, etc.)
-   - Clear browser cache if needed
-   - Retest the page
-   - Document the fix for future reference
-
-### Phase 2.5: URL/Port Verification (CRITICAL FIRST TEST)
-
-**IMPORTANT**: The server may not be running on the expected port. Always verify before testing.
-
-1. **Navigate to Provided URL**
-   - Use `mcp__playwright__browser_navigate` to base URL
-   - Use `mcp__playwright__browser_snapshot` to capture state
-
-2. **Verify Correct Application**
-   Check the snapshot for indicators:
-   - ✅ Expected application name/logo
-   - ✅ Known navigation elements
-   - ✅ Expected page structure
-   - ❌ NOT default server pages ("Welcome to nginx!", "It works!")
-   - ❌ NOT connection errors
-   - ❌ NOT a different application
-
-3. **Port Discovery (if verification fails)**
-   Try common alternative ports in order:
-   - 8000, 8080, 3000, 5173, 5174, 5000, 4200, 8888
-
-   For each port:
-   - Navigate to `http://localhost:{port}`
-   - Take snapshot and check for expected application
-   - If found, use this URL for all subsequent tests
-
-4. **Check Project Configuration (if still not found)**
-   Look for port settings in:
-   - `.env` files (APP_PORT, PORT, VITE_PORT)
-   - `package.json` scripts
-   - `vite.config.js/ts`
-   - `docker-compose.yml`
-
-5. **Report and Proceed**
-   - If URL differs from provided, warn user
-   - Update base URL for all subsequent phases
-   - If no working URL found, STOP and report error
-
-### Phase 3: Page Testing
-
-1. **Navigate to Each Page**
-   - Use `mcp__playwright__browser_navigate`
-
-2. **Verify Page Load**
-   - Use `mcp__playwright__browser_snapshot`
-   - Check for expected elements
-
-3. **Check for Errors**
-   - Use `mcp__playwright__browser_console_messages`
-   - Use `mcp__playwright__browser_network_requests`
-
-4. **Test Interactions**
-   - Use `mcp__playwright__browser_click`
-   - Use `mcp__playwright__browser_fill_form`
-
-### Phase 4: Role-Based Testing
-
-For each role:
-
-1. **Login as Role**
-   - Navigate to login
-   - Fill credentials
-   - Verify login success
-
-2. **Test Accessible Pages**
-   - Navigate to each page role should access
-   - Verify proper access
-
-3. **Test Blocked Pages**
-   - Try accessing restricted pages
-   - Verify proper blocking (403/redirect)
-
-4. **Test Role-Specific Features**
-   - Perform role-specific actions
-   - Verify expected behavior
-
-5. **Logout**
-   - Logout and proceed to next role
-
-### Phase 5: Flow Testing
-
-For each critical flow:
-
-1. **Execute Flow**
-   - Perform each step in sequence
-   - Verify state at each step
-
-2. **Check Completion**
-   - Verify flow completes successfully
-   - Check data persistence
-
-3. **Test Error Cases**
-   - Test with invalid inputs
-   - Verify error handling
-
-### Phase 5.5: Error Detection and Resolution
-
-**CRITICAL**: When errors are detected, solve them and retest.
-
-1. **Error Detection During Testing**
-   For each page/flow test:
-   - Check for error pages (500, 404, 403 screens)
-   - Check for error messages in the UI
-   - Check console for JavaScript errors
-   - Check network for failed requests
-
-2. **Error Resolution Workflow**
-   When an error is found:
-   ```
-   1. Take a screenshot of the error
-   2. Document the error message
-   3. Identify the root cause:
-      - Check Laravel logs (storage/logs/laravel.log)
-      - Check browser console
-      - Check network requests
-   4. Fix the error in the codebase
-   5. Retest the page/flow
-   6. Verify the fix worked
-   7. Continue testing
-   ```
-
-3. **Remember Solutions for Recurring Errors**
-   Track common errors and their solutions:
-   - Store in memory during the session
-   - If same error occurs again, apply known solution
-   - Common patterns:
-     - CSRF token mismatch → Clear session, refresh
-     - 419 Page Expired → Regenerate CSRF token
-     - 500 Server Error → Check logs, fix code
-     - Missing route → Add route or fix URL
-     - Permission denied → Check policies/gates
-
-4. **Error Documentation**
-   For each error found and fixed:
-   - Note the error type and message
-   - Document the root cause
-   - Record the solution applied
-   - Include in final test report
-
-### Phase 5.6: Screenshot Capture (ALWAYS)
-
-**ALWAYS take screenshots throughout testing.**
-
-1. **When to Take Screenshots**
-   - Initial page load (every page)
-   - After each significant interaction
-   - Before and after form submissions
-   - When errors are detected
-   - After successful flow completion
-   - At different viewport sizes
-
-2. **Screenshot Naming Convention**
-   ```
-   [phase]_[page/flow]_[state].png
-   Examples:
-   - page_home_initial.png
-   - page_login_form_filled.png
-   - flow_checkout_step3_payment.png
-   - error_dashboard_500.png
-   ```
-
-3. **Screenshot Storage**
-   - Store in `tests/screenshots/` directory
-   - Organize by test run date/time
-   - Include in test report
-
-### Phase 6: Reporting
-
-Generate comprehensive report with:
-- All pages tested and results
-- All roles tested and results
-- All flows tested and results
-- Errors found AND solutions applied
-- Screenshots taken (with paths)
-- Recommendations
-
-## Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| base-url | Application URL to test | Required |
-| --roles | Comma-separated list of roles | All discovered |
-| --viewport | Screen size (desktop/tablet/mobile) | desktop |
-| --headless | Run without visible browser | false |
-
-## Viewport Sizes
-
-| Viewport | Width | Height |
-|----------|-------|--------|
-| desktop | 1920 | 1080 |
-| tablet | 768 | 1024 |
-| mobile | 375 | 812 |
-
-## Examples
-
-### Full Test Suite
 ```bash
-/e2e-test-specialist:test http://localhost:8000
+SUBJECT_JSON="$(e2e_query "SELECT fields FROM v_subjects_resolved WHERE id=$(e2e_sql_quote "$SUBJECT_ID");" | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["fields"])')"
+RENDERED_ACTION="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render-template.py" "$ACTION_TEMPLATE" "$(printf '{"subject":%s}' "$SUBJECT_JSON")")"
 ```
-Tests everything with default settings.
 
-### Test Specific Roles
+`{{subject.target_domain}}`, `{{subject.services.redis}}`,
+`{{subject.metadata.deploy_dir}}` etc. all resolve as you'd expect. Missing
+keys render to empty strings (no errors).
+
+**Step execution id includes the subject** so retries/resume work per-variant:
+`EX-{run}-{step}-{subject_id}-{retry}`. The `step_executions.subject_id`
+column records which subject was targeted.
+
+## Step selection (build the work queue)
+
+Apply, in order:
+
+1. **Run-level filters** from the `test_runs` row (`target_phases`,
+   `target_tags`, `skip_tags`). These were set by `/start`.
+2. **Invocation-level filters** from this command's args (`--phase`, `--tag`,
+   `<test-id>`).
+3. **Already-terminal exclusions**: skip steps whose latest `step_executions`
+   row for this run is `passed` or `skipped`.
+
+A reference query (substitute placeholders). Note the join with
+`v_test_subjects` — that's what materializes per-subject expansions:
+
+```sql
+WITH terminal AS (
+    SELECT step_id, COALESCE(subject_id,'') AS sid FROM step_executions
+     WHERE run_id = :run_id AND status IN ('passed','skipped')
+),
+filtered_tests AS (
+    SELECT t.id
+      FROM tests t
+     WHERE t.deprecated_at IS NULL
+       -- run-level phase filter
+       AND ( :run_phases IS NULL OR t.phase_id IN (SELECT value FROM json_each(:run_phases)) )
+       -- run-level tag filter (any-match)
+       AND ( :run_tags IS NULL
+             OR EXISTS (SELECT 1 FROM test_tags tt
+                          WHERE tt.test_id = t.id
+                            AND tt.tag_name IN (SELECT value FROM json_each(:run_tags))) )
+       -- run-level skip-tag filter (none-match)
+       AND ( :run_skip_tags IS NULL
+             OR NOT EXISTS (SELECT 1 FROM test_tags tt
+                              WHERE tt.test_id = t.id
+                                AND tt.tag_name IN (SELECT value FROM json_each(:run_skip_tags))) )
+       -- invocation-level filters (added at runtime)
+       AND ( :invo_phases IS NULL OR t.phase_id IN (SELECT value FROM json_each(:invo_phases)) )
+       AND ( :invo_tags   IS NULL OR EXISTS (
+              SELECT 1 FROM test_tags tt
+               WHERE tt.test_id = t.id
+                 AND tt.tag_name IN (SELECT value FROM json_each(:invo_tags))) )
+)
+SELECT vts.test_id, vts.subject_id,
+       s.id AS step_id,
+       COALESCE(s.action_template, s.action)     AS action,
+       COALESCE(s.expected_template, s.expected) AS expected,
+       t.test_kind
+  FROM v_test_subjects vts
+  JOIN tests       t ON t.id = vts.test_id
+  JOIN test_steps  s ON s.test_id = t.id
+ WHERE t.id IN (SELECT id FROM filtered_tests)
+   AND (s.id, COALESCE(vts.subject_id,'')) NOT IN (SELECT step_id, sid FROM terminal)
+ ORDER BY t.test_order, vts.subject_id, s.step_order;
+```
+
+## Per-step execution loop
+
+For each step in the queue, **in order**:
+
+### 1. Resolve subject and render action (parametrized tests only)
+
+If `SUBJECT_ID` is non-empty, fetch its fields and render any templates:
+
 ```bash
-/e2e-test-specialist:test http://localhost:8000 --roles admin,user
-```
-Tests only admin and user roles.
+SUBJECT_JSON="$(sqlite3 -bail -json "$E2E_DB" "
+    SELECT fields FROM v_subjects_resolved WHERE id=$(e2e_sql_quote "$SUBJECT_ID");
+" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d[0]["fields"] if d else "{}")')"
 
-### Mobile Testing
+if [[ -n "$ACTION_TEMPLATE" ]]; then
+    ACTION="$(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/render-template.py" \
+        "$ACTION_TEMPLATE" "$(printf '{"subject":%s}' "$SUBJECT_JSON")")"
+fi
+```
+
+(For non-parametrized steps, `ACTION` is just the literal `action` column.)
+
+### 2. Checkpoint: begin
+
 ```bash
-/e2e-test-specialist:test http://localhost:8000 --viewport mobile
+EXEC_ID="$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/checkpoint.sh" begin \
+    "$ACTIVE_RUN" "$TEST_ID" "$STEP_ID" "$ATTEMPT" "$SUBJECT_ID")"
 ```
-Tests at mobile viewport size.
 
-### Multiple Viewports
+This creates a `step_executions` row with `status='in-progress'` *before* the
+action. If Claude crashes mid-action, the row is still there — that's how
+resume knows where you stopped. The `subject_id` column means retries/resume
+correctly target the same variant.
+
+### 3. Directive check (only for risky actions)
+
+If the step's action involves SSH writes, `tinker`, or DB writes:
+
 ```bash
-/e2e-test-specialist:test http://localhost:8000 --viewport desktop
-/e2e-test-specialist:test http://localhost:8000 --viewport tablet
-/e2e-test-specialist:test http://localhost:8000 --viewport mobile
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/directive-check.sh" "$ACTION_KIND" "$ACTION_DESCRIPTION"
+RC=$?
+if [[ $RC -eq 1 ]]; then
+    e2e_record_violation blocking  "$ACTION_KIND" "$ACTION_DESCRIPTION" aborted
+    STATUS=blocked; ERR="blocked by directive"
+    # skip the action entirely
+elif [[ $RC -eq 2 ]]; then
+    e2e_record_violation warning   "$ACTION_KIND" "$ACTION_DESCRIPTION" continued
+fi
 ```
 
-## Output
+### 4. Perform the action
 
-The command produces:
-1. Real-time test execution visible in browser
-2. Comprehensive test report in markdown
-3. List of errors found
-4. Recommendations for fixes
+For long-blocking actions (apt locks, image transfers, multi-region DO
+provisioning, anything you expect could exceed `crash_detection.warn_seconds`),
+spawn the background heartbeat watcher BEFORE the action and stop it after:
 
-## Notes
+```bash
+WATCHER="$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/long-step-heartbeat.sh" start)"
+# ... long action runs here ...
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/long-step-heartbeat.sh" stop "$WATCHER"
+```
 
-- **Sequential Testing**: E2E tests MUST run sequentially (one at a time), never in parallel. This prevents race conditions, state conflicts, and flaky results.
-- **URL Verification First**: Always verifies the application is accessible at the provided URL before testing. If the server is on a different port, attempts to discover the correct port automatically.
-- **Docker-Local Detection**: For Laravel projects, automatically detects if docker-local is running and uses `.test` domains instead of localhost. Never spins up `php artisan serve` if docker-local is available.
-- **CSS/Tailwind Verification**: Always checks that CSS is rendering correctly before proceeding. Verifies icons, Tailwind classes, and overall styling.
-- **Filament Theme Checks**: For Filament projects, verifies custom panel themes are loading correctly.
-- **Error Resolution**: When errors are found, fixes them and retests. Remembers solutions for recurring errors during the session.
-- **Always Screenshots**: Takes screenshots at every significant step - page loads, interactions, errors, flow completions.
-- Always runs in a visible browser by default so you can watch tests
-- Opens a new browser tab if other tests are running
-- Takes snapshots at each step for debugging
-- Checks console and network errors on every page
-- Will stop immediately if the correct application cannot be found (prevents testing wrong app)
+This keeps the heartbeat ticking every ~half of `warn_seconds` so a
+crashed-session reaper doesn't false-positive on legitimate long waits.
+
+Dispatch by the test's `test_kind`:
+
+#### `browser`
+Use Playwright MCP tools. Heartbeat after **each** tool call:
+
+```
+mcp__playwright__browser_navigate   → bash heartbeat.sh
+mcp__playwright__browser_snapshot   → bash heartbeat.sh
+mcp__playwright__browser_click      → bash heartbeat.sh
+mcp__playwright__browser_fill_form  → bash heartbeat.sh
+mcp__playwright__browser_take_screenshot → bash heartbeat.sh + record path in screenshots
+```
+
+Critical rules preserved from the previous plugin:
+- **Sequential only**. Never run E2E in parallel.
+- Visible browser by default; open new tabs (with 1s wait between) if other
+  tests are running.
+- Always take a screenshot at significant transitions; insert a row into the
+  `screenshots` table linked to this `EXEC_ID`.
+- Check `mcp__playwright__browser_console_messages` and
+  `mcp__playwright__browser_network_requests` after navigations; capture
+  failures as part of `evidence_snapshot`.
+
+#### `ssh`
+Use Bash(`ssh:*`) with read-only intent. Verify with `grep`/`cat` only — never
+write to remote files mid-run (the directive-check guard will stop you anyway).
+Capture stdout into `evidence_snapshot`.
+
+#### `api`
+Use `curl -sS` (or your project's API client). Capture status code and
+body excerpt into `evidence_snapshot`.
+
+#### `cli` / `mixed`
+Run the command. Capture exit code + truncated stdout/stderr.
+
+#### `manual` / `observation`
+Use `AskUserQuestion` to record the result; the user types the observed
+outcome. Status is whatever they say.
+
+### 5. Evaluate result
+
+- **Match against `expected`** if provided. Otherwise, classify by exit code /
+  HTTP status / presence of "error"/"500"/"undefined" in evidence.
+- Set `STATUS` to `passed`, `failed`, `skipped`, or `blocked`.
+
+### 6. On failure: consult retry policy
+
+```bash
+backoff="$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/retry-policy.sh" "$TEST_KIND" "$ERR_KIND" "$ATTEMPT")"
+if [[ $? -eq 0 ]]; then
+    sleep "$backoff"
+    ATTEMPT=$((ATTEMPT + 1))
+    # Loop back to step 1 with new attempt number — checkpoint.sh begin
+    # produces a new row (because retry_attempt is part of the id).
+fi
+```
+
+### 7. On unrecoverable failure: open a bug?
+
+If the step is `is_critical=1` and the failure is an assertion (not
+transient), ask the user via `AskUserQuestion` whether to:
+
+- **Open a bug** (insert into `bugs`, link to this `step_executions.bug_id`).
+  Capture: title, severity, description, error_message; leave `root_cause` /
+  `fix_applied` blank for now.
+- **Mark blocked** (no bug — known precondition not met).
+- **Skip** (note why).
+
+### 8. Checkpoint: end
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/checkpoint.sh" end \
+    "$EXEC_ID" "$STATUS" "$ACTUAL" "$ERR" "$EVIDENCE" "$BUG_ID"
+```
+
+This writes the terminal status, duration, and evidence atomically. After
+this returns, the next session would resume from the *next* step.
+
+### 9. Continue or stop
+
+- If `STATUS == passed | skipped`: continue to next step.
+- If `STATUS == failed | blocked` AND step is critical: ask whether to
+  continue, abort run, or pause for investigation. Default is **pause**
+  (mark session `paused`, leave run `in-progress`).
+- If `--batch N` was set, decrement N; stop when 0.
+
+## Run completion
+
+When the queue is empty:
+
+```bash
+e2e_exec "
+    UPDATE test_runs
+       SET status='completed', ended_at=datetime('now')
+     WHERE id = $(e2e_sql_quote "$ACTIVE_RUN");
+"
+e2e_session_end completed
+```
+
+Print a summary using `v_run_progress`. Suggest next steps:
+
+```
+Run R-NNN complete.
+  passed:        ###
+  failed:        ##   (with bug ids)
+  skipped:       #
+  blocked:       #
+
+Generate report:    /e2e-test-specialist:report
+Triage bugs:        /e2e-test-specialist:bugs
+Capture lessons:    /e2e-test-specialist:memory
+```
+
+## Important guarantees
+
+- **Every step row exists before the action runs.** A crash mid-action leaves
+  the row in `in-progress` status. The next session detects it via
+  `crash-recovery.sh` and resumes (or skips, on user choice).
+- **Heartbeat is updated after every tool call.** Long-running but live
+  operations don't get falsely flagged as crashed.
+- **Tags drive selection, not test order.** Re-running just the
+  `--tag wireguard` subset across many phases is one command.
+- **Sequential execution is enforced.** This loop processes one step at a
+  time per session — Playwright state, auth state, and DB state stay
+  consistent.

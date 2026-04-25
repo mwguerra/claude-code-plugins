@@ -1,0 +1,48 @@
+{
+  "version": "1.0.0",
+  "schema_version": "1.0.0",
+
+  "paths": {
+    "root":         ".e2e-testing",
+    "database":     ".e2e-testing/e2e-tests.sqlite",
+    "runs":         ".e2e-testing/runs",
+    "logs":         ".e2e-testing/logs/activity.log"
+  },
+
+  "crash_detection": {
+    "_comment": "Heartbeat is updated after every browser/SSH/API tool call. If the last_heartbeat on an 'active' session is older than this threshold, the session is treated as crashed and offered for resume on the next /e2e-test-specialist:start (or the user can /e2e-test-specialist:resume directly). Set this above your longest legitimate single-step duration (apt lock waits up to 900s; image transfers can be 5-10 min on slow networks). Decision point — see scripts/retry-policy.sh and scripts/directive-check.sh.",
+    "heartbeat_stale_seconds": 1200,
+    "warn_seconds":            600
+  },
+
+  "retry": {
+    "_comment": "Defaults applied by scripts/retry-policy.sh. The script is the source of truth for per-step-kind logic.",
+    "default_max_attempts":  1,
+    "transient_max_attempts": 3,
+    "backoff_seconds":       [5, 15, 45]
+  },
+
+  "playwright": {
+    "default_viewport":   "desktop",
+    "viewports": {
+      "desktop": { "width": 1920, "height": 1080 },
+      "tablet":  { "width": 768,  "height": 1024 },
+      "mobile":  { "width": 375,  "height": 812  }
+    },
+    "screenshot_on": ["page_load", "interaction", "form_submit", "error", "flow_complete"],
+    "wait_between_tabs_seconds": 1
+  },
+
+  "directives": {
+    "_comment": "Global enforcement modes. blocking = abort, warning = require explicit confirmation, advisory = log only. Per-directive override lives in the directives.enforcement column.",
+    "default_enforcement": "warning",
+    "block_destructive_ssh": true,
+    "block_db_tinker_patches": true
+  },
+
+  "import": {
+    "auto_tag":        true,
+    "preserve_raw":    true,
+    "deprecate_missing_tests": false
+  }
+}

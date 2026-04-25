@@ -1,2 +1,8 @@
 # Git worktrees
 .worktrees/
+
+# E2E reference file (used to seed the e2e-test-specialist plugin — contains real credentials)
+e2e-testing-old.md
+
+# E2E plugin runtime data (contains credentials, screenshots, run history per project)
+.e2e-testing/

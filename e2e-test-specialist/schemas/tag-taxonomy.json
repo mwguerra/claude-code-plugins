@@ -1,0 +1,75 @@
+{
+  "_comment": "Keyword → tag map. Used by scripts/import-ledger.py to auto-tag tests on insert. Each entry: case-insensitive substring matched against the test's title + raw markdown. Multiple matches → multiple tags. Customize freely; the importer reads this file at runtime so re-imports pick up taxonomy changes.",
+
+  "auto_tags": {
+    "infrastructure": {
+      "ssh":               ["SSH", "ssh-keygen", "authorized_keys", "ssh_auth_method", "ssh-keys", "ed25519"],
+      "wireguard":         ["WireGuard", "WG mesh", "WG IP", "10.100."],
+      "docker":            ["docker ", "docker compose", "Dockerfile", "container"],
+      "do-droplet":        ["DigitalOcean", "DO API", "DO droplet", "DropletProvision", "doctl"],
+      "load-balancer":     ["Load Balanc", "Traefik", "LB ", "scaling page", "instance_count"],
+      "dns":               ["DNS", "nip.io", "wildcard", "Let's Encrypt", "LE rate limit"],
+      "panel":             ["panel", "Filament", "/admin/"],
+      "wopr":              ["WOPR", "control plane", "deploy-panel.sh"]
+    },
+
+    "services": {
+      "postgres":          ["PostgreSQL", "PG ", "postgres", "PG-cross-server"],
+      "mysql":             ["MySQL"],
+      "sqlite":            ["SQLite"],
+      "redis":             ["Redis", "redis"],
+      "horizon":           ["Horizon", "horizon:status"],
+      "reverb":            ["Reverb", "WebSocket", "broadcast", "Echo"],
+      "pulse":             ["Pulse", "scheduler heartbeat", "app:heartbeat"],
+      "minio":             ["MinIO", "S3", "AWS_ENDPOINT", "FILESYSTEM_DISK"],
+      "scheduler":         ["scheduler", "cron"]
+    },
+
+    "apps": {
+      "todo":              ["todo.secnote", "todo app", "primeforge-test-todo"],
+      "full":              ["full.secnote", "primeforge-test-full"],
+      "static":            ["static.secnote", "static HTML"],
+      "express":           ["express.secnote", "Node Express", "primeforge-test-express"],
+      "nextjs":            ["nextjs.babytor", "Next.js", "primeforge-test-nextjs"],
+      "horizon-app":       ["horizon.babytor"],
+      "pulse-app":         ["pulse.babytor"],
+      "storage-app":       ["storage.babytor"],
+      "php-classic":       ["php.babytor", "PHP Classic", "PHP-FPM"],
+      "ipmed":             ["ipmed", "mwguerra/ipmed"],
+      "phpdevhub":         ["phpdevhub", "mwguerra/phpdevhub"]
+    },
+
+    "kind": {
+      "browser":           ["browser", "Navigate to", "Click ", "fill_form", "snapshot", "screenshot", "viewport"],
+      "ssh-verify":        ["ssh-verify", "SSH Verify", "grep ", "cat /", "/root/.ssh/"],
+      "api":               ["curl ", "api.github.com", "/api/", "REST"],
+      "stress":            ["stress", "performance", "concurrent", "throughput", "RPS", "load test"],
+      "mobile":            ["mobile", "375px", "responsive", "tablet", "768x"],
+      "regression":        ["regression", "UI/UX regression"],
+      "disaster-recovery": ["disaster recovery", "backup", "restore", "panic mode"],
+      "self-update":       ["panel self-update", "agent update", "shared service update"],
+      "self-healing":      ["self-heal", "agent disconnect", "reconcile", "retry"]
+    },
+
+    "concerns": {
+      "security":          ["audit log", "ssh_key", "revoke", "sanitiz", "permission denied", "policy", "panic mode"],
+      "ux":                ["empty state", "stepper", "loading", "responsive", "DNS soft warning", "service hint", "deploy banner"],
+      "credentials":       ["GitHub PAT", "ghp_", "Composer", "packgrid", "credential", "auth.json"],
+      "monitoring":        ["alert rule", "incident", "monitor", "dashboard"]
+    },
+
+    "lifecycle": {
+      "clean-vps":         ["clean VPS", "Clean Slate", "Phase 0", "fresh Ubuntu"],
+      "bootstrap":         ["bootstrap", "first deploy", "deploy-panel.sh", "first login"],
+      "site-creation":     ["Site Creation", "create site", "site wizard"],
+      "deployment":        ["deploy ", "deployment", "Last used", "auto-deploy"],
+      "post-launch":       ["post-launch", "preserve populated"]
+    }
+  },
+
+  "always_tag": {
+    "_comment": "Every test gets these regardless of content.",
+    "by_phase_id": true,
+    "by_test_kind": true
+  }
+}

@@ -1,262 +1,98 @@
 ---
-description: Test all pages and flows for each user role, verifying proper access control
-allowed-tools: Skill(test-plan), Skill(role-test), mcp__playwright__*, Read(*), Glob(*)
-argument-hint: <base-url> [--roles admin,user,guest] [--credentials path/to/credentials.json]
+description: Manage the roles table — first-class user identities for role-based testing
+allowed-tools: Bash(bash:*), Bash(sqlite3:*), AskUserQuestion, Read(*)
+argument-hint: [list | add | update <role-id> | link-credential <role-id> <cred-id>]
 ---
 
-# Role-Based Testing
+# /e2e-test-specialist:roles
 
-Test all pages and flows for each user role using Playwright MCP. Verifies proper access control and role-specific functionality.
+A role represents a tested user identity (Super Admin, Tenant Owner, Member,
+Guest). Roles can be linked to a credential, so role-parametrized tests can
+log in with the right account automatically.
 
-## Standard Test Plan Location
+## Subcommands
 
-**Plan file**: `docs/detailed-test-list.md`
-
-This command reads the test plan from `docs/detailed-test-list.md` to determine which roles to test and their credentials. If the plan file doesn't exist, this command will automatically invoke the `test-plan` skill first to generate the plan before running tests.
-
-## Usage
+### `list` (default)
 
 ```bash
-/e2e-test-specialist:roles http://localhost:8000
-/e2e-test-specialist:roles http://localhost:8000 --roles admin,user
-/e2e-test-specialist:roles http://localhost:8000 --credentials test-users.json
+sqlite3 -bail -column -header "$E2E_DB" "
+  SELECT r.id, r.name, r.panel,
+         json_array_length(r.permissions) AS perm_count,
+         c.name AS credential
+    FROM roles r
+    LEFT JOIN credentials c ON c.id = r.credential_id
+   ORDER BY r.id;
+"
 ```
 
-## Process
+### `add`
 
-### Step -1: Test Plan Verification (REQUIRED FIRST)
+Use `AskUserQuestion` to collect:
+- name (e.g., 'super-admin', 'tenant-owner', 'member', 'guest')
+- panel (admin / tenant / public / api)
+- permissions (comma-separated → JSON array)
+- credential_id (optional; from `credentials` list — usually a username-password)
+- notes
 
-**CRITICAL**: Before testing any roles, check if the test plan exists.
-
-1. **Check for Test Plan**
-   - Look for `docs/detailed-test-list.md`
-   - If the file exists, read the role definitions and credentials from it
-   - If the file does NOT exist, invoke `Skill(test-plan)` to generate it first
-
-2. **Read Role Information from Plan**
-   - Extract the "Test User Accounts" table from the plan
-   - Extract test credentials from the plan
-   - Use role list for testing (unless `--roles` flag overrides)
-
-### Step 0: Docker-Local Detection (For Laravel Projects)
-
-**IMPORTANT**: For Laravel projects, check if docker-local is running.
-
-1. **Check for docker-local**
-   - Look for docker-local configuration
-   - Check if `.env` contains docker-local settings (APP_URL with .test domain)
-   - Check if docker containers are running
-
-2. **Use .test Domains**
-   If docker-local is detected and running:
-   - Use the `.test` domain from APP_URL
-   - DO NOT use `php artisan serve`
-   - docker-local already has the server configured
-
-### Step 0.5: URL/Port Verification (CRITICAL FIRST)
-
-**Before testing any roles, verify the application is accessible at the correct URL.**
-
-1. **Navigate to Provided URL**
-   - Use `mcp__playwright__browser_navigate` to base URL
-   - Use `mcp__playwright__browser_snapshot` to capture state
-
-2. **Verify Correct Application**
-   - Check for expected app name/logo/navigation
-   - Ensure NOT a default server page ("Welcome to nginx!", "It works!")
-   - Ensure NOT a connection error page
-
-3. **Port Discovery (if verification fails)**
-   Try common ports: 8000, 8080, 3000, 5173, 5174, 5000, 4200
-
-4. **Proceed or Stop**
-   - If correct URL found: Update base URL and continue
-   - If no working URL found: **STOP** and report error
-
-### Step 0.7: CSS/Tailwind Rendering Verification
-
-**ALWAYS verify CSS and styling before testing roles.**
-
-1. **Visual Check**
-   - Take screenshot of login page
-   - Verify page is styled (not raw HTML)
-   - Check icons are displaying correctly
-
-2. **Framework-Specific Checks**
-   - **Laravel**: Check vite.config.js, tailwind.config.js
-   - **Filament**: Check custom panel themes
-   - Run `npm run build` if needed
-
-### Step 1: Role Discovery
-
-1. **Identify All Roles**
-   - Find role definitions in codebase
-   - Map role hierarchy
-   - Note role permissions
-
-2. **Prepare Credentials**
-   - Get test user for each role
-   - Verify credentials work
-   - Note login URLs
-
-### Step 2: Guest Testing
-
-1. **Test Public Pages**
-   - Verify accessible pages load
-   - Check content displays correctly
-
-2. **Test Protected Pages**
-   - Verify redirects to login
-   - Check proper blocking
-
-### Step 3: Authenticated Role Testing
-
-For EACH role:
-
-1. **Login**
-   ```
-   mcp__playwright__browser_navigate to /login
-   mcp__playwright__browser_fill_form with credentials
-   mcp__playwright__browser_click submit
-   mcp__playwright__browser_wait_for success
-   ```
-
-2. **Test Accessible Pages**
-   - Navigate to each page role should access
-   - Verify content loads correctly
-
-3. **Test Blocked Pages**
-   - Try accessing restricted pages
-   - Verify 403 or redirect
-
-4. **Test Role Actions**
-   - Perform role-specific actions
-   - Verify correct behavior
-
-5. **Logout**
-   - Logout before next role
-
-### Step 4: Security Tests
-
-1. **Session Isolation**
-   - Verify roles can't access each other's data
-
-2. **Privilege Escalation**
-   - Try admin actions as regular user
-   - Verify blocked
-
-### Step 4.5: Error Detection and Resolution
-
-**When errors are found, fix them and retest.**
-
-1. **Error Detection**
-   For each role test:
-   - Check for error pages (500, 404, 403 - except expected 403s)
-   - Check for error messages in UI
-   - Check browser console
-   - Check network requests
-
-2. **Error Resolution**
-   When error found:
-   - Take screenshot of error
-   - Identify root cause
-   - Fix the error
-   - Retest the role access
-   - Document the solution
-
-3. **Remember Solutions**
-   - Track errors and solutions during session
-   - Apply known solutions to recurring errors
-
-### Step 4.7: Screenshot Capture (ALWAYS)
-
-**Take screenshots at every step.**
-
-1. **When to Screenshot**
-   - Login page for each role
-   - After successful login
-   - Each page access (allowed and blocked)
-   - Error pages
-   - Logout confirmation
-
-2. **Storage**
-   - Save to `tests/screenshots/roles/`
-   - Use naming: `role_[rolename]_[page]_[status].png`
-
-### Step 5: Report Generation
-
-Generate report with:
-- Roles tested
-- Pages accessible per role
-- Pages correctly blocked
-- Security test results
-- Errors found AND solutions applied
-- Screenshots taken (with paths)
-
-## Parameters
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| base-url | Application URL | Required |
-| --roles | Roles to test | All discovered |
-| --credentials | Credentials file | Interactive |
-
-## Credentials File Format
-
-```json
-{
-  "admin": {
-    "email": "admin@example.com",
-    "password": "adminpass"
-  },
-  "user": {
-    "email": "user@example.com",
-    "password": "userpass"
-  }
-}
-```
-
-## Output
-
-```markdown
-# Role-Based Test Results
-
-## Summary
-| Role | Pages OK | Pages Blocked | Issues |
-|------|----------|---------------|--------|
-| guest | 5/5 | 10/10 | 0 |
-| user | 12/12 | 3/3 | 0 |
-| admin | 15/15 | 0/0 | 0 |
-
-## Details
-
-### Guest Role
-- [x] Can access public pages
-- [x] Blocked from protected pages
-
-### User Role
-- [x] Can access user pages
-- [x] Blocked from admin pages
-- [x] Can perform user actions
-
-### Admin Role
-- [x] Full access to all pages
-- [x] Can perform all actions
-```
-
-## Examples
-
-### Test All Roles
 ```bash
-/e2e-test-specialist:roles http://localhost:8000
+source "${CLAUDE_PLUGIN_ROOT}/scripts/lib.sh"
+RID="ROLE-$(echo "$NAME" | tr 'A-Z ' 'a-z-')"
+e2e_exec "
+  INSERT INTO roles (id, name, permissions, credential_id, panel, notes)
+  VALUES (
+    $(e2e_sql_quote "$RID"),
+    $(e2e_sql_quote "$NAME"),
+    $(e2e_sql_quote "$PERMISSIONS_JSON"),
+    NULLIF($(e2e_sql_quote "$CRED_ID"),''),
+    $(e2e_sql_quote "$PANEL"),
+    $(e2e_sql_quote "$NOTES")
+  );
+"
 ```
 
-### Test Specific Roles
+### `update <role-id>`
+
 ```bash
-/e2e-test-specialist:roles http://localhost:8000 --roles admin,user
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/backup-db.sh" pre-roles-update >/dev/null
+e2e_exec "
+  UPDATE roles SET
+    permissions   = COALESCE($(e2e_sql_quote "$NEW_PERMS"), permissions),
+    panel         = COALESCE($(e2e_sql_quote "$NEW_PANEL"), panel),
+    credential_id = COALESCE(NULLIF($(e2e_sql_quote "$NEW_CRED"),''), credential_id),
+    notes         = COALESCE($(e2e_sql_quote "$NEW_NOTES"), notes),
+    updated_at    = datetime('now')
+  WHERE id = $(e2e_sql_quote "$RID");
+"
 ```
 
-### Use Credentials File
+### `link-credential <role-id> <cred-id>`
+
+Associate a stored credential with a role so role-based tests can resolve
+login info automatically:
+
 ```bash
-/e2e-test-specialist:roles http://localhost:8000 --credentials tests/users.json
+e2e_exec "
+  UPDATE roles SET credential_id = $(e2e_sql_quote "$2"), updated_at = datetime('now')
+   WHERE id = $(e2e_sql_quote "$1");
+"
 ```
+
+After linking, parametrized tests with `applies_to = ["ROLE-admin","ROLE-user"]`
+will resolve subject fields including `{{subject.credential.username}}` and
+`{{subject.credential.password}}` — the executor reaches through the
+`v_subjects_resolved` view to fetch.
+
+## Using roles in tests
+
+```
+/e2e-test-specialist:plan applies-to T-01.04 ROLE-admin,ROLE-user,ROLE-guest
+```
+
+The test runs three times, once per role. Steps with templates like:
+
+```
+Navigate to /login, fill {{subject.credential.username}} / {{subject.credential.password}}, submit.
+Verify {{subject.panel}} dashboard loads.
+```
+
+…render correctly per role.
