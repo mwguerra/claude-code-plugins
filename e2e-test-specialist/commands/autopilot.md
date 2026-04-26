@@ -133,14 +133,40 @@ fi
 e2e_log "autopilot run = $ACTIVE_RUN"
 ```
 
-### 3.5. Pre-run lifecycle hooks
+### 3.5. Pre-run briefing (READ EVERY RUN — load before deciding skip-vs-drive)
 
-Before executing the first test, read every active `pre-run` hook from
-`lifecycle_hooks` (in `order_idx` ascending) and follow its `body`. These
-hooks encode project-specific preconditions (clean-slate verification, VPS
-warm-up, environment snapshots, credential rotation, etc.).
+Before executing the first test, the autopilot loads the **pre-run briefing**
+— three sources that together encode every standing instruction the agent
+must respect during this run. The briefing is the agent's authorization
+context, project policy, and procedural prelude in one place.
+
+**Load all three, in order, into the agent's working context:**
 
 ```bash
+# (1) Active blocking/warning directives (the file-rules, safety, ux-standard)
+DIRECTIVES="$(e2e_query "
+  SELECT id, title, enforcement, body
+    FROM directives
+   WHERE active=1 AND enforcement IN ('blocking','warning')
+   ORDER BY enforcement DESC, id ASC;
+")"
+
+# (2) Active high-importance memories that grant authorization or codify policy.
+#     Imported ledger directives + /authorize entries + manually-saved standing grants.
+AUTHS="$(e2e_query "
+  SELECT id, title, importance, body, tags
+    FROM memories
+   WHERE status='active'
+     AND importance >= 4
+     AND (tags LIKE '%\"authorization\"%'
+          OR tags LIKE '%\"standing-grant\"%'
+          OR tags LIKE '%\"directive\"%'
+          OR tags LIKE '%\"policy\"%')
+   ORDER BY importance DESC, updated_at DESC;
+")"
+
+# (3) Active pre-run lifecycle hooks (procedural — clean-slate verification,
+#     env warm-up, snapshots, credential rotation, etc.).
 HOOKS="$(e2e_query "
   SELECT id, title, body, enforcement
     FROM lifecycle_hooks
@@ -149,20 +175,59 @@ HOOKS="$(e2e_query "
 ")"
 ```
 
-For each hook the agent:
+**The agent then:**
 
-1. Reads the hook's `body` and follows the instructions inside.
-2. If the hook completes successfully → record an info-level log line and
-   continue to the next hook.
-3. If a hook with `enforcement='blocking'` fails → write a memory
-   (kind='environment', importance=5) capturing the failure and `e2e_die`
-   the autopilot. The active run remains `in-progress` so a later
-   `/resume` can pick up after the user fixes the precondition.
-4. If a hook with `enforcement='advisory'` fails → log a warning + write a
-   memory and continue.
+1. **Reads DIRECTIVES** as non-negotiable rules (blocking = halts the run on
+   violation; warning = log + continue but flag in run summary).
+2. **Reads AUTHS** as the run's authorization context. Every authorization
+   memory grants permission to take actions the autopilot would otherwise
+   need to ask about (e.g. provisioning Forge servers, creating DO droplets,
+   modifying production-ish state inside test scope). The agent treats
+   these as durable user decisions — never re-asks.
+3. **Executes HOOKS** in `order_idx` ASC, then `id` ASC:
+   - hook completes → log + continue
+   - `enforcement='blocking'` failure → write a memory and `e2e_die`
+     (active run stays `in-progress` for later `/resume`)
+   - `enforcement='advisory'` failure → write a memory and continue
 
-If `lifecycle_hooks` returns zero rows, this step is a silent no-op — the
-table is opt-in.
+If any of the three queries returns zero rows, the corresponding sub-step
+is a silent no-op — all three are opt-in.
+
+### 3.6. Skip discipline (NON-NEGOTIABLE)
+
+A test is **skipped** only when ALL of the following are true:
+
+- The test requires infrastructure or external resources that don't exist.
+- **No** authorization memory in the briefing grants permission to create
+  them.
+- **No** pre-run hook in the briefing provides a procedure to create them.
+- The test plan itself explicitly tags the test as `cross-run-coverage` or
+  `future-impl` (i.e. the ledger acknowledges it can't run in isolation).
+
+**Forbidden reasons to skip:**
+
+- "Needs manual approval" → check AUTHS first; if a `standing-grant`
+  authorization tag covers this scope, drive live.
+- "Would create real resources" → if AUTHS authorizes provisioning, drive
+  live. The autopilot's no-prompt rule means there is no "ask the user"
+  fallback.
+- "Other tests will cover this" → cross-run coverage is a deliberate
+  ledger-level decision, not a runtime shortcut. Only honor it when the
+  test plan itself says so.
+
+If the agent finds itself about to skip outside these rules, it MUST first
+re-read the AUTHS list and the test's tags, then either drive live or write
+a memory (kind='lesson-learned', importance=4, tag `skip-rationale`) and
+mark the test `blocked` with a clear note. **Do not silently skip.**
+
+### 3.7. Failures must be fixed (default policy)
+
+Per the Ultrathink Root Cause directive, every failure becomes a fix-loop
+target. If the run completes with `failed` step_executions remaining (i.e.
+fix budget exhausted on some tests), autopilot's completion step prints a
+hint to run `/e2e-test-specialist:fix-failures` to revisit them with a
+fresh evidence cycle. Production bugs surfaced by E2E are first-class work
+— they don't get filed-and-forgotten.
 
 ### 4. The autonomous loop
 
@@ -273,7 +338,19 @@ run's status — they are purely for side effects on external systems.
 
 If `lifecycle_hooks` returns zero rows, this step is a silent no-op.
 
-Then print the standard suggestions:
+Then print the standard suggestions, including a re-attempt hint when
+failures remain:
+
+```bash
+FAILED_COUNT="$(e2e_query_value "
+  SELECT COUNT(*) FROM step_executions
+   WHERE run_id = $(e2e_sql_quote "$ACTIVE_RUN") AND status = 'failed';
+")"
+SKIPPED_COUNT="$(e2e_query_value "
+  SELECT COUNT(*) FROM step_executions
+   WHERE run_id = $(e2e_sql_quote "$ACTIVE_RUN") AND status = 'skipped';
+")"
+```
 
 ```
 Autopilot run $ACTIVE_RUN complete.
@@ -283,7 +360,24 @@ Triage open bugs:        /e2e-test-specialist:bugs
 Capture lessons:         /e2e-test-specialist:memory
 Export back to ledger:   /e2e-test-specialist:export
 
-To start the next round:  /e2e-test-specialist:autopilot $BASE_URL --label "next round"
+To start the next round:  /e2e-test-specialist:autopilot --label "next round"
+```
+
+If `FAILED_COUNT > 0`, also print:
+
+```
+$FAILED_COUNT failed step(s) remain. Re-attempt with the ultrathink fix
+loop using:
+  /e2e-test-specialist:fix-failures
+```
+
+If `SKIPPED_COUNT > 0`, also print:
+
+```
+$SKIPPED_COUNT skipped step(s). Review skip rationale memories and
+consider whether an /authorize entry would have allowed driving live:
+  /e2e-test-specialist:authorize --list
+  /e2e-test-specialist:failures --status skipped
 ```
 
 Autopilot does **not** auto-restart. A completed run is a checkpoint. If you

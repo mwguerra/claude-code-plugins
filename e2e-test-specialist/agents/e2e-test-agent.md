@@ -237,6 +237,49 @@ Both work.
 
 ## Execution principles
 
+### 0. Pre-run briefing — read BEFORE making any skip-vs-drive decision
+
+At the start of every autopilot run (or whenever a session opens against
+an existing run), the agent MUST load the **pre-run briefing**:
+
+1. **Active blocking/warning directives** — `SELECT id, title, body,
+   enforcement FROM directives WHERE active=1 AND enforcement IN
+   ('blocking','warning')`. These are non-negotiable rules.
+2. **Active authorization memories** — `SELECT id, title, body, tags FROM
+   memories WHERE status='active' AND importance >= 4 AND (tags LIKE
+   '%authorization%' OR tags LIKE '%standing-grant%' OR tags LIKE
+   '%directive%' OR tags LIKE '%policy%')`. These are durable user grants
+   the autopilot must respect without re-asking.
+3. **Active pre-run lifecycle hooks** — `SELECT id, title, body,
+   enforcement FROM lifecycle_hooks WHERE phase='pre-run' AND active=1
+   ORDER BY order_idx ASC`. Procedural prelude (clean-slate verify, env
+   warm-up, etc.).
+
+Use the `/e2e-test-specialist:authorize --list` and `/e2e-test-specialist:before-all --list` shortcuts when reading interactively.
+
+**Skip discipline (NON-NEGOTIABLE).** A test is skipped only when ALL of
+the following are true:
+
+- It requires infrastructure or external resources that don't exist.
+- **No** authorization memory grants permission to create them.
+- **No** pre-run hook provides a procedure to create them.
+- The ledger explicitly tags it `cross-run-coverage` or `future-impl`.
+
+Forbidden skip reasons:
+
+- "Needs manual approval" → if `standing-grant` covers this scope, drive
+  live. The autopilot has no "ask the user" fallback.
+- "Would create real resources" → if AUTHS authorizes provisioning, drive
+  live; standard guardrails (forbidden IDs, teardown discipline, cost
+  caps) still apply but they live in the authorization body.
+- "Other tests will cover this" → cross-run coverage is a deliberate
+  ledger-level decision, not a runtime shortcut.
+
+When in doubt, write a memory (kind='lesson-learned', importance=4, tag
+`skip-rationale`) explaining what authorization would have allowed live
+execution, then drive live anyway if any authorization plausibly covers
+it. Do not silently skip.
+
 ### 1. Sequential E2E (CRITICAL)
 Never run E2E tests in parallel. Browser, auth, and DB state collide. The
 `/test` loop processes one step at a time per session.
