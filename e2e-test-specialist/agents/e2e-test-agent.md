@@ -442,6 +442,81 @@ The crash-detection threshold lives in `.e2e-testing/config.json`
 legitimate single-step duration (apt locks, image transfers, cross-region
 DO provisioning).
 
+## Diagnostic commands — prefer these over ad-hoc SQL
+
+When you need to know "what's the state of the run?", call a slash command
+instead of writing SQL by hand. Hand-written SQL keeps hallucinating column
+names that don't exist (e.g. `sessions.paused_at`, `step_executions.executed_at`,
+`tests.run_id`, `tests.status` — none of these are real). The wrappers below
+use the right schema and the right views:
+
+| Question                                  | Command                                          |
+|-------------------------------------------|--------------------------------------------------|
+| Where am I overall?                       | `/e2e-test-specialist:status`                    |
+| What sessions exist for the run?          | `/e2e-test-specialist:sessions [<run-id>]`       |
+| What failed/skipped/blocked recently?     | `/e2e-test-specialist:failures [<run-id>]`       |
+| What's still pending? Next test?          | `/e2e-test-specialist:pending [<run-id>]`        |
+| Open bug rows?                            | `/e2e-test-specialist:bugs`                      |
+| Crashed-session recovery state?           | `/e2e-test-specialist:resume` (or `/status`)     |
+
+If you find yourself writing `SELECT ... FROM sessions WHERE …` or
+`SELECT ... FROM step_executions WHERE …`, stop and use one of the commands
+above. They emit human-readable output with the same data, and they will
+not invent columns.
+
+## Schema reality check (read this BEFORE writing diagnostic SQL)
+
+Common mistakes the agent makes when guessing column names:
+
+| Wrong reference                          | Truth                                                                                                                                  |
+|------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `sessions.paused_at`                     | Does **not exist**. Pause is `status='paused'`. The pause moment is `last_heartbeat` (when activity stopped) or `ended_at` (if closed). |
+| `sessions.paused_reason`                 | Does **not exist**. There is a free-form `notes` column.                                                                               |
+| `step_executions.executed_at`            | Does **not exist**. Real timestamps: `started_at`, `completed_at`, `created_at`.                                                        |
+| `tests.run_id`                           | Does **not exist**. `tests` is a catalog (test definitions). Per-run state lives in `step_executions.run_id`.                          |
+| `tests.status`                           | Does **not exist**. Status is per execution. Use `v_test_results_by_subject` to aggregate per (run, test).                              |
+| `step_executions.test_status`            | Does **not exist**. The test catalog has no per-run state; only `step_executions.status` per (run, step).                              |
+
+Authoritative column lists (canonical, from `schemas/schema.sql`):
+
+```text
+sessions:
+    id, run_id, started_at, last_heartbeat, ended_at, status,
+    current_test_id, current_step_id, current_execution_id,
+    process_info, notes, created_at
+    status ∈ {active, paused, completed, crashed, aborted}
+
+step_executions:
+    id, run_id, test_id, step_id, subject_id, retry_attempt, status,
+    started_at, completed_at, duration_ms, actual_result, error_message,
+    evidence_snapshot, bug_id, metrics, notes, created_at
+    status ∈ {pending, in-progress, passed, failed, skipped, blocked}
+
+tests:
+    id, phase_id, title, description, actor, preconditions, postconditions,
+    test_kind, estimated_duration_seconds, test_order, is_critical,
+    deprecated_at, deprecated_reason, raw_markdown, applies_to,
+    created_at, updated_at
+    NO run_id. NO status. (Templates only.)
+
+test_runs:
+    id, label, base_url, status, target_phases, target_tags, skip_tags,
+    started_at, ended_at, ...
+
+state:           (single-row pointer)
+    id (=1), active_session_id, active_run_id, base_url,
+    detected_environment, last_update
+```
+
+Useful views:
+- `v_run_progress(run_id, steps_passed, steps_failed, steps_skipped, steps_blocked, steps_in_progress, tests_total, tests_passed, tests_failed, tests_blocked, duration_minutes)`
+- `v_test_results_by_subject(run_id, test_id, subject_id, steps_passed, …)`
+- `v_flaky_steps(step_id, test_id, pass_count, fail_count, run_count, last_seen)`
+- `v_subjects_resolved(id, fields)`
+
+When in doubt, run `PRAGMA table_info(<table>);` against the DB rather than
+guessing.
+
 ## Common SQL recipes
 
 ```sql

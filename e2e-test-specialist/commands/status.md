@@ -73,6 +73,50 @@ sqlite3 -bail -column -header "$E2E_DB" "
 e2e_section "Recovery hint"
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/crash-recovery.sh"
 
+# === Diagnostic surfaces — what failed, what's pending ====================
+ACTIVE_RUN="$(e2e_query_value 'SELECT active_run_id FROM state WHERE id=1;')"
+if [[ -n "$ACTIVE_RUN" ]]; then
+    e2e_section "Last 5 failures in $ACTIVE_RUN  (drill in: /e2e-test-specialist:failures)"
+    sqlite3 -bail -column -header "$E2E_DB" "
+      SELECT se.test_id, se.step_id, se.status,
+             COALESCE(substr(se.error_message,1,60),'') AS error_excerpt,
+             COALESCE(se.completed_at, se.started_at) AS at
+        FROM step_executions se
+       WHERE se.run_id = $(e2e_sql_quote "$ACTIVE_RUN")
+         AND se.status IN ('failed','skipped','blocked')
+       ORDER BY COALESCE(se.completed_at, se.started_at, se.created_at) DESC
+       LIMIT 5;
+    "
+
+    e2e_section "Pending in $ACTIVE_RUN  (drill in: /e2e-test-specialist:pending)"
+    sqlite3 -bail -column -header "$E2E_DB" "
+      WITH latest_exec AS (
+          SELECT step_id, status,
+                 ROW_NUMBER() OVER (PARTITION BY step_id ORDER BY created_at DESC) AS rn
+            FROM step_executions
+           WHERE run_id = $(e2e_sql_quote "$ACTIVE_RUN")
+      )
+      SELECT
+        (SELECT COUNT(*) FROM test_steps s
+           LEFT JOIN latest_exec le ON le.step_id = s.id AND le.rn = 1
+          WHERE le.status IS NULL OR le.status IN ('pending','in-progress')) AS pending_steps,
+        (SELECT COUNT(DISTINCT t.id) FROM tests t
+           JOIN test_steps s ON s.test_id = t.id
+           LEFT JOIN latest_exec le ON le.step_id = s.id AND le.rn = 1
+          WHERE (le.status IS NULL OR le.status IN ('pending','in-progress'))
+            AND t.deprecated_at IS NULL) AS pending_tests;
+    "
+
+    e2e_section "Sessions for $ACTIVE_RUN  (drill in: /e2e-test-specialist:sessions)"
+    sqlite3 -bail -column -header "$E2E_DB" "
+      SELECT id, status, started_at, last_heartbeat, ended_at
+        FROM sessions
+       WHERE run_id = $(e2e_sql_quote "$ACTIVE_RUN")
+       ORDER BY started_at DESC
+       LIMIT 3;
+    "
+fi
+
 e2e_section "Flaky steps (passed AND failed across runs)"
 sqlite3 -bail -column -header "$E2E_DB" "
   SELECT step_id, test_id, pass_count, fail_count, run_count, last_seen
