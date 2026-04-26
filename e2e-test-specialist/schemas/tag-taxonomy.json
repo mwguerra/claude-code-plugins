@@ -8,9 +8,11 @@
       "docker":            ["docker ", "docker compose", "Dockerfile", "container"],
       "do-droplet":        ["DigitalOcean", "DO API", "DO droplet", "DropletProvision", "doctl"],
       "load-balancer":     ["Load Balanc", "Traefik", "LB ", "scaling page", "instance_count"],
+      "lb-topology":       ["lb_transition_state", "ProvisionLoadBalancedTopologyJob", "SiteInstanceService", "lb-topology", "LB Traefik config", "LB instance pool", "LB backend", "lb cutover"],
       "dns":               ["DNS", "nip.io", "wildcard", "Let's Encrypt", "LE rate limit"],
       "panel":             ["panel", "Filament", "/admin/"],
-      "wopr":              ["WOPR", "control plane", "deploy-panel.sh"]
+      "wopr":              ["WOPR", "control plane", "deploy-panel.sh"],
+      "apt-lock":          ["apt lock", "apt-lock", "wait_for_apt_lock", "wait_for_system_apt", "unattended-upgrades", "apt.systemd.daily", "fresh Ubuntu"]
     },
 
     "services": {
@@ -54,8 +56,17 @@
     "concerns": {
       "security":          ["audit log", "ssh_key", "revoke", "sanitiz", "permission denied", "policy", "panic mode"],
       "ux":                ["empty state", "stepper", "loading", "responsive", "DNS soft warning", "service hint", "deploy banner"],
+      "mobile-responsive": ["mobile", "375px", "390x844", "iPhone", "iPad", "tablet", "stack vertically", "single column", "1-column", "2-col"],
       "credentials":       ["GitHub PAT", "ghp_", "Composer", "packgrid", "credential", "auth.json"],
-      "monitoring":        ["alert rule", "incident", "monitor", "dashboard"]
+      "package-credential":["PackageCredential", "packgrid composer", "auth.json", "Resources → Packages", "Resources > Packages", "GitProvider credential"],
+      "monitoring":        ["alert rule", "incident", "monitor", "dashboard"],
+      "incident-dismissal":["incident_dismissals", "Dismiss button", "Show dismissed", "Restore button", "dismissed badge", "IncidentFeedService"]
+    },
+
+    "features": {
+      "forge-migration":     ["Forge", "ForgeClient", "ForgeMigration", "ForgeMigrationDetectionService", "MigrateForgeSiteJob", "ForgeDataPumpService", "PostMigrationSyncJob", "pfimport-", "Forge Import", "/admin/{tenant}/forge"],
+      "services-installer":  ["Services tab", "ServerService", "Services Installer", "Install Redis", "Install PostgreSQL", "Install MinIO", "Install MySQL", "ServerServicesInstall", "type morph", "type morphs"],
+      "dashboard-redesign":  ["StatusHero", "AttentionRail", "FleetPulse", "ServersGrid", "SitesMatrix", "QuickActions", "Deploys timeline", "DashboardPage.jsx", "wire:poll", "LIVE · polls"]
     },
 
     "lifecycle": {

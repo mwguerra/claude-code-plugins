@@ -264,10 +264,70 @@ Tailwind not applying:
   Filament panels)
 - Retest before continuing.
 
-### 6. Find errors AND fix them
-Console errors, 500s, network failures: don't paper over. Check
-`storage/logs/laravel.log` for Laravel; identify root cause; fix in
-codebase; retest. Bug created via `/e2e-test-specialist:bugs open`.
+### 6. Ultrathink root cause on EVERY failure (then fix it)
+
+This is the most important rule the agent must follow.
+
+When ANY step fails, surfaces a 5xx, surfaces an unexpected behavior, or
+produces output that doesn't match the expected outcome:
+
+**STOP. Do not retry blindly. Do not paper over. Do not move on to the next
+test. Do not classify it as transient and skip.**
+
+The fix loop is part of the test loop. Capturing a bug report is necessary
+but not sufficient — the bug must be root-caused and fixed before declaring
+the failing step done. Run this sequence:
+
+1. **Capture full evidence**:
+   - Browser: `mcp__playwright__browser_console_messages`,
+     `mcp__playwright__browser_network_requests`, screenshot at the failure
+     point. Persist to the executing `step_executions.evidence_snapshot`.
+   - Server: read `storage/logs/laravel.log` (last 200 lines), `docker ps`,
+     `docker logs {container} --tail 200` for the implicated container.
+   - Agent: read `/var/log/primeforge-agent/agent.log` if SSH-reachable.
+   - Panel: query the relevant DB rows (sites, deployments, server_services,
+     forge_migrations, etc.) to confirm panel state matches reality.
+
+2. **Form a specific hypothesis**: in plain English, name the code path you
+   believe produced this output. Avoid "it's probably a race" / "it's
+   intermittent" — those are non-explanations. Examples of acceptable
+   hypotheses: "ImageDistributionService::transfer() exits 0 on partial
+   transfer because rsync exit-code 23 is treated as success", "Reverb apps.json
+   uses underscore-joined slug while site env emits hyphen-joined".
+
+3. **Verify the hypothesis** by reading the source code at the suspected
+   location, running a targeted SQL query, or reproducing the failure in
+   isolation (e.g., `php artisan tinker --execute='...'`). If the hypothesis
+   doesn't survive verification, form a new one — never skip this step.
+
+4. **Propose the smallest fix** that addresses the root cause, not a symptom.
+   "Catch and ignore the exception" is almost never the right fix. "Add a
+   retry" is almost never the right fix. Look for the underlying invariant
+   that's being violated.
+
+5. **Apply the fix in the source repository**: edit code, write/update a
+   regression test, run the test suite (`php artisan test --filter=...`),
+   commit with a conventional message that names the root cause + fix.
+
+6. **Redeploy** the affected component if needed (panel rebuild, container
+   restart, etc.).
+
+7. **Re-run the failing step end-to-end**. Only after the failing step passes
+   against the fixed code is the bug considered resolved. Update
+   `bugs.status = 'fixed'` with `fix_commit` populated; update
+   `step_executions` for the retried attempt to `passed`.
+
+The retry policy in `scripts/retry-policy.sh` is for genuine transient
+infrastructure flakes only (network blip, rate limit, brief 5xx during
+container reload). Assertion failures, 4xx outside auth, structural errors
+(missing column / missing method / wrong type), and unexpected behaviors are
+NEVER candidates for blind retry — they are bugs that must be root-caused
+and fixed.
+
+If after a thorough investigation you genuinely cannot determine the root
+cause OR the fix would exceed the scope the user authorized, use
+`AskUserQuestion` to surface the hypothesis tree + the partial evidence and
+ask the user how to proceed. Do not silently skip.
 
 ### 7. Take screenshots at every transition
 Page loads, form submits, errors, flow completions. Each goes to the

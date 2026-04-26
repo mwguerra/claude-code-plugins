@@ -39,6 +39,19 @@ attempt="${3:-0}"
 #   - apt locks on a fresh Ubuntu can hold for 900s+ legitimately.
 #
 #   Edit the case statement to reflect your real failure modes.
+#
+# CRITICAL — interaction with the agent's "Ultrathink Root Cause" directive:
+#
+#   This script returns 0 ONLY for genuine transient infrastructure flakes.
+#   For everything else (assertion failures, 4xx outside auth, structural
+#   errors, unexpected behaviors) it returns 1, and the /test command's
+#   step 7 takes over: capture evidence → form hypothesis → verify → fix
+#   in source → re-run.
+#
+#   When in doubt, prefer to return 1 (no retry, force root-cause loop)
+#   over returning 0 (retry, possibly hiding a real bug). A spurious
+#   root-cause investigation costs minutes; a hidden assertion bug that
+#   the test suite glosses over costs hours of confusion later.
 # ----------------------------------------------------------------------------
 
 # Helpful aliases — feel free to use or ignore in your custom logic.
@@ -87,10 +100,10 @@ if [[ "$step_kind" == "stress" ]]; then
     exit 1
 fi
 
-# Unknown error_kind on first attempt: retry once with short backoff.
-# (Common when an action surfaces a new failure shape we haven't classified.)
-if [[ "$error_kind" == "unknown" && "$attempt" -eq 0 ]]; then
-    echo 5; exit 0
-fi
+# Unknown error_kind: do NOT auto-retry. An unclassified failure is exactly
+# the case where the agent should drop into the root-cause loop instead of
+# papering over a new failure shape with a quick retry that might hide it.
+# (Previous behavior was a single 5s retry on unknown — removed because it
+#  conflicts with the Ultrathink Root Cause directive.)
 
 exit 1

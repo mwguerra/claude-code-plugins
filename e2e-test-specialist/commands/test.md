@@ -240,28 +240,132 @@ outcome. Status is whatever they say.
   HTTP status / presence of "error"/"500"/"undefined" in evidence.
 - Set `STATUS` to `passed`, `failed`, `skipped`, or `blocked`.
 
-### 6. On failure: consult retry policy
+### 6. On failure: classify, then either retry (transient) OR root-cause (everything else)
 
 ```bash
 backoff="$(bash "${CLAUDE_PLUGIN_ROOT}/scripts/retry-policy.sh" "$TEST_KIND" "$ERR_KIND" "$ATTEMPT")"
-if [[ $? -eq 0 ]]; then
+RETRY_RC=$?
+if [[ $RETRY_RC -eq 0 ]]; then
+    # Transient infrastructure flake — wait + retry.
     sleep "$backoff"
     ATTEMPT=$((ATTEMPT + 1))
     # Loop back to step 1 with new attempt number — checkpoint.sh begin
     # produces a new row (because retry_attempt is part of the id).
+    continue
 fi
+# RETRY_RC != 0 → this is a real failure. Do NOT skip. Do NOT loop. Drop
+# into the root-cause loop in step 7.
 ```
 
-### 7. On unrecoverable failure: open a bug?
+### 7. On real failure: ULTRATHINK ROOT CAUSE → FIX → RETEST
 
-If the step is `is_critical=1` and the failure is an assertion (not
-transient), ask the user via `AskUserQuestion` whether to:
+This step is non-negotiable. The fix loop is part of the test loop. A bug
+that's only reported is half a bug; a bug that's root-caused, fixed,
+regression-tested, redeployed, and re-verified is a closed bug.
 
-- **Open a bug** (insert into `bugs`, link to this `step_executions.bug_id`).
-  Capture: title, severity, description, error_message; leave `root_cause` /
-  `fix_applied` blank for now.
-- **Mark blocked** (no bug — known precondition not met).
-- **Skip** (note why).
+**7.1 Capture full evidence into `step_executions.evidence_snapshot`**
+
+For browser failures:
+```bash
+mcp__playwright__browser_console_messages    # JS errors / warnings
+mcp__playwright__browser_network_requests    # 4xx/5xx responses
+mcp__playwright__browser_take_screenshot     # visual evidence
+mcp__playwright__browser_snapshot            # accessibility tree
+```
+
+For server-side failures:
+```bash
+ssh "$SERVER" "tail -200 /var/www/html/storage/logs/laravel.log"
+ssh "$SERVER" "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+ssh "$SERVER" "docker logs $CONTAINER --tail 200 --timestamps"
+ssh "$SERVER" "tail -200 /var/log/primeforge-agent/agent.log"
+```
+
+For panel/DB-side failures:
+```bash
+sqlite3 -bail -json "$E2E_DB" "SELECT … FROM bugs ORDER BY created_at DESC LIMIT 5;"
+# Plus targeted queries against the actual app DB to confirm panel state
+# matches reality on the server.
+```
+
+Persist all of the above to `evidence_snapshot` so a future session can
+re-investigate without rerunning the failure.
+
+**7.2 Form a specific hypothesis (one sentence, names the code path)**
+
+Bad: "intermittent network issue", "probably a race", "needs investigation".
+Good: "ImageDistributionService::transfer() exits 0 on partial transfer
+because rsync exit-code 23 is treated as success" / "Reverb apps.json uses
+underscore-joined slug while site env emits hyphen-joined".
+
+**7.3 Verify the hypothesis by reading source / running a targeted query**
+
+Open the suspected file at the suspected line. Confirm the code matches the
+hypothesis. If it doesn't, form a new hypothesis. Never skip this step.
+
+**7.4 Propose the smallest fix that addresses the root cause**
+
+NOT "catch and ignore". NOT "add a retry". NOT "add a sleep". Look for the
+underlying invariant that's being violated. If the fix would touch a wider
+area than the user authorized, use `AskUserQuestion` to confirm before
+proceeding.
+
+**7.5 Open a bug row, then apply the fix in the source repo**
+
+```bash
+BUG_ID="$(e2e_query_value "
+    INSERT INTO bugs (id, discovered_in_run, severity, title, description,
+                      error_message, evidence_snapshot, root_cause,
+                      fix_applied, status)
+    VALUES ('$NEW_BUG_ID', '$ACTIVE_RUN', '$SEVERITY',
+            $(e2e_sql_quote \"$TITLE\"),
+            $(e2e_sql_quote \"$DESCRIPTION\"),
+            $(e2e_sql_quote \"$ERR\"),
+            $(e2e_sql_quote \"$EVIDENCE\"),
+            $(e2e_sql_quote \"$ROOT_CAUSE\"),
+            $(e2e_sql_quote \"$PROPOSED_FIX\"),
+            'in-progress')
+    RETURNING id;
+")"
+```
+
+Then: edit the source file(s), add/update a regression test that reproduces
+the bug, run the test suite locally (`php artisan test --filter=…`),
+commit with a conventional message naming the root cause + fix, redeploy
+the affected component if needed.
+
+**7.6 Re-run the failing step end-to-end against the fixed code**
+
+```bash
+ATTEMPT=$((ATTEMPT + 1))
+# Loop back to step 2 (Checkpoint: begin) for a fresh execution row.
+# When this re-execution returns STATUS=passed:
+e2e_exec "
+    UPDATE bugs
+       SET status = 'fixed',
+           fix_commit = $(e2e_sql_quote \"$COMMIT_SHA\"),
+           fixed_at = datetime('now')
+     WHERE id = $(e2e_sql_quote \"$BUG_ID\");
+"
+```
+
+Only after the failing step passes against the fixed code is the bug
+considered resolved.
+
+**7.7 If you genuinely cannot determine the root cause OR the fix exceeds
+the user's authorized scope**
+
+Use `AskUserQuestion` to surface the partial hypothesis tree + collected
+evidence + your best-guess fix proposal, and ask the user how to proceed
+(authorize a wider fix; defer with bug recorded; mark blocked; skip with
+explicit acknowledgement). NEVER silently skip.
+
+**Special case: `is_critical=0` non-blocking checks**
+
+For non-critical steps (e.g., observation-only screenshots, optional
+warnings), step 7's full root-cause loop is best-effort — log the bug,
+attempt a quick hypothesis, but the run can proceed. For critical steps
+(default), the loop above is mandatory.
 
 ### 8. Checkpoint: end
 

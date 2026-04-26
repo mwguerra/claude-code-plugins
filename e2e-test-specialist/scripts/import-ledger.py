@@ -672,11 +672,12 @@ class Writer:
     def write_credential(self, c: dict) -> str:
         # Credentials have UNIQUE(name); a re-import of the same ledger should
         # be a no-op rather than crash. Look up the existing row first.
-        existing = self.conn.execute(
-            "SELECT id FROM credentials WHERE name = ?", (c["name"],)
-        ).fetchone()
-        if existing:
-            return existing[0]
+        if not self.dry and self.conn:
+            existing = self.conn.execute(
+                "SELECT id FROM credentials WHERE name = ?", (c["name"],)
+            ).fetchone()
+            if existing:
+                return existing[0]
         cid = self.next_id("credentials", "CRED")
         self._exec(
             "INSERT INTO credentials (id,name,kind,fields,notes) VALUES (?,?,?,?,?)",
@@ -687,11 +688,12 @@ class Writer:
     def write_infra(self, i: dict, cred_lookup: dict[str, str]):
         # infrastructure.name is UNIQUE — a re-import of the same ledger row
         # should be a no-op.
-        existing = self.conn.execute(
-            "SELECT id FROM infrastructure WHERE name = ?", (i["name"],)
-        ).fetchone()
-        if existing:
-            return
+        if not self.dry and self.conn:
+            existing = self.conn.execute(
+                "SELECT id FROM infrastructure WHERE name = ?", (i["name"],)
+            ).fetchone()
+            if existing:
+                return
         iid = self.next_id("infrastructure", "INF")
         link = i.pop("credential_link_to", None)
         cred_id = cred_lookup.get(link) if link else None
@@ -705,11 +707,12 @@ class Writer:
 
     def write_app(self, a: dict):
         # apps.name is UNIQUE — re-import of the same row is a no-op.
-        existing = self.conn.execute(
-            "SELECT id FROM apps WHERE name = ?", (a["name"],)
-        ).fetchone()
-        if existing:
-            return
+        if not self.dry and self.conn:
+            existing = self.conn.execute(
+                "SELECT id FROM apps WHERE name = ?", (a["name"],)
+            ).fetchone()
+            if existing:
+                return
         aid = self.next_id("apps", "APP")
         self._exec(
             "INSERT INTO apps (id,name,app_type,description,services) VALUES (?,?,?,?,?)",
