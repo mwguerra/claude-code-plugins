@@ -39,11 +39,22 @@ Read `/tmp/e2e-recovery.json`. **If `crashed_session` is non-null and
 
 | Flag             | Effect                                                       |
 |------------------|--------------------------------------------------------------|
-| `<base-url>`     | URL the run targets; stored on the run row and `state`       |
+| `<base-url>`     | URL the run targets; stored on the run row and `state`. Optional — if omitted, auto-resolved from `.env` `APP_URL`. |
 | `--label "..."`  | Free-form label for the run (used in reports)                |
 | `--phase X,Y`    | Limit to listed phase IDs (e.g., `P00,P01,P04`)              |
 | `--tag a,b`      | Limit to tests with **any** of the listed tags                |
 | `--skip-tag x,y` | Exclude tests tagged with any of these                        |
+
+**Base URL resolution** (positional arg wins, `.env` is fallback):
+
+```bash
+if [[ -z "${BASE_URL:-}" && -f .env ]]; then
+    BASE_URL="$(grep -E '^[[:space:]]*APP_URL[[:space:]]*=' .env \
+                  | tail -n1 \
+                  | sed -E 's/^[[:space:]]*APP_URL[[:space:]]*=[[:space:]]*//; s/^"//; s/"$//; s/^'"'"'//; s/'"'"'$//')"
+fi
+[[ -n "${BASE_URL:-}" ]] || e2e_die "start: no <base-url> argument and no APP_URL in .env. Pass a URL or set APP_URL."
+```
 
 If `--tag` was provided, **verify the tags exist** before creating the run:
 

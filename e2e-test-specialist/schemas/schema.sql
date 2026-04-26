@@ -1,4 +1,4 @@
--- e2e-test-specialist schema v1.0.0
+-- e2e-test-specialist schema v1.3.0
 -- WAL + foreign keys are required for crash-safe checkpoints.
 
 PRAGMA foreign_keys = ON;
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS schema_version (
     version    TEXT PRIMARY KEY,
     applied_at TEXT DEFAULT (datetime('now'))
 );
-INSERT OR IGNORE INTO schema_version (version) VALUES ('1.2.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('1.3.0');
 
 -- ============================================================================
 -- Directives — non-negotiable rules harvested from the source ledger
@@ -32,6 +32,31 @@ CREATE TABLE IF NOT EXISTS directives (
 );
 
 CREATE INDEX IF NOT EXISTS idx_directives_active ON directives(active, enforcement);
+
+-- ============================================================================
+-- Lifecycle hooks — instructions the autopilot reads & follows at run boundaries
+--   phase = 'pre-run'  → executed before the first test of an autopilot run
+--   phase = 'post-run' → executed after the run reaches a terminal status
+-- Multiple hooks per phase are allowed; ordered by order_idx ascending.
+-- enforcement: 'blocking' aborts the run if the hook fails; 'advisory' logs only.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS lifecycle_hooks (
+    id           TEXT PRIMARY KEY,
+    phase        TEXT NOT NULL CHECK (phase IN ('pre-run','post-run')),
+    title        TEXT NOT NULL,
+    body         TEXT NOT NULL,
+    enforcement  TEXT NOT NULL DEFAULT 'advisory'
+                 CHECK (enforcement IN ('blocking','advisory')),
+    active       INTEGER NOT NULL DEFAULT 1,
+    order_idx    INTEGER NOT NULL DEFAULT 100,
+    source       TEXT,
+    created_at   TEXT DEFAULT (datetime('now')),
+    updated_at   TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_lifecycle_hooks_active
+    ON lifecycle_hooks(phase, active, order_idx);
 
 -- ============================================================================
 -- Credentials — sensitive data (gitignored DB, never logged in plaintext)

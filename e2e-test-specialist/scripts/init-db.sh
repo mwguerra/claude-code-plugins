@@ -12,19 +12,26 @@ E2E_COMPONENT=init
 if [[ -f "$E2E_DB" ]]; then
     existing="$(sqlite3 "$E2E_DB" 'SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1;' 2>/dev/null || true)"
     case "$existing" in
-        1.2.0)
+        1.3.0)
             echo "e2e-test-specialist already initialized at $E2E_ROOT_DIR (schema v$existing)."
             exit 0
             ;;
+        1.2.0)
+            echo "Found schema v1.2.0; migrating to v1.3.0 (lifecycle_hooks)..."
+            bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.2-to-v1.3.sh" "$E2E_DB"
+            exit 0
+            ;;
         1.1.0)
-            echo "Found schema v1.1.0; migrating to v1.2.0 (sites/roles/assertions/coverage/violations)..."
+            echo "Found schema v1.1.0; migrating to v1.3.0 (sites/roles/assertions/coverage/violations + lifecycle_hooks)..."
             bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.1-to-v1.2.sh" "$E2E_DB"
+            bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.2-to-v1.3.sh" "$E2E_DB"
             exit 0
             ;;
         1.0.0)
-            echo "Found schema v1.0.0; migrating to v1.2.0..."
+            echo "Found schema v1.0.0; migrating to v1.3.0..."
             bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.0-to-v1.1.sh" "$E2E_DB"
             bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.1-to-v1.2.sh" "$E2E_DB"
+            bash "${CLAUDE_PLUGIN_ROOT}/schemas/migrate-v1.2-to-v1.3.sh" "$E2E_DB"
             exit 0
             ;;
         "")
@@ -47,7 +54,7 @@ fi
 
 # Verify
 version="$(sqlite3 "$E2E_DB" 'SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1;')"
-[[ "$version" == "1.2.0" ]] || e2e_die "schema version mismatch: $version"
+[[ "$version" == "1.3.0" ]] || e2e_die "schema version mismatch: $version"
 
 e2e_log INFO init "initialized $E2E_ROOT_DIR (schema v$version)"
 

@@ -1,7 +1,7 @@
 ---
-description: One-shot autonomous run — setup, start, execute, ultrathink-fix on failures, continue until queue empty
+description: One-shot autonomous run (R34/R35 mode) — setup, start, execute, ultrathink-fix on failures, continue until queue empty
 allowed-tools: Bash(bash:*), Bash(sqlite3:*), Bash(ssh:*), Bash(curl:*), Bash(grep:*), Bash(cat:*), Bash(ls:*), Read(*), Write(*), mcp__playwright__*, mcp__plugin_playwright_playwright__*
-argument-hint: <base-url> [--ledger <path>] [--label "..."] [--phase ...] [--tag ...] [--skip-tag ...] [--max-fix-attempts N] [--max-wall-hours H]
+argument-hint: [<base-url>] [--ledger <path>] [--label "..."] [--phase ...] [--tag ...] [--skip-tag ...] [--max-fix-attempts N] [--max-wall-hours H]
 ---
 
 # /e2e-test-specialist:autopilot
@@ -15,11 +15,25 @@ This command is the autonomous wrapper around the existing primitives
 (`init`, `import`, `start`, `test`, `resume`). It does not duplicate their
 logic — it sequences them.
 
+## Default mode (canonical)
+
+Unless overridden via flags, autopilot runs in **R34/R35 mode**:
+
+- **Scope**: full autonomy — execute every selected test, fix what can be
+  fixed in-flight, mark `blocked` what can't, complete the run.
+- **Wall-time cap**: ∞ (unlimited). The run takes as long as it takes.
+- **Per-test fix budget**: 5 attempts before marking `blocked`.
+- **Base URL**: positional `<base-url>` if given, otherwise `APP_URL` from
+  the project's `.env`. Errors out only if neither is available.
+
+These defaults reflect the project's R34/R35 operating philosophy: nightly
+autonomous runs that triage themselves into a morning report.
+
 ## Operating philosophy
 
 - **Never ask the user a question** during the run unless something is
-  structurally broken (missing ledger on a fresh DB, missing base-url, DB
-  unrecoverable). Everything else is a problem to either fix or escalate
+  structurally broken (missing ledger on a fresh DB, no base-url anywhere,
+  DB unrecoverable). Everything else is a problem to either fix or escalate
   silently to a memory + bug row and continue.
 - **Failures are bugs, not flakes.** On any non-transient failure, drop into
   the Ultrathink Root Cause loop (the agent doc + `commands/test.md` step 7
@@ -31,16 +45,16 @@ logic — it sequences them.
 
 ## Arguments
 
-| Flag                         | Default     | Effect                                                                |
-|------------------------------|-------------|-----------------------------------------------------------------------|
-| `<base-url>` (positional)    | required    | URL the run targets                                                   |
-| `--ledger <path>`            | none        | Markdown ledger to import if DB has 0 phases                          |
-| `--label "..."`              | "autopilot" | Free-form label written to the run row                                |
-| `--phase P00,P01`            | all         | Restrict to listed phases (forwarded to `/start`)                     |
-| `--tag a,b`                  | all         | Restrict to tests with any of these tags (forwarded to `/start`)      |
-| `--skip-tag x,y`             | none        | Exclude tests with these tags (forwarded to `/start`)                 |
-| `--max-fix-attempts N`       | 5           | Per-test fix-loop budget. Exceeded → mark `blocked` and continue.     |
-| `--max-wall-hours H`         | 0 (∞)       | Wall-clock cap for the whole autopilot run. 0 = unlimited.            |
+| Flag                         | Default                      | Effect                                                                |
+|------------------------------|------------------------------|-----------------------------------------------------------------------|
+| `<base-url>` (positional)    | `.env` `APP_URL`             | URL the run targets                                                   |
+| `--ledger <path>`            | none                         | Markdown ledger to import if DB has 0 phases                          |
+| `--label "..."`              | "autopilot R34/R35"          | Free-form label written to the run row                                |
+| `--phase P00,P01`            | all                          | Restrict to listed phases (forwarded to `/start`)                     |
+| `--tag a,b`                  | all                          | Restrict to tests with any of these tags (forwarded to `/start`)      |
+| `--skip-tag x,y`             | none                         | Exclude tests with these tags (forwarded to `/start`)                 |
+| `--max-fix-attempts N`       | **5**                        | Per-test fix-loop budget. Exceeded → mark `blocked` and continue.     |
+| `--max-wall-hours H`         | **0 (∞)**                    | Wall-clock cap for the whole autopilot run. 0 = unlimited.            |
 
 ## Process
 
@@ -49,10 +63,19 @@ logic — it sequences them.
 ```bash
 source "${CLAUDE_PLUGIN_ROOT}/scripts/lib.sh"
 
-# Parse args. Required: BASE_URL. Optional: LEDGER, LABEL, PHASES, TAGS,
+# Parse args. Optional CLI vars: BASE_URL, LEDGER, LABEL, PHASES, TAGS,
 # SKIP_TAGS, MAX_FIX_ATTEMPTS, MAX_WALL_HOURS.
-[[ -n "$BASE_URL" ]] || e2e_die "autopilot: <base-url> is required"
-LABEL="${LABEL:-autopilot $(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
+# Base URL resolution: positional arg wins; otherwise read APP_URL from .env.
+if [[ -z "${BASE_URL:-}" && -f .env ]]; then
+    # Tolerate quoted ("https://x.test") and unquoted (https://x.test) values.
+    BASE_URL="$(grep -E '^[[:space:]]*APP_URL[[:space:]]*=' .env \
+                  | tail -n1 \
+                  | sed -E 's/^[[:space:]]*APP_URL[[:space:]]*=[[:space:]]*//; s/^"//; s/"$//; s/^'"'"'//; s/'"'"'$//')"
+fi
+[[ -n "${BASE_URL:-}" ]] || e2e_die "autopilot: no <base-url> argument and no APP_URL in .env. Pass a URL or set APP_URL."
+
+LABEL="${LABEL:-autopilot R34/R35 $(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 MAX_FIX_ATTEMPTS="${MAX_FIX_ATTEMPTS:-5}"
 MAX_WALL_HOURS="${MAX_WALL_HOURS:-0}"
 AUTOPILOT_STARTED_AT="$(date +%s)"
@@ -109,6 +132,37 @@ fi
 [[ -n "$ACTIVE_RUN" ]] || e2e_die "autopilot: failed to obtain an active run after start"
 e2e_log "autopilot run = $ACTIVE_RUN"
 ```
+
+### 3.5. Pre-run lifecycle hooks
+
+Before executing the first test, read every active `pre-run` hook from
+`lifecycle_hooks` (in `order_idx` ascending) and follow its `body`. These
+hooks encode project-specific preconditions (clean-slate verification, VPS
+warm-up, environment snapshots, credential rotation, etc.).
+
+```bash
+HOOKS="$(e2e_query "
+  SELECT id, title, body, enforcement
+    FROM lifecycle_hooks
+   WHERE phase='pre-run' AND active=1
+   ORDER BY order_idx ASC, id ASC;
+")"
+```
+
+For each hook the agent:
+
+1. Reads the hook's `body` and follows the instructions inside.
+2. If the hook completes successfully → record an info-level log line and
+   continue to the next hook.
+3. If a hook with `enforcement='blocking'` fails → write a memory
+   (kind='environment', importance=5) capturing the failure and `e2e_die`
+   the autopilot. The active run remains `in-progress` so a later
+   `/resume` can pick up after the user fixes the precondition.
+4. If a hook with `enforcement='advisory'` fails → log a warning + write a
+   memory and continue.
+
+If `lifecycle_hooks` returns zero rows, this step is a silent no-op — the
+table is opt-in.
 
 ### 4. The autonomous loop
 
@@ -196,6 +250,29 @@ e2e_exec "
 "
 ```
 
+### 5.5. Post-run lifecycle hooks
+
+After the summary is written, read every active `post-run` hook from
+`lifecycle_hooks` (in `order_idx` ascending) and follow its `body`. These
+hooks encode project-specific cleanup/handoff (snapshot DB, push report,
+notify Slack, archive screenshots, restore baseline state, etc.).
+
+```bash
+HOOKS="$(e2e_query "
+  SELECT id, title, body, enforcement
+    FROM lifecycle_hooks
+   WHERE phase='post-run' AND active=1
+   ORDER BY order_idx ASC, id ASC;
+")"
+```
+
+Same execution semantics as pre-run hooks (step 3.5): blocking failures
+abort with a memory; advisory failures log + memory and continue. Post-run
+hooks run AFTER the run is marked `completed`, so they cannot affect the
+run's status — they are purely for side effects on external systems.
+
+If `lifecycle_hooks` returns zero rows, this step is a silent no-op.
+
 Then print the standard suggestions:
 
 ```
@@ -267,3 +344,57 @@ will:
 
 No flags or env vars carry over between invocations except what's stored in
 the DB. The DB IS the autopilot's memory.
+
+## Managing lifecycle hooks
+
+Pre-run and post-run hooks live in the `lifecycle_hooks` table (schema
+v1.3.0+). They are opt-in: an empty table means autopilot skips steps 3.5
+and 5.5 silently.
+
+**Insert a hook directly via SQL:**
+
+```sql
+-- Pre-run: verify the VPS is in a clean slate before starting any test.
+INSERT INTO lifecycle_hooks (id, phase, title, body, enforcement, order_idx)
+VALUES (
+  'lh-pre-clean-slate',
+  'pre-run',
+  'Verify VPS clean slate (Phase 0)',
+  'SSH to wopr.test and run `panel-status --json`. If any sites or droplets
+   exist from a prior run, abort: the operator must run Phase 0 manually.
+   Reason: tests assume a virgin VPS — partial state poisons later phases.',
+  'blocking',
+  10
+);
+
+-- Post-run: snapshot the DB for nightly comparison.
+INSERT INTO lifecycle_hooks (id, phase, title, body, enforcement, order_idx)
+VALUES (
+  'lh-post-snapshot',
+  'post-run',
+  'Snapshot DB to _backups/post-run-<timestamp>.sqlite',
+  'Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/backup-db.sh post-run`. The
+   backup feeds the nightly diff report.',
+  'advisory',
+  10
+);
+```
+
+**List active hooks:**
+
+```sql
+SELECT id, phase, title, enforcement, order_idx
+  FROM lifecycle_hooks
+ WHERE active=1
+ ORDER BY phase, order_idx;
+```
+
+**Disable a hook without deleting:**
+
+```sql
+UPDATE lifecycle_hooks SET active=0, updated_at=datetime('now') WHERE id='lh-pre-clean-slate';
+```
+
+The `body` is free-form markdown — write it as if briefing a teammate who
+has full repo access. The agent reads the body and executes it as part of
+the autopilot run.
