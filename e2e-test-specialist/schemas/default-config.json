@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "schema_version": "1.0.0",
+  "version": "1.4.0",
+  "schema_version": "1.4.0",
 
   "paths": {
     "root":         ".e2e-testing",
@@ -44,5 +44,28 @@
     "auto_tag":        true,
     "preserve_raw":    true,
     "deprecate_missing_tests": false
+  },
+
+  "notifications": {
+    "_comment": "Drained by scripts/notify.sh. default_target accepts file:<path>, webhook:<url>, or notify: (osascript on macOS / notify-send on Linux). Per-row .target overrides this. webhook_url is optional; notifications below min_severity_for_webhook never POST.",
+    "default_target":              "file:.e2e-testing/logs/notifications.log",
+    "webhook_url":                 "",
+    "min_severity_for_webhook":    "warning"
+  },
+
+  "backups": {
+    "_comment": "Retention policy enforced by scripts/prune-backups.sh. Defaults: keep all from last 7 days, then 1/week for 4 weeks, then 1/month for 12 months, then nothing.",
+    "retention_days_daily":        7,
+    "retention_weeks_weekly":      4,
+    "retention_months_monthly":    12
+  },
+
+  "autopilot": {
+    "_comment": "Defaults overridable by /autopilot CLI flags.",
+    "default_max_fix_attempts":    5,
+    "default_max_wall_hours":      0,
+    "cascade_threshold":           5,
+    "cascade_prefix_chars":        32,
+    "kill_switch_path":            ".e2e-testing/STOP"
   }
 }

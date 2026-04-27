@@ -1,4 +1,4 @@
--- e2e-test-specialist schema v1.3.0
+-- e2e-test-specialist schema v1.4.0
 -- WAL + foreign keys are required for crash-safe checkpoints.
 
 PRAGMA foreign_keys = ON;
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS schema_version (
     version    TEXT PRIMARY KEY,
     applied_at TEXT DEFAULT (datetime('now'))
 );
-INSERT OR IGNORE INTO schema_version (version) VALUES ('1.3.0');
+INSERT OR IGNORE INTO schema_version (version) VALUES ('1.4.0');
 
 -- ============================================================================
 -- Directives — non-negotiable rules harvested from the source ledger
@@ -57,6 +57,86 @@ CREATE TABLE IF NOT EXISTS lifecycle_hooks (
 
 CREATE INDEX IF NOT EXISTS idx_lifecycle_hooks_active
     ON lifecycle_hooks(phase, active, order_idx);
+
+-- ============================================================================
+-- Test coverage links (v1.4.0) — cross-run-coverage citations
+--   "Test T-04.03 is covered by T-15.07 across runs" — let the autopilot's
+--   skip discipline honor cross-run coverage as a first-class signal instead
+--   of free-text memory. valid_until_run NULL means "until explicitly revoked".
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS test_coverage_links (
+    id                TEXT PRIMARY KEY,
+    covered_test_id   TEXT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+    covering_test_id  TEXT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+    rationale         TEXT,
+    declared_in_run   TEXT REFERENCES test_runs(id) ON DELETE SET NULL,
+    valid_from_run    TEXT REFERENCES test_runs(id) ON DELETE SET NULL,
+    valid_until_run   TEXT REFERENCES test_runs(id) ON DELETE SET NULL,
+    active            INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    created_at        TEXT DEFAULT (datetime('now')),
+    updated_at        TEXT DEFAULT (datetime('now')),
+    UNIQUE (covered_test_id, covering_test_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_coverage_links_covered
+    ON test_coverage_links(covered_test_id, active);
+CREATE INDEX IF NOT EXISTS idx_coverage_links_covering
+    ON test_coverage_links(covering_test_id, active);
+
+-- ============================================================================
+-- Notifications (v1.4.0) — outbound dispatch queue
+--   Filled by autopilot at notable events (run done, blocking hook failed,
+--   critical-tag failure, wall-time hit, cascade detected). Drained by
+--   scripts/notify.sh which fires webhooks / OS notifications / file writes
+--   per the user's config. status='pending' rows are unsent.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id           TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL CHECK (kind IN (
+        'run-completed','run-failed','hook-blocking-failed',
+        'critical-failure','wall-time-hit','cascade-detected',
+        'kill-switch-triggered','manual'
+    )),
+    severity     TEXT NOT NULL DEFAULT 'info'
+                 CHECK (severity IN ('info','warning','critical')),
+    title        TEXT NOT NULL,
+    body         TEXT,
+    related_run  TEXT REFERENCES test_runs(id) ON DELETE SET NULL,
+    related_test TEXT REFERENCES tests(id) ON DELETE SET NULL,
+    related_bug  TEXT REFERENCES bugs(id) ON DELETE SET NULL,
+    status       TEXT NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','sent','failed','suppressed')),
+    sent_at      TEXT,
+    target       TEXT,                                  -- webhook url / file path / channel name
+    created_at   TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_status
+    ON notifications(status, severity, created_at);
+
+-- ============================================================================
+-- Resource ledger (v1.4.0) — autopilot-driven cost / resource accounting
+--   When the autopilot provisions Forge servers / DO droplets / etc. under a
+--   standing authorization, it logs each create/destroy here. /cost rolls up.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS resource_ledger (
+    id           TEXT PRIMARY KEY,
+    run_id       TEXT REFERENCES test_runs(id) ON DELETE SET NULL,
+    provider     TEXT NOT NULL,                       -- 'do', 'forge', 'aws', etc.
+    resource_id  TEXT NOT NULL,                       -- provider-side id
+    resource_kind TEXT NOT NULL,                      -- 'droplet', 'server', 'lb', etc.
+    label        TEXT,                                -- 'pfdo-r36-app1'
+    action       TEXT NOT NULL CHECK (action IN ('created','destroyed','tagged','noted')),
+    estimated_cost_cents INTEGER,                     -- NULL if unknown
+    metadata     TEXT NOT NULL DEFAULT '{}',          -- JSON: size, region, hourly rate
+    created_at   TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_resource_run ON resource_ledger(run_id, action);
+CREATE INDEX IF NOT EXISTS idx_resource_lookup ON resource_ledger(provider, resource_id, action);
 
 -- ============================================================================
 -- Credentials — sensitive data (gitignored DB, never logged in plaintext)
@@ -244,6 +324,10 @@ CREATE TABLE IF NOT EXISTS test_steps (
     -- If templates are NULL, the action/expected are used verbatim for every subject.
     action_template   TEXT,
     expected_template TEXT,
+    -- v1.4.0: idempotency declaration. 1 = re-running yields the same result (default,
+    -- safe assumption for read-only checks). 0 = mutates state — fix-loop should rebuild
+    -- preceding setup steps before retry, or surface "manual cleanup needed" first.
+    idempotent        INTEGER NOT NULL DEFAULT 1 CHECK (idempotent IN (0,1)),
     created_at        TEXT DEFAULT (datetime('now'))
 );
 
@@ -411,12 +495,21 @@ CREATE TABLE IF NOT EXISTS step_executions (
     bug_id               TEXT REFERENCES bugs(id) ON DELETE SET NULL,  -- v1.2: real FK (was soft)
     metrics              TEXT NOT NULL DEFAULT '{}', -- v1.2: JSON measurements (RPS, latency, count, ...)
     notes                TEXT,
+    -- v1.4.0: structured skip rationale for legible aggregation.
+    skip_reason          TEXT
+        CHECK (skip_reason IS NULL OR skip_reason IN
+            ('needs-infra','cross-run-coverage','future-impl','no-authorization',
+             'dependency-failed','manual-decision','flake-quarantine')),
+    -- v1.4.0: denormalized fix-attempt counter. Maintained by /test and /fix-failures.
+    fix_attempt_index    INTEGER NOT NULL DEFAULT 0,
     created_at           TEXT DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_exec_run ON step_executions(run_id, status);
 CREATE INDEX IF NOT EXISTS idx_exec_step ON step_executions(step_id, run_id);
 CREATE INDEX IF NOT EXISTS idx_exec_test ON step_executions(test_id, run_id);
+CREATE INDEX IF NOT EXISTS idx_exec_skip ON step_executions(run_id, skip_reason)
+    WHERE skip_reason IS NOT NULL;
 
 -- ============================================================================
 -- Bugs
@@ -439,6 +532,9 @@ CREATE TABLE IF NOT EXISTS bugs (
         CHECK (status IN ('open','fixed','wontfix','duplicate')),
     related_step_id     TEXT REFERENCES test_steps(id) ON DELETE SET NULL,
     tags                TEXT NOT NULL DEFAULT '[]',
+    -- v1.4.0: denormalized JSON array of test_ids this bug currently blocks.
+    -- Maintained by /test step 7 (root-cause loop) and /fix-failures.
+    affected_tests      TEXT NOT NULL DEFAULT '[]',
     created_at          TEXT DEFAULT (datetime('now')),
     updated_at          TEXT DEFAULT (datetime('now'))
 );
@@ -702,6 +798,49 @@ FROM coverage_targets ct
 LEFT JOIN coverage_hits ch     ON ch.target_id = ct.id
 LEFT JOIN step_executions e    ON e.id = ch.execution_id
 GROUP BY ct.id;
+
+-- v1.4.0 — skip rationale rollup: count distinct skipped tests per run, per reason.
+-- Lets /skipped --explain answer "record what /authorize to recover N tests".
+CREATE VIEW IF NOT EXISTS v_skip_rollup AS
+SELECT
+    e.run_id,
+    COALESCE(e.skip_reason, 'unspecified') AS skip_reason,
+    COUNT(DISTINCT e.test_id)              AS test_count,
+    COUNT(*)                                AS step_count,
+    GROUP_CONCAT(DISTINCT e.test_id)        AS test_ids
+FROM step_executions e
+WHERE e.status = 'skipped'
+GROUP BY e.run_id, COALESCE(e.skip_reason, 'unspecified');
+
+-- v1.4.0 — latest-status-per-step view, used by /diff and dependency enforcement.
+-- For each (run, step) pair, returns the most-recent execution row.
+CREATE VIEW IF NOT EXISTS v_latest_step_status AS
+SELECT run_id, step_id, test_id, status, error_message, completed_at, started_at,
+       skip_reason, fix_attempt_index, retry_attempt
+FROM step_executions
+WHERE id IN (
+    SELECT id FROM step_executions
+    GROUP BY run_id, step_id
+    HAVING MAX(created_at)
+);
+
+-- v1.4.0 — latest-status-per-test view, used by /diff to compare runs at the test level.
+CREATE VIEW IF NOT EXISTS v_latest_test_status AS
+SELECT
+    run_id,
+    test_id,
+    CASE
+        WHEN SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END)  > 0 THEN 'failed'
+        WHEN SUM(CASE WHEN status='blocked' THEN 1 ELSE 0 END) > 0 THEN 'blocked'
+        WHEN SUM(CASE WHEN status='skipped' THEN 1 ELSE 0 END) > 0
+             AND SUM(CASE WHEN status='passed' THEN 1 ELSE 0 END) = 0 THEN 'skipped'
+        WHEN SUM(CASE WHEN status='in-progress' THEN 1 ELSE 0 END) > 0 THEN 'in-progress'
+        WHEN SUM(CASE WHEN status='passed' THEN 1 ELSE 0 END) > 0 THEN 'passed'
+        ELSE 'pending'
+    END AS test_status,
+    COUNT(*) AS execution_count
+FROM v_latest_step_status
+GROUP BY run_id, test_id;
 
 -- ============================================================================
 -- v1.2 triggers: protect data integrity that CHECK constraints can't express

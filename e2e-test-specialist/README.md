@@ -35,7 +35,7 @@ phases, 1000+ steps, multi-month iterations, "round 35" fatigue.
 
 ```
 .e2e-testing/                    (gitignored — contains credentials)
-├── e2e-tests.sqlite             SQLite DB, WAL mode, schema v1.2
+├── e2e-tests.sqlite             SQLite DB, WAL mode, schema v1.4
 ├── config.json                  Tunable: heartbeat, retry, viewports, redaction
 ├── runs/R-NNN/screenshots/      Per-run artifacts
 ├── runs/_backups/               Auto-backups before destructive ops
@@ -116,18 +116,30 @@ The crash-detection threshold is `crash_detection.heartbeat_stale_seconds` in
 
 ## Schema
 
-`schemas/schema.sql` is the canonical source. Highlights:
+`schemas/schema.sql` is the canonical source. Highlights (v1.4.0):
 
-- 22 tables: directives, credentials, roles, integrations, infrastructure,
-  apps, sites, phases, tests, test_steps, step_assertions, assertion_results,
-  test_dependencies, coverage_targets, coverage_hits, directive_violations,
-  tags, test_tags, test_runs, step_executions, bugs, screenshots, memories
-  (with FTS5), sessions, state.
-- 7 views: `v_run_progress`, `v_tests_with_tags`, `v_test_subjects`,
-  `v_subjects_resolved`, `v_test_results_by_subject`, `v_flaky_steps`,
-  `v_coverage`.
-- Migration scripts: `migrate-v1.0-to-v1.1.sh`, `migrate-v1.1-to-v1.2.sh`.
-  `/init` detects the existing version and runs the right chain.
+- **27 tables** — all v1.2 tables plus `lifecycle_hooks` (v1.3), and
+  `test_coverage_links`, `notifications`, `resource_ledger` (v1.4).
+- **10 views** — v1.2's seven plus `v_skip_rollup`, `v_latest_step_status`,
+  `v_latest_test_status` (all v1.4).
+- **Migration scripts**: `migrate-v1.0-to-v1.1.sh` → `migrate-v1.1-to-v1.2.sh`
+  → `migrate-v1.2-to-v1.3.sh` → `migrate-v1.3-to-v1.4.sh`. `/init` detects the
+  existing version and runs the right chain.
+
+### Plugin / schema compat matrix
+
+| Plugin version | Schema version | Notable additions                                                                  |
+|----------------|----------------|------------------------------------------------------------------------------------|
+| 2.0.0          | 1.2.0          | First DB-backed release                                                            |
+| 2.1.0          | 1.2.0          | Hardened `/test` step 7 (ultrathink fix loop)                                       |
+| 2.2.0          | 1.3.0          | `lifecycle_hooks` table; `/before-all`, `/after-all`; R34/R35 default mode         |
+| 2.3.0          | 1.3.0          | `/sessions`, `/failures`, `/pending`, schema cheat sheet                            |
+| 2.4.0          | 1.3.0          | `/before-all`, `/after-all` upsert wrappers                                         |
+| 2.5.0          | 1.3.0          | Pre-run briefing, `/authorize`, `/fix-failures`, strict skip discipline            |
+| **2.6.0**      | **1.4.0**      | `skip_reason`, `fix_attempt_index`, `idempotent`, `affected_tests`; `test_coverage_links` / `notifications` / `resource_ledger` tables; `/doctor`, `/schema`, `/diff`, `/recommend`, `/skipped`, `/cost`, `/notify`, `/wizard`; cascade circuit breaker + kill switch + `--dry-run` in autopilot |
+
+Older plugin versions can run against older schemas, but newer commands
+(e.g. `/skipped`) require the schema upgrade. `/init` migrates safely.
 
 ## Authoring a markdown ledger
 

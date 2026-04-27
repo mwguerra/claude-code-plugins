@@ -1,7 +1,7 @@
 ---
 description: One-shot autonomous run (R34/R35 mode) — setup, start, execute, ultrathink-fix on failures, continue until queue empty
 allowed-tools: Bash(bash:*), Bash(sqlite3:*), Bash(ssh:*), Bash(curl:*), Bash(grep:*), Bash(cat:*), Bash(ls:*), Read(*), Write(*), mcp__playwright__*, mcp__plugin_playwright_playwright__*
-argument-hint: [<base-url>] [--ledger <path>] [--label "..."] [--phase ...] [--tag ...] [--skip-tag ...] [--max-fix-attempts N] [--max-wall-hours H]
+argument-hint: [<base-url>] [--ledger <path>] [--label "..."] [--phase ...] [--tag ...] [--skip-tag ...] [--max-fix-attempts N] [--max-wall-hours H] [--dry-run]
 ---
 
 # /e2e-test-specialist:autopilot
@@ -55,6 +55,7 @@ autonomous runs that triage themselves into a morning report.
 | `--skip-tag x,y`             | none                         | Exclude tests with these tags (forwarded to `/start`)                 |
 | `--max-fix-attempts N`       | **5**                        | Per-test fix-loop budget. Exceeded → mark `blocked` and continue.     |
 | `--max-wall-hours H`         | **0 (∞)**                    | Wall-clock cap for the whole autopilot run. 0 = unlimited.            |
+| `--dry-run`                  | off                          | Run setup + briefing + queue planning; **do not** execute any tests.  |
 
 ## Process
 
@@ -229,12 +230,85 @@ hint to run `/e2e-test-specialist:fix-failures` to revisit them with a
 fresh evidence cycle. Production bugs surfaced by E2E are first-class work
 — they don't get filed-and-forgotten.
 
+### 3.8. Dry-run gate
+
+If `--dry-run` was passed, stop here. Print:
+
+```
+DRY RUN — no tests executed.
+
+Setup:        DB at ${E2E_DB} (schema $(e2e_query_value 'SELECT version FROM schema_version ORDER BY applied_at DESC LIMIT 1;'))
+Briefing:     ${#DIRECTIVES_LINES} directive(s), ${#AUTHS_LINES} authorization memory(ies), ${#HOOKS_LINES} pre-run hook(s)
+Active run:   $ACTIVE_RUN
+Queue size:   $(e2e_query_value "SELECT COUNT(*) FROM test_steps s LEFT JOIN step_executions e ON e.step_id=s.id AND e.run_id=$(e2e_sql_quote "$ACTIVE_RUN") WHERE e.id IS NULL OR e.status IN ('pending','in-progress');") pending step(s)
+
+Re-run without --dry-run to execute.
+```
+
+Then `exit 0`. No tests run, no notifications dispatched.
+
 ### 4. The autonomous loop
 
-Repeat until the run reaches a terminal state.
+Repeat until the run reaches a terminal state. Two new safety machines run
+on every iteration: the **kill switch** and the **cascade circuit breaker**.
+
+**Kill switch.** Before each `/test` invocation, check for the file
+`.e2e-testing/STOP`. If present, gracefully halt: mark the session
+`paused` with notes `'kill-switch-triggered'`, queue a `kill-switch-triggered`
+notification, and exit. The run row stays `in-progress` for `/resume`.
+
+```bash
+if [[ -f .e2e-testing/STOP ]]; then
+    e2e_exec "
+      UPDATE sessions SET status='paused', notes=COALESCE(notes,'') || ' kill-switch-triggered',
+             ended_at=datetime('now')
+       WHERE id=(SELECT active_session_id FROM state WHERE id=1);
+      INSERT INTO notifications (id, kind, severity, title, related_run, status)
+      VALUES ('ntf-killsw-' || strftime('%s','now'), 'kill-switch-triggered', 'warning',
+              'Autopilot halted by .e2e-testing/STOP file',
+              (SELECT active_run_id FROM state WHERE id=1), 'pending');
+    "
+    e2e_die "kill switch tripped — STOP file present"
+fi
+```
+
+**Cascade circuit breaker.** After each `/test` returns, scan recent
+failures for repeating error_message patterns. If ≥ 5 consecutive failures
+share a substring (32-char prefix), this is almost always environmental
+(panel down, DB lock, deploy in flight) — not 5 individual bugs. Halt
+ultrathink-fix on each one, queue a `cascade-detected` notification, and
+pause the session. The user / next session decides whether to resume after
+fixing the environment.
+
+```bash
+CASCADE_COUNT="$(e2e_query_value "
+  SELECT COUNT(*) FROM (
+      SELECT substr(error_message, 1, 32) AS prefix
+        FROM step_executions
+       WHERE run_id=$(e2e_sql_quote "$ACTIVE_RUN")
+         AND status='failed'
+       ORDER BY created_at DESC LIMIT 5
+  ) GROUP BY prefix HAVING COUNT(*) >= 5;
+")"
+if [[ "${CASCADE_COUNT:-0}" -ge 1 ]]; then
+    e2e_exec "
+      INSERT INTO notifications (id, kind, severity, title, body, related_run, status)
+      VALUES ('ntf-cascade-' || strftime('%s','now'), 'cascade-detected', 'critical',
+              'Cascade failure pattern detected — pausing autopilot',
+              'Five recent failures share an error prefix. This is typically environmental. Inspect recent step_executions and re-run autopilot once root cause is addressed.',
+              $(e2e_sql_quote "$ACTIVE_RUN"), 'pending');
+      UPDATE sessions SET status='paused', notes=COALESCE(notes,'') || ' cascade-detected',
+             ended_at=datetime('now')
+       WHERE id=(SELECT active_session_id FROM state WHERE id=1);
+    "
+    e2e_die "cascade pattern detected — see /e2e-test-specialist:failures"
+fi
+```
 
 ```text
 loop:
+    0. Kill-switch + cascade checks (above) → halt if tripped
+
     1. Invoke /e2e-test-specialist:test --batch 9999
        (executes pending steps sequentially with checkpoints; pauses on
         critical failure; returns when queue empty OR session paused)
@@ -313,6 +387,25 @@ e2e_exec "
           json_array('autopilot','run-summary'),
           datetime('now'));
 "
+
+# Queue a 'run-completed' notification (or 'run-failed' if any failed steps remain).
+FAIL_NOW="$(e2e_query_value "SELECT COUNT(*) FROM v_latest_step_status WHERE run_id=$(e2e_sql_quote "$ACTIVE_RUN") AND status='failed';")"
+NTF_KIND="run-completed"; NTF_SEV="info"
+if [[ "${FAIL_NOW:-0}" -gt 0 ]]; then NTF_KIND="run-failed"; NTF_SEV="warning"; fi
+e2e_exec "
+  INSERT INTO notifications (id, kind, severity, title, body, related_run, status)
+  VALUES ('ntf-runend-' || strftime('%s','now'),
+          $(e2e_sql_quote "$NTF_KIND"), $(e2e_sql_quote "$NTF_SEV"),
+          'Autopilot run $ACTIVE_RUN ended',
+          (SELECT printf('passed=%d failed=%d blocked=%d skipped=%d duration=%dmin',
+                         steps_passed, steps_failed, steps_blocked, steps_skipped,
+                         duration_minutes)
+             FROM v_run_progress WHERE run_id=$(e2e_sql_quote "$ACTIVE_RUN")),
+          $(e2e_sql_quote "$ACTIVE_RUN"), 'pending');
+"
+
+# Dispatch any pending notifications.
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/notify.sh" 2>/dev/null || true
 ```
 
 ### 5.5. Post-run lifecycle hooks

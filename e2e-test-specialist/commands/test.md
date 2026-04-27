@@ -86,6 +86,18 @@ Apply, in order:
    `<test-id>`).
 3. **Already-terminal exclusions**: skip steps whose latest `step_executions`
    row for this run is `passed` or `skipped`.
+4. **Dependency check** (schema v1.4.0): for each candidate test, look up
+   `test_dependencies(parent_test_id, child_test_id)`. If a parent has
+   `test_status='failed'` or `'blocked'` in `v_latest_test_status` for
+   this run, the child auto-skips with `skip_reason='dependency-failed'`
+   and a note recording the failing parent's test_id. The child's step
+   executions are still inserted (so the run report is complete) but with
+   `status='skipped'` from the start.
+5. **Cross-run-coverage check** (schema v1.4.0): if `test_coverage_links`
+   has an active row where `covered_test_id = candidate AND
+   covering_test_id` already passed in this run, the candidate auto-skips
+   with `skip_reason='cross-run-coverage'` and a note pointing at the
+   covering test.
 
 A reference query (substitute placeholders). Note the join with
 `v_test_subjects` — that's what materializes per-subject expansions:
@@ -312,11 +324,16 @@ proceeding.
 
 **7.5 Open a bug row, then apply the fix in the source repo**
 
+Maintain `bugs.affected_tests` (schema v1.4.0 column, JSON array) so triage
+can answer "which tests does fixing this bug unblock?" in one query. Use
+`json_array(<test_id>)` on insert and `json_insert` if a later failure
+attaches the same root cause to a different test.
+
 ```bash
 BUG_ID="$(e2e_query_value "
     INSERT INTO bugs (id, discovered_in_run, severity, title, description,
                       error_message, evidence_snapshot, root_cause,
-                      fix_applied, status)
+                      fix_applied, affected_tests, status)
     VALUES ('$NEW_BUG_ID', '$ACTIVE_RUN', '$SEVERITY',
             $(e2e_sql_quote \"$TITLE\"),
             $(e2e_sql_quote \"$DESCRIPTION\"),
@@ -324,6 +341,7 @@ BUG_ID="$(e2e_query_value "
             $(e2e_sql_quote \"$EVIDENCE\"),
             $(e2e_sql_quote \"$ROOT_CAUSE\"),
             $(e2e_sql_quote \"$PROPOSED_FIX\"),
+            json_array($(e2e_sql_quote \"$TEST_ID\")),
             'in-progress')
     RETURNING id;
 ")"
@@ -336,15 +354,27 @@ the affected component if needed.
 
 **7.6 Re-run the failing step end-to-end against the fixed code**
 
+The new `step_executions.fix_attempt_index` column (schema v1.4.0) is the
+authoritative counter for fix attempts. Increment on each retry; the
+autopilot's MAX_FIX_ATTEMPTS check uses this column directly instead of
+counting `status='failed'` rows.
+
 ```bash
-ATTEMPT=$((ATTEMPT + 1))
-# Loop back to step 2 (Checkpoint: begin) for a fresh execution row.
+ATTEMPT="$(e2e_query_value "
+    SELECT COALESCE(MAX(fix_attempt_index),0)+1
+      FROM step_executions
+     WHERE run_id=$(e2e_sql_quote \"$ACTIVE_RUN\") AND step_id=$(e2e_sql_quote \"$STEP_ID\");
+")"
+# Loop back to step 2 (Checkpoint: begin) for a fresh execution row,
+# inserting fix_attempt_index = $ATTEMPT.
 # When this re-execution returns STATUS=passed:
 e2e_exec "
     UPDATE bugs
        SET status = 'fixed',
-           fix_commit = $(e2e_sql_quote \"$COMMIT_SHA\"),
-           fixed_at = datetime('now')
+           fix_commit_sha = $(e2e_sql_quote \"$COMMIT_SHA\"),
+           retested_at = datetime('now'),
+           retest_result = 'fixed',
+           updated_at = datetime('now')
      WHERE id = $(e2e_sql_quote \"$BUG_ID\");
 "
 ```

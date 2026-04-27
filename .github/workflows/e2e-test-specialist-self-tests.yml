@@ -1,0 +1,45 @@
+name: e2e-test-specialist self-tests
+
+on:
+  push:
+    paths:
+      - 'e2e-test-specialist/**'
+      - '.github/workflows/e2e-test-specialist-self-tests.yml'
+  pull_request:
+    paths:
+      - 'e2e-test-specialist/**'
+      - '.github/workflows/e2e-test-specialist-self-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  self-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show sqlite3 version
+        run: sqlite3 --version
+
+      - name: Set CLAUDE_PLUGIN_ROOT
+        run: echo "CLAUDE_PLUGIN_ROOT=$GITHUB_WORKSPACE/e2e-test-specialist" >> $GITHUB_ENV
+
+      - name: Run self-tests
+        run: bash e2e-test-specialist/tests/run-self-tests.sh
+
+      - name: Verify schema versions match plugin metadata
+        run: |
+          PLUGIN_VER=$(jq -r .version e2e-test-specialist/.claude-plugin/plugin.json)
+          MARKETPLACE_VER=$(jq -r '.plugins[] | select(.name=="e2e-test-specialist") | .version' .claude-plugin/marketplace.json)
+          if [[ "$PLUGIN_VER" != "$MARKETPLACE_VER" ]]; then
+            echo "::error::plugin.json version ($PLUGIN_VER) != marketplace.json version ($MARKETPLACE_VER)"
+            exit 1
+          fi
+          echo "plugin = $PLUGIN_VER, marketplace = $MARKETPLACE_VER ✓"
+
+      - name: Validate JSON files are well-formed
+        run: |
+          jq empty e2e-test-specialist/.claude-plugin/plugin.json
+          jq empty e2e-test-specialist/schemas/default-config.json
+          jq empty e2e-test-specialist/schemas/tag-taxonomy.json
+          jq empty .claude-plugin/marketplace.json

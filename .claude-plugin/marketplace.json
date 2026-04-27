@@ -371,7 +371,7 @@
     {
       "name": "e2e-test-specialist",
       "source": "./e2e-test-specialist",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "description": "Database-backed E2E testing for large suites (50+ phases, 1000+ steps). SQLite plan storage, tag-driven selection, heartbeat-based crash recovery, importable from existing markdown ledgers, and Playwright MCP execution with checkpoint persistence.",
       "keywords": [
         "e2e",
