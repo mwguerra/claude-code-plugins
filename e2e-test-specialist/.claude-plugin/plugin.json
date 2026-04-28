@@ -1,7 +1,7 @@
 {
   "name": "e2e-test-specialist",
   "description": "Database-backed E2E testing for large suites (50+ phases, 1000+ steps). SQLite plan storage, tag-driven selection, heartbeat-based crash recovery, importable from existing markdown ledgers, and Playwright MCP execution with checkpoint persistence.",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "license": "MIT",
   "author": {
     "name": "Marcelo Guerra",

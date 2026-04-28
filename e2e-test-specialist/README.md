@@ -136,7 +136,8 @@ The crash-detection threshold is `crash_detection.heartbeat_stale_seconds` in
 | 2.3.0          | 1.3.0          | `/sessions`, `/failures`, `/pending`, schema cheat sheet                            |
 | 2.4.0          | 1.3.0          | `/before-all`, `/after-all` upsert wrappers                                         |
 | 2.5.0          | 1.3.0          | Pre-run briefing, `/authorize`, `/fix-failures`, strict skip discipline            |
-| **2.6.0**      | **1.4.0**      | `skip_reason`, `fix_attempt_index`, `idempotent`, `affected_tests`; `test_coverage_links` / `notifications` / `resource_ledger` tables; `/doctor`, `/schema`, `/diff`, `/recommend`, `/skipped`, `/cost`, `/notify`, `/wizard`; cascade circuit breaker + kill switch + `--dry-run` in autopilot |
+| 2.6.0          | 1.4.0          | `skip_reason`, `fix_attempt_index`, `idempotent`, `affected_tests`; `test_coverage_links` / `notifications` / `resource_ledger` tables; `/doctor`, `/schema`, `/diff`, `/recommend`, `/skipped`, `/cost`, `/notify`, `/wizard`; cascade circuit breaker + kill switch + `--dry-run` in autopilot |
+| **2.7.0**      | **1.4.0**      | `/reset` — execute after-all teardown + reset run pointer (default), `--clear-history` (catalog kept, run history wiped), or `--hard --ledger <path>` (full re-init + re-import) |
 
 Older plugin versions can run against older schemas, but newer commands
 (e.g. `/skipped`) require the schema upgrade. `/init` migrates safely.
